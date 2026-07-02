@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS fund_investment (
     vs_benchmark   benchmark_status DEFAULT 'NA',
     geography      TEXT,                    -- token canonique : 'US','EUROPE','UK','DACH','GLOBAL','OTHER' (§13.1)
     asset_class    TEXT,
+    commitment     NUMERIC,                 -- capital envisagé par Atlan (devise de base) — KPI « capital en revue »
 
     -- millésime le plus récent
     recent_vintage INT,
@@ -85,6 +86,7 @@ CREATE TABLE IF NOT EXISTS direct_deal (
     gp             TEXT,                    -- general partner / sponsor
     geography      TEXT,                    -- token canonique (§13.1)
     inv_type       TEXT,                    -- ex. 'Direct/Growth Equity'
+    commitment     NUMERIC,                 -- capital envisagé par Atlan (devise de base) — KPI « capital en revue »
 
     -- performance financière (fractions pour les %)
     revenue        NUMERIC,
@@ -121,3 +123,7 @@ CREATE TABLE IF NOT EXISTS direct_deal (
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_by     BIGINT REFERENCES app_user(id)
 );
+
+-- Ajouts additifs idempotents (pour les bases créées avant l'ajout de colonnes)
+ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS commitment NUMERIC;
+ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS commitment NUMERIC;
