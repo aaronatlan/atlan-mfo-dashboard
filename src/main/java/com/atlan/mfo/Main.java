@@ -9,13 +9,11 @@ import com.atlan.mfo.db.Migrations;
 import com.atlan.mfo.model.AppUser;
 import com.atlan.mfo.ui.controllers.ChangePasswordController;
 import com.atlan.mfo.ui.controllers.LoginController;
+import com.atlan.mfo.ui.controllers.MainShellController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
@@ -72,30 +70,12 @@ public class Main extends Application {
         setScene(root, 420, 520);
     }
 
-    /**
-     * Écran d'accueil provisoire (Phase 0). La coquille applicative et le
-     * Pipeline summary arrivent en Phase 1.
-     */
+    /** Coquille applicative (menu latéral + Pipeline summary). */
     public void showHome(AppUser user) {
         Session.setCurrentUser(user);
-
-        Label title = new Label("Connecté");
-        title.getStyleClass().add("home-title");
-        Label who = new Label(user.fullName() + "  ·  " + user.role());
-        who.getStyleClass().add("home-subtitle");
-        Label note = new Label("Phase 0 validée. La suite (pipeline, scoring) arrive en Phase 1.");
-        note.getStyleClass().add("home-note");
-
-        Button logout = new Button("Se déconnecter");
-        logout.getStyleClass().add("primary-button");
-        logout.setOnAction(e -> {
-            Session.clear();
-            showLogin();
-        });
-
-        VBox box = new VBox(16, title, who, note, logout);
-        box.getStyleClass().add("home-root");
-        setScene(box, 640, 480);
+        MainShellController controller = new MainShellController(this, user);
+        Parent root = load("/fxml/main.fxml", controller);
+        setScene(root, 1240, 780);
     }
 
     /* ---- Helpers ---- */

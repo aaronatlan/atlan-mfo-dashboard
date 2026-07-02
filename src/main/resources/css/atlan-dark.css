@@ -126,3 +126,326 @@
     -fx-text-fill: -atlan-text-3;
     -fx-font-size: 12px;
 }
+
+/* ============================================================
+   Coquille applicative (Phase 1)
+   ============================================================ */
+
+.shell-root {
+    -fx-background-color: -atlan-bg;
+}
+
+/* ---- Barre supérieure ---- */
+.topbar {
+    -fx-background-color: -atlan-nav;
+    -fx-padding: 12 18 12 18;
+    -fx-border-color: transparent transparent -atlan-line transparent;
+    -fx-border-width: 1;
+}
+
+.topbar-brand {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-letter-spacing: 0.16em;
+}
+
+.topbar-brand-sub {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 10px;
+    -fx-letter-spacing: 0.20em;
+    -fx-padding: 3 0 0 0;
+}
+
+.topbar-user {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 12px;
+    -fx-padding: 0 12 0 0;
+}
+
+.ghost-button {
+    -fx-background-color: transparent;
+    -fx-border-color: -atlan-line-strong;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 12px;
+    -fx-padding: 6 12 6 12;
+    -fx-cursor: hand;
+}
+
+.ghost-button:hover {
+    -fx-border-color: -atlan-accent;
+    -fx-text-fill: -atlan-text;
+}
+
+/* ---- Menu latéral ---- */
+.sidebar {
+    -fx-background-color: -atlan-nav;
+    -fx-padding: 16 12 16 12;
+    -fx-min-width: 220;
+    -fx-pref-width: 220;
+    -fx-border-color: transparent -atlan-line transparent transparent;
+    -fx-border-width: 1;
+}
+
+.sidebar-section {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 9px;
+    -fx-letter-spacing: 0.16em;
+    -fx-padding: 14 0 4 8;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 4;
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 13px;
+    -fx-alignment: CENTER-LEFT;
+    -fx-padding: 9 12 9 12;
+    -fx-cursor: hand;
+}
+
+.nav-button:hover {
+    -fx-background-color: -atlan-raised;
+    -fx-text-fill: -atlan-text;
+}
+
+.nav-button:selected {
+    -fx-background-color: -atlan-accent-wash;
+    -fx-text-fill: -atlan-text;
+    -fx-border-color: -atlan-accent;
+    -fx-border-width: 0 0 0 2;
+}
+
+/* ---- Zone de contenu ---- */
+.content-pane {
+    -fx-background-color: -atlan-bg;
+    -fx-padding: 22 26 22 26;
+}
+
+.view-root {
+    -fx-background-color: -atlan-bg;
+}
+
+.view-title {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 19px;
+    -fx-font-weight: bold;
+}
+
+/* ---- KPI ---- */
+.kpi-bar {
+    -fx-padding: 4 0 4 0;
+}
+
+.kpi-card {
+    -fx-background-color: -atlan-card;
+    -fx-background-radius: 4;
+    -fx-border-color: -atlan-line;
+    -fx-border-radius: 4;
+    -fx-padding: 14 16 14 16;
+}
+
+.kpi-value {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
+
+.kpi-label {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 9px;
+    -fx-letter-spacing: 0.14em;
+}
+
+/* ---- Filtres ---- */
+.filter-row {
+    -fx-padding: 2 0 2 0;
+}
+
+.combo-box {
+    -fx-background-color: -atlan-card;
+    -fx-background-radius: 4;
+    -fx-border-color: -atlan-line-strong;
+    -fx-border-radius: 4;
+    -fx-min-width: 190;
+}
+
+.combo-box .list-cell {
+    -fx-text-fill: -atlan-text;
+    -fx-background-color: transparent;
+    -fx-padding: 4 8 4 8;
+}
+
+.combo-box .arrow,
+.combo-box .arrow-button {
+    -fx-background-color: -atlan-text-3;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: -atlan-raised;
+    -fx-border-color: -atlan-line-strong;
+}
+
+.combo-box-popup .list-cell {
+    -fx-text-fill: -atlan-text;
+    -fx-background-color: -atlan-raised;
+    -fx-padding: 6 10 6 10;
+}
+
+.combo-box-popup .list-cell:hover,
+.combo-box-popup .list-cell:filled:selected {
+    -fx-background-color: -atlan-accent-wash;
+}
+
+.search-field {
+    -fx-background-color: -atlan-card;
+    -fx-background-radius: 4;
+    -fx-border-color: -atlan-line-strong;
+    -fx-border-radius: 4;
+    -fx-text-fill: -atlan-text;
+    -fx-prompt-text-fill: -atlan-text-3;
+    -fx-padding: 7 12 7 12;
+}
+
+.search-field:focused {
+    -fx-border-color: -atlan-accent;
+}
+
+/* ---- Tableau ---- */
+.opportunity-table {
+    -fx-background-color: transparent;
+    -fx-border-color: -atlan-line;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.opportunity-table .column-header-background {
+    -fx-background-color: -atlan-nav;
+}
+
+.opportunity-table .column-header {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent -atlan-line transparent;
+    -fx-padding: 8 8 8 8;
+}
+
+.opportunity-table .column-header .label {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 10px;
+    -fx-letter-spacing: 0.10em;
+    -fx-alignment: CENTER-LEFT;
+}
+
+.opportunity-table .table-row-cell {
+    -fx-background-color: -atlan-card;
+    -fx-border-color: transparent transparent -atlan-line transparent;
+    -fx-table-cell-border-color: transparent;
+}
+
+.opportunity-table .table-row-cell:odd {
+    -fx-background-color: derive(-atlan-card, -3%);
+}
+
+.opportunity-table .table-row-cell:hover {
+    -fx-background-color: -atlan-raised;
+}
+
+.opportunity-table .table-row-cell:selected {
+    -fx-background-color: -atlan-accent-wash;
+}
+
+.opportunity-table .table-cell {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 13px;
+    -fx-padding: 9 8 9 8;
+    -fx-border-color: transparent;
+}
+
+.opportunity-table .table-row-cell:empty {
+    -fx-background-color: -atlan-bg;
+}
+
+/* ---- Tiers : point coloré + libellé (§8.1) ---- */
+.tier-dot {
+    -fx-min-width: 9;
+    -fx-min-height: 9;
+    -fx-max-width: 9;
+    -fx-max-height: 9;
+    -fx-background-radius: 5;
+}
+
+.tier-strong   { -fx-background-color: -atlan-strong; }
+.tier-moderate { -fx-background-color: -atlan-moderate; }
+.tier-caution  { -fx-background-color: -atlan-caution; }
+
+/* ---- Fiche détail / méthodologie ---- */
+.detail-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.detail-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.detail-body {
+    -fx-padding: 4 8 20 2;
+}
+
+.detail-header {
+    -fx-padding: 0 0 14 0;
+    -fx-border-color: transparent transparent -atlan-line transparent;
+    -fx-border-width: 1;
+}
+
+.detail-title {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.detail-subtitle {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 12px;
+}
+
+.detail-score {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+}
+
+.detail-section {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 10px;
+    -fx-letter-spacing: 0.14em;
+    -fx-padding: 6 0 2 0;
+}
+
+.detail-key {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 12px;
+}
+
+.detail-value {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 13px;
+}
+
+.detail-paragraph {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 13px;
+}
+
+.method-head {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 10px;
+    -fx-letter-spacing: 0.10em;
+}
+
+.method-cell {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 13px;
+}
