@@ -1,0 +1,128 @@
+/*
+ * Atlan MFO Dashboard — thème institutionnel « terminal financier ».
+ * Toutes les couleurs sont centralisées ici (voir §8).
+ */
+
+.root {
+    -atlan-bg:          #163B4A;   /* pétrole, couleur dominante */
+    -atlan-nav:         #11303C;
+    -atlan-card:        #1D4A5B;
+    -atlan-raised:      #245567;
+    -atlan-line:        rgba(255,255,255,0.08);
+    -atlan-line-strong: rgba(255,255,255,0.16);
+    -atlan-text:        #FFFFFF;
+    -atlan-text-2:      #AEC3C9;
+    -atlan-text-3:      #79949C;
+    -atlan-accent:      #816430;   /* bronze */
+    -atlan-accent-hover:#9A7A3C;
+    -atlan-accent-wash: rgba(129,100,48,0.16);
+    -atlan-strong:      #6FA88C;
+    -atlan-moderate:    #8FA0B2;
+    -atlan-caution:     #C0796A;
+    -atlan-danger:      #C0796A;
+
+    -fx-background-color: -atlan-bg;
+    -fx-font-family: "Inter";
+    -fx-text-fill: -atlan-text;
+}
+
+/* ---- Écrans d'authentification ---- */
+
+.auth-root {
+    -fx-background-color: -atlan-bg;
+    -fx-padding: 48 44 48 44;
+}
+
+.brand-mark {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+    -fx-letter-spacing: 0.18em;
+}
+
+.brand-sub {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 11px;
+    -fx-letter-spacing: 0.22em;
+}
+
+.field-label {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 10px;
+    -fx-letter-spacing: 0.14em;
+    -fx-padding: 6 0 2 2;
+}
+
+.help-text {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 12px;
+}
+
+.error-label {
+    -fx-text-fill: -atlan-danger;
+    -fx-font-size: 12px;
+    -fx-padding: 4 0 0 2;
+}
+
+/* ---- Champs de saisie ---- */
+
+.text-field,
+.password-field {
+    -fx-background-color: -atlan-card;
+    -fx-background-radius: 4;
+    -fx-border-color: -atlan-line-strong;
+    -fx-border-radius: 4;
+    -fx-text-fill: -atlan-text;
+    -fx-prompt-text-fill: -atlan-text-3;
+    -fx-font-size: 13px;
+    -fx-padding: 9 12 9 12;
+}
+
+.text-field:focused,
+.password-field:focused {
+    -fx-border-color: -atlan-accent;
+}
+
+/* ---- Boutons ---- */
+
+.primary-button {
+    -fx-background-color: -atlan-accent-wash;
+    -fx-border-color: -atlan-accent;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 18 10 18;
+    -fx-cursor: hand;
+}
+
+.primary-button:hover {
+    -fx-background-color: -atlan-accent;
+    -fx-border-color: -atlan-accent-hover;
+}
+
+/* ---- Accueil provisoire (Phase 0) ---- */
+
+.home-root {
+    -fx-background-color: -atlan-bg;
+    -fx-alignment: center;
+    -fx-padding: 40;
+}
+
+.home-title {
+    -fx-text-fill: -atlan-strong;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.home-subtitle {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 14px;
+    -fx-letter-spacing: 0.05em;
+}
+
+.home-note {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 12px;
+}
