@@ -449,3 +449,107 @@
     -fx-text-fill: -atlan-text;
     -fx-font-size: 13px;
 }
+
+/* ============================================================
+   Formulaires de saisie (Phase 3)
+   ============================================================ */
+
+.form-view {
+    -fx-background-color: -atlan-bg;
+}
+
+.form-header {
+    -fx-padding: 0 0 14 0;
+    -fx-border-color: transparent transparent -atlan-line transparent;
+    -fx-border-width: 1;
+}
+
+.form-content {
+    -fx-padding: 16 0 0 0;
+}
+
+.form-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.form-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.form-body {
+    -fx-padding: 2 12 16 2;
+}
+
+.form-label {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 12px;
+}
+
+.form-section {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 10px;
+    -fx-letter-spacing: 0.14em;
+    -fx-padding: 10 0 2 0;
+}
+
+.vintage-head {
+    -fx-padding: 4 0 0 0;
+}
+
+.form-control,
+.date-picker,
+.text-area {
+    -fx-background-color: -atlan-card;
+    -fx-background-radius: 4;
+    -fx-border-color: -atlan-line-strong;
+    -fx-border-radius: 4;
+    -fx-text-fill: -atlan-text;
+}
+
+.text-area {
+    -fx-control-inner-background: -atlan-card;
+}
+
+.text-area .content {
+    -fx-background-color: -atlan-card;
+}
+
+.text-area .text {
+    -fx-fill: -atlan-text;
+}
+
+.date-picker .text-field {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.date-picker .arrow-button {
+    -fx-background-color: -atlan-raised;
+}
+
+/* Panneau de score en direct */
+.score-panel {
+    -fx-background-color: -atlan-card;
+    -fx-background-radius: 4;
+    -fx-border-color: -atlan-line;
+    -fx-border-radius: 4;
+    -fx-padding: 16 18 16 18;
+}
+
+.score-panel-caption {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 9px;
+    -fx-letter-spacing: 0.16em;
+}
+
+.score-panel-value {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 40px;
+    -fx-font-weight: bold;
+}
+
+.score-panel-footer {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 11px;
+}

@@ -31,10 +31,10 @@ public final class DetailView extends BorderPane {
         getStyleClass().add("detail-view");
     }
 
-    public static DetailView ofFund(FundInvestment f, ScoreBreakdown breakdown, Runnable onBack) {
+    public static DetailView ofFund(FundInvestment f, ScoreBreakdown breakdown, Runnable onBack, Runnable onEdit) {
         DetailView v = new DetailView();
         v.setTop(v.header(f.name(), f.category().label() + "  ·  " + f.status().label(),
-                breakdown, onBack));
+                breakdown, onBack, onEdit));
 
         VBox body = new VBox(18);
         body.getStyleClass().add("detail-body");
@@ -65,10 +65,10 @@ public final class DetailView extends BorderPane {
         return v;
     }
 
-    public static DetailView ofDeal(DirectDeal d, ScoreBreakdown breakdown, Runnable onBack) {
+    public static DetailView ofDeal(DirectDeal d, ScoreBreakdown breakdown, Runnable onBack, Runnable onEdit) {
         DetailView v = new DetailView();
         v.setTop(v.header(d.name(), PipelineItem.DEALS_STRATEGY + "  ·  " + d.status().label(),
-                breakdown, onBack));
+                breakdown, onBack, onEdit));
 
         VBox body = new VBox(18);
         body.getStyleClass().add("detail-body");
@@ -117,7 +117,7 @@ public final class DetailView extends BorderPane {
         return v;
     }
 
-    private HBox header(String name, String subtitle, ScoreBreakdown breakdown, Runnable onBack) {
+    private HBox header(String name, String subtitle, ScoreBreakdown breakdown, Runnable onBack, Runnable onEdit) {
         Button back = new Button("← Retour");
         back.getStyleClass().add("ghost-button");
         back.setOnAction(e -> onBack.run());
@@ -128,6 +128,10 @@ public final class DetailView extends BorderPane {
         sub.getStyleClass().add("detail-subtitle");
         VBox titles = new VBox(2, title, sub);
 
+        Button edit = new Button("Éditer");
+        edit.getStyleClass().add("primary-button");
+        edit.setOnAction(e -> onEdit.run());
+
         VBox scoreBox = new VBox(2);
         scoreBox.setAlignment(Pos.CENTER_RIGHT);
         Label scoreVal = new Label(Formatters.score(breakdown.score()));
@@ -137,7 +141,7 @@ public final class DetailView extends BorderPane {
         Region spacer = new Region();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
-        HBox bar = new HBox(16, back, titles, spacer, scoreBox);
+        HBox bar = new HBox(16, back, titles, spacer, edit, scoreBox);
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.getStyleClass().add("detail-header");
         return bar;
