@@ -157,6 +157,7 @@ CREATE TABLE fund_investment (
     vs_benchmark   benchmark_status DEFAULT 'NA',
     geography      TEXT,                    -- token canonique : 'US','EUROPE','UK','DACH','GLOBAL','OTHER' (voir §13.1)
     asset_class    TEXT,
+    commitment     NUMERIC,                 -- capital envisagé par Atlan (KPI « capital en revue », §6.1)
 
     -- millésime le plus récent
     recent_vintage INT,
@@ -202,6 +203,7 @@ CREATE TABLE direct_deal (
     gp             TEXT,                    -- general partner / sponsor
     geography      TEXT,
     inv_type       TEXT,                    -- ex. 'Direct/Growth Equity'
+    commitment     NUMERIC,                 -- capital envisagé par Atlan (KPI « capital en revue », §6.1)
 
     -- performance financière (fractions pour les %)
     revenue        NUMERIC,
@@ -340,7 +342,9 @@ Coquille applicative : **menu latéral** fixe à gauche, contenu à droite, barr
 
 ### 6.1 Écrans (vue analyste)
 
-1. **Pipeline summary** (accueil) — bande de KPI (deals actifs, capital en revue, score moyen, nombre en tier Strong) puis tableau global de toutes les opportunités, filtrable par stratégie et statut, avec recherche. Colonnes : nom, stratégie, statut, score, tier. Tri par colonne. Double-clic sur une ligne → ouvre la fiche. Le score affiché en liste est **recalculé en direct** à l'ouverture, jamais lu depuis `score_snapshot` (voir §13.4).
+1. **Pipeline summary** (accueil) — bande de KPI (deals actifs, capital en revue, score moyen, nombre en tier Strong) puis tableau global de toutes les opportunités, filtrable par stratégie et statut, avec recherche. Colonnes : nom, stratégie, statut, score, tier. Tri par colonne. Double-clic sur une ligne → ouvre la fiche. Le score affiché en liste est **recalculé en direct** à l'ouverture, jamais lu depuis `score_snapshot` (voir §13.4). *(Note de phasage : tant que le moteur de scoring (Phase 2) n'est pas branché, la Phase 1 affiche `score_snapshot` ; le recalcul live remplace cette source en Phase 2.)*
+
+   Définition des KPI : **deals actifs** = opportunités dont le statut n'est ni `APPROVED` ni `DECLINED_LOST` ; **capital en revue** = somme des `commitment` de ces opportunités actives ; **score moyen** et **tier Strong** sont calculés sur ce même sous-ensemble actif.
 2. **Buyout, growth, VC** — liste filtrée + fiche fonds.
 3. **Secondaries** — même liste et même fiche que Buyout/growth/VC (`category = SECONDARIES`).
 4. **Private credit** — même structure fonds, grille de scoring B.
