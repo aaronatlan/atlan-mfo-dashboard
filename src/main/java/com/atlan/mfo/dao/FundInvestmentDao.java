@@ -3,6 +3,7 @@ package com.atlan.mfo.dao;
 import com.atlan.mfo.db.Database;
 import com.atlan.mfo.model.FundInvestment;
 import com.atlan.mfo.model.FundVintage;
+import com.atlan.mfo.model.ScoreBreakdown;
 import com.atlan.mfo.model.enums.BenchmarkStatus;
 import com.atlan.mfo.model.enums.Category;
 import com.atlan.mfo.model.enums.DealStatus;
@@ -55,6 +56,111 @@ public final class FundInvestmentDao {
             throw new IllegalStateException("Lecture de fund_investment impossible", e);
         }
         return result;
+    }
+
+    /* ---- Écritures (Phase 3) ---- */
+
+    private static final String INSERT = """
+            INSERT INTO fund_investment
+              (category, name, next_steps, status, vs_benchmark, geography, asset_class, commitment,
+               first_close, final_close, comments,
+               score_snapshot, sub_dpi, sub_irr, sub_moic, sub_geo, sub_time, updated_by)
+            VALUES (?::category, ?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            RETURNING id
+            """;
+
+    private static final String UPDATE = """
+            UPDATE fund_investment SET
+               category=?::category, name=?, next_steps=?, status=?::deal_status, vs_benchmark=?::benchmark_status,
+               geography=?, asset_class=?, commitment=?, first_close=?, final_close=?, comments=?,
+               score_snapshot=?, sub_dpi=?, sub_irr=?, sub_moic=?, sub_geo=?, sub_time=?,
+               version=version+1, updated_at=now(), updated_by=?
+             WHERE id=? AND version=?
+            """;
+
+    /** Crée un fonds et ses millésimes (transaction). Renvoie l'id généré. */
+    public long insert(FundInvestment f, ScoreBreakdown score, long userId) {
+        try (Connection conn = Database.dataSource().getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                long id;
+                try (PreparedStatement ps = conn.prepareStatement(INSERT)) {
+                    setFundParams(ps, f, score);
+                    ps.setLong(18, userId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        rs.next();
+                        id = rs.getLong(1);
+                    }
+                }
+                for (FundVintage v : f.vintages()) {
+                    vintageDao.insert(conn, id, v);
+                }
+                conn.commit();
+                return id;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Création du fonds impossible", e);
+        }
+    }
+
+    /**
+     * Met à jour un fonds sous verrou optimiste (§13.2) et remplace ses millésimes.
+     *
+     * @throws StaleDataException si la fiche a été modifiée entre-temps.
+     */
+    public void update(FundInvestment f, ScoreBreakdown score, long userId) {
+        try (Connection conn = Database.dataSource().getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                int rows;
+                try (PreparedStatement ps = conn.prepareStatement(UPDATE)) {
+                    setFundParams(ps, f, score);
+                    ps.setLong(18, userId);
+                    ps.setLong(19, f.id());
+                    ps.setLong(20, f.version());
+                    rows = ps.executeUpdate();
+                }
+                if (rows == 0) {
+                    conn.rollback();
+                    throw new StaleDataException(
+                            "Le fonds a été modifié par un autre utilisateur depuis son ouverture.");
+                }
+                vintageDao.deleteByFund(conn, f.id());
+                for (FundVintage v : f.vintages()) {
+                    vintageDao.insert(conn, f.id(), v);
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Mise à jour du fonds impossible", e);
+        }
+    }
+
+    /** Renseigne les 17 colonnes de données (1..17). L'appelant fixe updated_by / id / version. */
+    private void setFundParams(PreparedStatement ps, FundInvestment f, ScoreBreakdown s) throws SQLException {
+        ps.setString(1, f.category().name());
+        ps.setString(2, f.name());
+        JdbcSupport.setString(ps, 3, f.nextSteps());
+        ps.setString(4, f.status().name());
+        JdbcSupport.setString(ps, 5, f.vsBenchmark() == null ? null : f.vsBenchmark().name());
+        JdbcSupport.setString(ps, 6, f.geography());
+        JdbcSupport.setString(ps, 7, f.assetClass());
+        JdbcSupport.setDouble(ps, 8, f.commitment());
+        JdbcSupport.setDate(ps, 9, f.firstClose());
+        JdbcSupport.setDate(ps, 10, f.finalClose());
+        JdbcSupport.setString(ps, 11, f.comments());
+        JdbcSupport.setInteger(ps, 12, s.score());
+        JdbcSupport.setDouble(ps, 13, s.subScoreOf("DPI"));
+        JdbcSupport.setDouble(ps, 14, s.subScoreOf("IRR"));
+        JdbcSupport.setDouble(ps, 15, s.subScoreOf("MOIC"));
+        JdbcSupport.setDouble(ps, 16, s.subScoreOf("Géographie"));
+        JdbcSupport.setDouble(ps, 17, s.subScoreOf("Timeline"));
     }
 
     private FundInvestment map(ResultSet rs, List<FundVintage> vintages) throws SQLException {
