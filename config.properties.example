@@ -1,0 +1,15 @@
+# Modèle de configuration locale — copier en `config.properties` (non versionné)
+# et renseigner les valeurs. Les variables d'environnement ATLAN_DB_URL,
+# ATLAN_DB_USER, ATLAN_DB_PASSWORD ont priorité sur ce fichier si définies.
+
+# URL JDBC PostgreSQL
+db.url=jdbc:postgresql://localhost:5432/atlan_mfo
+
+# Identifiant du rôle applicatif unique
+db.user=
+
+# Mot de passe du rôle applicatif
+db.password=
+
+# Exécuter schema.sql + seed.sql au démarrage (true en dev, false ensuite)
+db.runMigrations=true
