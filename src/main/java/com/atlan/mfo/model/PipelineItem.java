@@ -33,15 +33,16 @@ public record PipelineItem(
         return status.isActive();
     }
 
-    public static PipelineItem ofFund(FundInvestment f) {
+    /** Le score est recalculé en direct par le moteur (§13.4), pas lu depuis score_snapshot. */
+    public static PipelineItem ofFund(FundInvestment f, Integer liveScore) {
         return new PipelineItem(
                 f.id(), Type.FUND, f.name(), f.category(),
-                f.category().label(), f.status(), f.scoreSnapshot(), f.commitment());
+                f.category().label(), f.status(), liveScore, f.commitment());
     }
 
-    public static PipelineItem ofDeal(DirectDeal d) {
+    public static PipelineItem ofDeal(DirectDeal d, Integer liveScore) {
         return new PipelineItem(
                 d.id(), Type.DEAL, d.name(), null,
-                DEALS_STRATEGY, d.status(), d.scoreSnapshot(), d.commitment());
+                DEALS_STRATEGY, d.status(), liveScore, d.commitment());
     }
 }

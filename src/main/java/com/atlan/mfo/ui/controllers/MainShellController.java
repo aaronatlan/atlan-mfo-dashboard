@@ -10,6 +10,7 @@ import com.atlan.mfo.model.FundInvestment;
 import com.atlan.mfo.model.PipelineItem;
 import com.atlan.mfo.model.enums.Category;
 import com.atlan.mfo.model.enums.Role;
+import com.atlan.mfo.scoring.ScoringEngine;
 import com.atlan.mfo.ui.view.DetailView;
 import com.atlan.mfo.ui.view.MethodologyView;
 import com.atlan.mfo.ui.view.PipelineView;
@@ -33,6 +34,7 @@ public class MainShellController {
 
     private final FundInvestmentDao fundDao = new FundInvestmentDao();
     private final DirectDealDao dealDao = new DirectDealDao();
+    private final ScoringEngine engine = new ScoringEngine();
 
     private List<FundInvestment> funds;
     private List<DirectDeal> deals;
@@ -60,9 +62,11 @@ public class MainShellController {
     private void loadData() {
         funds = fundDao.findAll();
         deals = dealDao.findAll();
+        // Score recalculé en direct par le moteur à l'ouverture (§13.4)
+        java.time.LocalDate today = java.time.LocalDate.now();
         allItems = new java.util.ArrayList<>();
-        funds.forEach(f -> allItems.add(PipelineItem.ofFund(f)));
-        deals.forEach(d -> allItems.add(PipelineItem.ofDeal(d)));
+        funds.forEach(f -> allItems.add(PipelineItem.ofFund(f, engine.score(f, today).score())));
+        deals.forEach(d -> allItems.add(PipelineItem.ofDeal(d, engine.score(d, today).score())));
     }
 
     private void buildNav() {
@@ -131,10 +135,10 @@ public class MainShellController {
         Runnable onBack = () -> setContent(currentView.get());
         if (item.type() == PipelineItem.Type.FUND) {
             funds.stream().filter(f -> f.id() == item.id()).findFirst()
-                    .ifPresent(f -> setContent(DetailView.ofFund(f, onBack)));
+                    .ifPresent(f -> setContent(DetailView.ofFund(f, engine.score(f), onBack)));
         } else {
             deals.stream().filter(d -> d.id() == item.id()).findFirst()
-                    .ifPresent(d -> setContent(DetailView.ofDeal(d, onBack)));
+                    .ifPresent(d -> setContent(DetailView.ofDeal(d, engine.score(d), onBack)));
         }
     }
 

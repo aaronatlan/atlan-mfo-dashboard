@@ -4,7 +4,8 @@ import com.atlan.mfo.model.DirectDeal;
 import com.atlan.mfo.model.FundInvestment;
 import com.atlan.mfo.model.FundVintage;
 import com.atlan.mfo.model.PipelineItem;
-import com.atlan.mfo.model.enums.Tier;
+import com.atlan.mfo.model.ScoreBreakdown;
+import com.atlan.mfo.model.ScoreComponent;
 import com.atlan.mfo.ui.util.Formatters;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -30,10 +31,10 @@ public final class DetailView extends BorderPane {
         getStyleClass().add("detail-view");
     }
 
-    public static DetailView ofFund(FundInvestment f, Runnable onBack) {
+    public static DetailView ofFund(FundInvestment f, ScoreBreakdown breakdown, Runnable onBack) {
         DetailView v = new DetailView();
         v.setTop(v.header(f.name(), f.category().label() + "  ·  " + f.status().label(),
-                f.scoreSnapshot(), onBack));
+                breakdown, onBack));
 
         VBox body = new VBox(18);
         body.getStyleClass().add("detail-body");
@@ -52,6 +53,7 @@ public final class DetailView extends BorderPane {
         addRow(g4, "Final close", Formatters.date(f.finalClose()));
 
         body.getChildren().addAll(
+                section("Détail du score"), scoreTable(breakdown),
                 section("Général"), g1,
                 section("Millésimes (track record)"), vintages,
                 section("Timeline"), g4);
@@ -63,10 +65,10 @@ public final class DetailView extends BorderPane {
         return v;
     }
 
-    public static DetailView ofDeal(DirectDeal d, Runnable onBack) {
+    public static DetailView ofDeal(DirectDeal d, ScoreBreakdown breakdown, Runnable onBack) {
         DetailView v = new DetailView();
         v.setTop(v.header(d.name(), PipelineItem.DEALS_STRATEGY + "  ·  " + d.status().label(),
-                d.scoreSnapshot(), onBack));
+                breakdown, onBack));
 
         VBox body = new VBox(18);
         body.getStyleClass().add("detail-body");
@@ -102,6 +104,7 @@ public final class DetailView extends BorderPane {
         addRow(g4, "Sortie cible", Formatters.date(d.targetExit()));
 
         body.getChildren().addAll(
+                section("Détail du score"), scoreTable(breakdown),
                 section("Général"), g1,
                 section("Performance financière"), g2,
                 section("Retours attendus"), g3,
@@ -114,7 +117,7 @@ public final class DetailView extends BorderPane {
         return v;
     }
 
-    private HBox header(String name, String subtitle, Integer score, Runnable onBack) {
+    private HBox header(String name, String subtitle, ScoreBreakdown breakdown, Runnable onBack) {
         Button back = new Button("← Retour");
         back.getStyleClass().add("ghost-button");
         back.setOnAction(e -> onBack.run());
@@ -127,12 +130,9 @@ public final class DetailView extends BorderPane {
 
         VBox scoreBox = new VBox(2);
         scoreBox.setAlignment(Pos.CENTER_RIGHT);
-        Label scoreVal = new Label(Formatters.score(score));
+        Label scoreVal = new Label(Formatters.score(breakdown.score()));
         scoreVal.getStyleClass().add("detail-score");
-        scoreBox.getChildren().add(scoreVal);
-        if (score != null) {
-            scoreBox.getChildren().add(OpportunityTable.tierNode(Tier.fromScore(score)));
-        }
+        scoreBox.getChildren().addAll(scoreVal, OpportunityTable.tierNode(breakdown.tier()));
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
@@ -141,6 +141,38 @@ public final class DetailView extends BorderPane {
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.getStyleClass().add("detail-header");
         return bar;
+    }
+
+    /** Tableau du détail du score : composant, sous-score / max, ou « exclu ». */
+    private static Node scoreTable(ScoreBreakdown breakdown) {
+        GridPane g = new GridPane();
+        g.getStyleClass().add("method-table");
+        g.setHgap(28);
+        g.setVgap(6);
+        String[] heads = {"Composant", "Sous-score", "Max"};
+        for (int c = 0; c < heads.length; c++) {
+            Label h = new Label(heads[c]);
+            h.getStyleClass().add("method-head");
+            g.add(h, c, 0);
+        }
+        int r = 1;
+        for (ScoreComponent comp : breakdown.components()) {
+            String value = comp.communicated() ? String.format("%.1f", comp.subScore()) : "exclu";
+            String[] cells = {comp.label(), value, String.format("%.0f", comp.maxPoints())};
+            for (int c = 0; c < cells.length; c++) {
+                Label cell = new Label(cells[c]);
+                cell.getStyleClass().add("method-cell");
+                g.add(cell, c, r);
+            }
+            r++;
+        }
+        Label total = new Label("Total");
+        total.getStyleClass().add("method-head");
+        Label totalVal = new Label(breakdown.score() + "  (" + breakdown.tier().label() + ")");
+        totalVal.getStyleClass().add("method-head");
+        g.add(total, 0, r);
+        g.add(totalVal, 1, r);
+        return g;
     }
 
     private static ScrollPane scroll(VBox body) {
