@@ -6,12 +6,14 @@ import com.atlan.mfo.model.enums.DealStatus;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 /**
  * Fonds (Buyout/growth/VC, Secondaries, Private credit) — table {@code fund_investment}.
  *
  * <p>Les métriques financières sont nullable : {@code null} = « non communiqué »,
- * exclu du scoring (voir §4, §5.1).
+ * exclu du scoring (voir §4, §5.1). Le track record est porté par la liste des
+ * millésimes {@code vintages} (table {@code fund_vintage}, voir §5.5).
  */
 public record FundInvestment(
         long id,
@@ -24,17 +26,7 @@ public record FundInvestment(
         String assetClass,
         Double commitment,
 
-        Integer recentVintage,
-        Double recentDpi,
-        Double recentTvpi,
-        Double recentIrr,
-        Double recentMoic,
-
-        Integer earlierVintage,
-        Double earlierDpi,
-        Double earlierTvpi,
-        Double earlierIrr,
-        Double earlierMoic,
+        List<FundVintage> vintages,
 
         LocalDate firstClose,
         LocalDate finalClose,

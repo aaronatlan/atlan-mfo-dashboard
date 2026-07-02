@@ -2,6 +2,7 @@ package com.atlan.mfo.dao;
 
 import com.atlan.mfo.db.Database;
 import com.atlan.mfo.model.FundInvestment;
+import com.atlan.mfo.model.FundVintage;
 import com.atlan.mfo.model.enums.BenchmarkStatus;
 import com.atlan.mfo.model.enums.Category;
 import com.atlan.mfo.model.enums.DealStatus;
@@ -13,14 +14,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-/** Accès en lecture aux fonds (table {@code fund_investment}). */
+/** Accès en lecture aux fonds (table {@code fund_investment}), millésimes attachés. */
 public final class FundInvestmentDao {
+
+    private final FundVintageDao vintageDao = new FundVintageDao();
 
     private static final String SELECT = """
             SELECT id, category, name, next_steps, status, vs_benchmark, geography, asset_class, commitment,
-                   recent_vintage, recent_dpi, recent_tvpi, recent_irr, recent_moic,
-                   earlier_vintage, earlier_dpi, earlier_tvpi, earlier_irr, earlier_moic,
                    first_close, final_close, comments,
                    score_snapshot, sub_dpi, sub_irr, sub_moic, sub_geo, sub_time,
                    version, updated_at, updated_by
@@ -36,6 +38,7 @@ public final class FundInvestmentDao {
     }
 
     private List<FundInvestment> query(String sql, String categoryParam) {
+        Map<Long, List<FundVintage>> vintagesByFund = vintageDao.findAllByFund();
         List<FundInvestment> result = new ArrayList<>();
         try (Connection conn = Database.dataSource().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -44,7 +47,8 @@ public final class FundInvestmentDao {
             }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    result.add(map(rs));
+                    long id = rs.getLong("id");
+                    result.add(map(rs, vintagesByFund.getOrDefault(id, List.of())));
                 }
             }
         } catch (SQLException e) {
@@ -53,7 +57,7 @@ public final class FundInvestmentDao {
         return result;
     }
 
-    private FundInvestment map(ResultSet rs) throws SQLException {
+    private FundInvestment map(ResultSet rs, List<FundVintage> vintages) throws SQLException {
         String bench = rs.getString("vs_benchmark");
         return new FundInvestment(
                 rs.getLong("id"),
@@ -66,17 +70,7 @@ public final class FundInvestmentDao {
                 rs.getString("asset_class"),
                 JdbcSupport.getDouble(rs, "commitment"),
 
-                JdbcSupport.getInteger(rs, "recent_vintage"),
-                JdbcSupport.getDouble(rs, "recent_dpi"),
-                JdbcSupport.getDouble(rs, "recent_tvpi"),
-                JdbcSupport.getDouble(rs, "recent_irr"),
-                JdbcSupport.getDouble(rs, "recent_moic"),
-
-                JdbcSupport.getInteger(rs, "earlier_vintage"),
-                JdbcSupport.getDouble(rs, "earlier_dpi"),
-                JdbcSupport.getDouble(rs, "earlier_tvpi"),
-                JdbcSupport.getDouble(rs, "earlier_irr"),
-                JdbcSupport.getDouble(rs, "earlier_moic"),
+                vintages,
 
                 JdbcSupport.getLocalDate(rs, "first_close"),
                 JdbcSupport.getLocalDate(rs, "final_close"),
