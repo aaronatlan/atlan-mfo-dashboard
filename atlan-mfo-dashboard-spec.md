@@ -159,19 +159,7 @@ CREATE TABLE fund_investment (
     asset_class    TEXT,
     commitment     NUMERIC,                 -- capital envisagé par Atlan (KPI « capital en revue », §6.1)
 
-    -- millésime le plus récent
-    recent_vintage INT,
-    recent_dpi     NUMERIC,
-    recent_tvpi    NUMERIC,
-    recent_irr     NUMERIC,                 -- fraction : 0.137 = 13.7 %
-    recent_moic    NUMERIC,
-
-    -- millésime antérieur
-    earlier_vintage INT,
-    earlier_dpi     NUMERIC,
-    earlier_tvpi    NUMERIC,
-    earlier_irr     NUMERIC,
-    earlier_moic    NUMERIC,
+    -- Les millésimes (track record complet, N par fonds) sont dans fund_vintage.
 
     -- timeline
     first_close    DATE,
@@ -190,6 +178,18 @@ CREATE TABLE fund_investment (
     version        BIGINT NOT NULL DEFAULT 0,   -- verrou optimiste (voir §13.2)
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_by     BIGINT REFERENCES app_user(id)
+);
+
+-- Millésimes d'un fonds : track record complet, N par fonds (voir §5.5)
+CREATE TABLE fund_vintage (
+    id           BIGSERIAL PRIMARY KEY,
+    fund_id      BIGINT NOT NULL REFERENCES fund_investment(id) ON DELETE CASCADE,
+    vintage_year INT NOT NULL,
+    dpi          NUMERIC,
+    tvpi         NUMERIC,
+    irr          NUMERIC,                 -- fraction : 0.137 = 13.7 %
+    moic         NUMERIC,
+    UNIQUE (fund_id, vintage_year)
 );
 
 -- Deals directs : Co-investissement et direct
@@ -298,7 +298,23 @@ Règles :
 
 ### 5.5 Millésimes pris en compte pour le scoring des fonds
 
-Le scoring des fonds (grilles A et B) s'appuie sur les métriques du **millésime le plus récent** (`recent_dpi`, `recent_irr`, `recent_moic`). Le millésime antérieur est stocké et affiché à titre de contexte mais **n'entre pas** dans le score. Décision retenue : simplicité et défendabilité devant l'IC, sans interprétation discutable d'une pondération.
+Le scoring des fonds (grilles A et B) prend en compte **tous les millésimes** du fonds (table `fund_vintage`). Pour chaque métrique m ∈ {DPI, IRR, MOIC}, on calcule une valeur combinée **pondérée par la récence** du millésime, avant d'appliquer la formule de la grille :
+
+```
+âge_v     = année_du_millésime_le_plus_récent − vintage_year        (0 pour le plus récent)
+poids_v   = 0,5 ^ (âge_v / H)                                        (H = demi-vie, défaut 4 ans)
+blended_m = Σ(poids_v × m_v) / Σ(poids_v)   sur les millésimes v où m_v est communiquée
+```
+
+Principe :
+
+- **Récence** : le millésime le plus récent porte le poids 1 ; un millésime plus vieux de H années porte la moitié du poids, et ainsi de suite. La demi-vie `H` est centralisée dans `ScoringProfile` (ajustable).
+- **Référence intra-fonds** : l'âge se mesure par rapport au millésime le plus récent *du fonds* (pas à l'année civile), donc les poids ne dérivent pas avec le temps tant qu'aucun millésime n'est ajouté.
+- **Données manquantes** (cohérent avec §5.1) : un millésime dont la métrique m est non communiquée est exclu du calcul de `blended_m` (son poids et sa valeur sont ignorés) ; si **aucun** millésime ne communique m, la métrique est exclue de `Earned`/`Possible`.
+
+Les colonnes `sub_dpi`, `sub_irr`, `sub_moic` stockent le sous-score final (calculé sur la valeur combinée). Dans les grilles A et B (§5.2, §5.3), « DPI / IRR / MOIC » désignent ces valeurs combinées.
+
+> **Point de vigilance assumé** : la pondération par récence donne du poids aux millésimes jeunes, dont le DPI est structurellement bas (courbe en J). C'est un choix délibéré (refléter la stratégie actuelle du GP) ; augmenter la demi-vie `H` atténue l'effet si nécessaire.
 
 ### 5.6 Tiers et gouvernance
 
@@ -316,9 +332,9 @@ Rappel de gouvernance à afficher dans l'app (repris de la méthodologie) : **le
 - **Timeline et écoulement du temps** : le sous-score timeline dépend de la date du jour par rapport au `final_close` / `deal_deadline`. Le score affiché est donc **toujours recalculé à l'ouverture** (il peut évoluer d'un jour à l'autre sans modification de la fiche). Le `score_snapshot` en base n'est qu'une photo mise à jour à chaque enregistrement, utilisée pour le tri rapide dans les listes.
 - **Entrées textuelles** (ex. `20-40x`, `20-30%`) : exclues du scoring automatique. La saisie doit se faire en décimale (point milieu). `peers_mult` reste un champ texte purement informatif.
 
-### 5.8 Exemple de calcul (grille A)
+### 5.8 Exemple de calcul (grille A, un seul millésime)
 
-Fonds avec DPI = 0,65 / IRR = 0,24 / MOIC = 2,1 / géographie = US (match) / pas de final close renseigné.
+Fonds à **un seul millésime** (valeurs combinées = valeurs de ce millésime) : DPI = 0,65 / IRR = 0,24 / MOIC = 2,1 / géographie = US (match) / pas de final close renseigné.
 
 ```
 sub_dpi  = MIN(0.65/0.8, 1) * 30 = 24.4
@@ -332,7 +348,34 @@ Possible = 30 + 25 + 20 + 15 = 90
 Score    = MIN( 76.2 / MAX(90, 80) * 100, 95 ) = MIN(84.7, 95) = 85  → tier Strong
 ```
 
-Ce cas doit figurer tel quel dans les tests unitaires du `ScoringEngine`.
+### 5.9 Exemple de calcul (grille A, deux millésimes, pondération par récence)
+
+Fonds avec deux millésimes (H = 4 ans), géographie = US (match), pas de final close.
+
+| Millésime | Âge | Poids `0,5^(âge/4)` | DPI | IRR | MOIC |
+|---|---|---|---|---|---|
+| 2022 (récent) | 0 | 1,000 | 0,30 | 0,26 | 1,9 |
+| 2018 | 4 | 0,500 | 1,10 | 0,20 | 2,2 |
+
+Valeurs combinées (Σ poids = 1,500) :
+
+```
+blended_dpi  = (1.000×0.30 + 0.500×1.10) / 1.500 = 0.567
+blended_irr  = (1.000×0.26 + 0.500×0.20) / 1.500 = 0.240
+blended_moic = (1.000×1.9  + 0.500×2.2 ) / 1.500 = 2.00
+
+sub_dpi  = MIN(0.567/0.8, 1) * 30 = 21.3
+sub_irr  = MIN(0.240/0.3, 1) * 25 = 20.0
+sub_moic = MIN(2.00/2.5, 1) * 20  = 16.0
+sub_geo  = 15  (match)
+sub_time = exclu (pas de date)
+
+Earned   = 21.3 + 20.0 + 16.0 + 15 = 72.3
+Possible = 30 + 25 + 20 + 15 = 90
+Score    = MIN( 72.3 / MAX(90, 80) * 100, 95 ) = MIN(80.3, 95) = 80  → tier Strong
+```
+
+Les deux exemples (§5.8 et §5.9) doivent figurer dans les tests unitaires du `ScoringEngine`.
 
 ---
 
@@ -456,7 +499,7 @@ Chaque phase correspond à un lot cohérent, à committer et pousser au fil de l
 
 - **Phase 0 — Fondations** : projet Maven, `pom.xml`, connexion HikariCP, exécution de `schema.sql` + `seed.sql`, écran de login fonctionnel + changement de mot de passe forcé au 1er login (§13.3).
 - **Phase 1 — Lecture** : modèles + DAO (fonds, deals, users), écran Pipeline summary avec KPI et tableau global filtrable, listes par section en lecture.
-- **Phase 2 — Scoring** : `ScoringEngine` + `ScoringProfile` (3 grilles, scoring sur le millésime récent §5.5), `MetricParser`, `GeographyMatcher` (normalisation §13.1), `TimelineScorer`, tests unitaires JUnit couvrant les 3 grilles et les cas limites (données éparses, plancher 80, plafond 95, exemple §5.8).
+- **Phase 2 — Scoring** : refonte du stockage des millésimes (`fund_vintage`, modèle + DAO, adaptation de la fiche/seed), `ScoringEngine` + `ScoringProfile` (3 grilles, agrégation multi-millésimes pondérée par récence §5.5), `MetricParser`, `GeographyMatcher` (normalisation §13.1), `TimelineScorer`, tests unitaires JUnit couvrant les 3 grilles et les cas limites (données éparses, plancher 80, plafond 95, un vs plusieurs millésimes, exemples §5.8 et §5.9), et bascule des listes sur le recalcul live (§13.4).
 - **Phase 3 — Saisie** : fiches d'édition fonds (3 catégories) et deal direct, avec scoring en direct, sélecteurs de géographie canoniques (§13.1), création / modification / enregistrement via DAO avec verrou optimiste (§13.2).
 - **Phase 4 — Modes et rôles** : mode présentation (plein écran), gating par rôle (analyste vs partner), bascule en barre supérieure.
 - **Phase 5 — Finitions** : thème complet `atlan-dark.css`, filtres et tri avancés.
@@ -477,7 +520,7 @@ Chaque phase correspond à un lot cohérent, à committer et pousser au fil de l
 
 Détails d'implémentation en §13.
 
-1. Scoring des fonds : **résolu** — sur le seul **millésime récent** ; le millésime antérieur reste du contexte non scoré. (§5.5)
+1. Scoring des fonds : **résolu** — **tous les millésimes** (table `fund_vintage`), combinés avec une **pondération par récence** (demi-vie `H`, défaut 4 ans, dans `ScoringProfile`). Poids des métriques inchangés (points des grilles). (§5.5, §5.9)
 2. Géographie/timeline vides = **exclues** (confirmé) ; géographie fiabilisée par vocabulaire canonique + normalisation. (§5.7, §13.1)
 3. Mode présentation : bascule dans la même fenêtre (confirmé) ; export PDF plein écran en finition optionnelle. (§6.3, §10)
 4. Palette **verrouillée** : pétrole `#163B4A` dominant, blanc, accent bronze `#816430`. (§8.1)
