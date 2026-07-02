@@ -17,22 +17,51 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM fund_investment) THEN
     INSERT INTO fund_investment
       (category, name, status, vs_benchmark, geography, asset_class, commitment,
-       recent_vintage, recent_dpi, recent_tvpi, recent_irr, recent_moic,
-       earlier_vintage, earlier_dpi, earlier_tvpi, earlier_irr, earlier_moic,
        first_close, final_close, score_snapshot)
     VALUES
       ('BUYOUT_GROWTH_VC','Meridian Buyout Fund IV','DUE_DILIGENCE','ABOVE_THRESHOLD','US','Buyout',25000000,
-       2021,0.65,1.9,0.24,2.1, 2018,1.10,2.2,0.19,2.0, DATE '2025-09-01', DATE '2025-12-15', 85),
+       DATE '2025-09-01', DATE '2025-12-15', 85),
       ('BUYOUT_GROWTH_VC','Northwind Growth Partners III','SCREENING','NA','EUROPE','Growth',15000000,
-       2022,0.20,1.4,0.18,1.6, 2019,0.80,1.9,0.17,1.8, NULL, DATE '2026-03-01', 62),
+       NULL, DATE '2026-03-01', 62),
       ('BUYOUT_GROWTH_VC','Helix Ventures Fund II','INITIAL_REVIEW','BELOW_THRESHOLD','US','Venture',10000000,
-       2023,0.05,1.2,0.12,1.3, NULL,NULL,NULL,NULL,NULL, NULL, NULL, 44),
+       NULL, NULL, 44),
       ('SECONDARIES','Lattice Secondaries Fund','IC_VOTE','ABOVE_THRESHOLD','GLOBAL','Secondaries',20000000,
-       2020,0.90,1.7,0.21,1.8, 2017,1.30,1.9,0.18,1.9, NULL, DATE '2025-08-01', 78),
+       NULL, DATE '2025-08-01', 78),
       ('PRIVATE_CREDIT','Anchor Direct Lending II','DUE_DILIGENCE','ABOVE_THRESHOLD','US','Private credit',30000000,
-       2021,0.55,1.3,0.14,1.4, 2019,0.90,1.25,0.12,1.3, NULL, DATE '2026-01-20', 71),
+       NULL, DATE '2026-01-20', 71),
       ('PRIVATE_CREDIT','Sable Credit Opportunities','DECLINED_LOST','BELOW_THRESHOLD','UK','Private credit',12000000,
-       2022,0.10,1.05,0.07,1.1, NULL,NULL,NULL,NULL,NULL, NULL, NULL, 33);
+       NULL, NULL, 33);
+  END IF;
+END $$;
+
+-- Millésimes fictifs (insérés une seule fois ; rattachés au fonds par son nom)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM fund_vintage) THEN
+    INSERT INTO fund_vintage (fund_id, vintage_year, dpi, tvpi, irr, moic)
+    SELECT id, 2021, 0.65, 1.9, 0.24, 2.1 FROM fund_investment WHERE name = 'Meridian Buyout Fund IV';
+    INSERT INTO fund_vintage (fund_id, vintage_year, dpi, tvpi, irr, moic)
+    SELECT id, 2018, 1.10, 2.2, 0.19, 2.0 FROM fund_investment WHERE name = 'Meridian Buyout Fund IV';
+
+    INSERT INTO fund_vintage (fund_id, vintage_year, dpi, tvpi, irr, moic)
+    SELECT id, 2022, 0.20, 1.4, 0.18, 1.6 FROM fund_investment WHERE name = 'Northwind Growth Partners III';
+    INSERT INTO fund_vintage (fund_id, vintage_year, dpi, tvpi, irr, moic)
+    SELECT id, 2019, 0.80, 1.9, 0.17, 1.8 FROM fund_investment WHERE name = 'Northwind Growth Partners III';
+
+    INSERT INTO fund_vintage (fund_id, vintage_year, dpi, tvpi, irr, moic)
+    SELECT id, 2023, 0.05, 1.2, 0.12, 1.3 FROM fund_investment WHERE name = 'Helix Ventures Fund II';
+
+    INSERT INTO fund_vintage (fund_id, vintage_year, dpi, tvpi, irr, moic)
+    SELECT id, 2020, 0.90, 1.7, 0.21, 1.8 FROM fund_investment WHERE name = 'Lattice Secondaries Fund';
+    INSERT INTO fund_vintage (fund_id, vintage_year, dpi, tvpi, irr, moic)
+    SELECT id, 2017, 1.30, 1.9, 0.18, 1.9 FROM fund_investment WHERE name = 'Lattice Secondaries Fund';
+
+    INSERT INTO fund_vintage (fund_id, vintage_year, dpi, tvpi, irr, moic)
+    SELECT id, 2021, 0.55, 1.3, 0.14, 1.4 FROM fund_investment WHERE name = 'Anchor Direct Lending II';
+    INSERT INTO fund_vintage (fund_id, vintage_year, dpi, tvpi, irr, moic)
+    SELECT id, 2019, 0.90, 1.25, 0.12, 1.3 FROM fund_investment WHERE name = 'Anchor Direct Lending II';
+
+    INSERT INTO fund_vintage (fund_id, vintage_year, dpi, tvpi, irr, moic)
+    SELECT id, 2022, 0.10, 1.05, 0.07, 1.1 FROM fund_investment WHERE name = 'Sable Credit Opportunities';
   END IF;
 END $$;
 

@@ -42,19 +42,7 @@ CREATE TABLE IF NOT EXISTS fund_investment (
     asset_class    TEXT,
     commitment     NUMERIC,                 -- capital envisagé par Atlan (devise de base) — KPI « capital en revue »
 
-    -- millésime le plus récent
-    recent_vintage INT,
-    recent_dpi     NUMERIC,
-    recent_tvpi    NUMERIC,
-    recent_irr     NUMERIC,                 -- fraction : 0.137 = 13.7 %
-    recent_moic    NUMERIC,
-
-    -- millésime antérieur
-    earlier_vintage INT,
-    earlier_dpi     NUMERIC,
-    earlier_tvpi    NUMERIC,
-    earlier_irr     NUMERIC,
-    earlier_moic    NUMERIC,
+    -- Les millésimes (track record complet, N par fonds) sont dans fund_vintage.
 
     -- timeline
     first_close    DATE,
@@ -73,6 +61,18 @@ CREATE TABLE IF NOT EXISTS fund_investment (
     version        BIGINT NOT NULL DEFAULT 0,   -- verrou optimiste (§13.2)
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_by     BIGINT REFERENCES app_user(id)
+);
+
+-- Millésimes d'un fonds : track record complet, N par fonds (§5.5)
+CREATE TABLE IF NOT EXISTS fund_vintage (
+    id           BIGSERIAL PRIMARY KEY,
+    fund_id      BIGINT NOT NULL REFERENCES fund_investment(id) ON DELETE CASCADE,
+    vintage_year INT NOT NULL,
+    dpi          NUMERIC,
+    tvpi         NUMERIC,
+    irr          NUMERIC,                 -- fraction : 0.137 = 13.7 %
+    moic         NUMERIC,
+    UNIQUE (fund_id, vintage_year)
 );
 
 -- Deals directs : Co-investissement et direct
