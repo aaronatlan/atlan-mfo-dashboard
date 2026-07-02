@@ -1,0 +1,58 @@
+package com.atlan.mfo.model;
+
+import com.atlan.mfo.model.enums.BenchmarkStatus;
+import com.atlan.mfo.model.enums.DealStatus;
+
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+
+/**
+ * Deal direct (Co-investissement et direct) — table {@code direct_deal}.
+ *
+ * <p>Pourcentages et IRR stockés en fraction décimale ; multiples en nombre nu
+ * (voir §4). Métriques nullable = « non communiqué ».
+ */
+public record DirectDeal(
+        long id,
+        String name,
+        String nextSteps,
+        DealStatus status,
+        BenchmarkStatus vsBenchmark,
+        String industry,
+        String gp,
+        String geography,
+        String invType,
+        Double commitment,
+
+        Double revenue,
+        Double cagrPct,
+        Double ebitda,
+        Double ebitdaGrPct,
+        Double ebitdaMgnPct,
+        Double fcf,
+        Double fcfConvPct,
+        Double ev,
+
+        Double entryMult,
+        String peersMult,
+        Double exitVal,
+        Double expIrrPct,
+        Double expMoic,
+
+        LocalDate dealDeadline,
+        LocalDate targetExit,
+
+        String comments,
+
+        Integer scoreSnapshot,
+        Double subCagr,
+        Double subEbitdaMgn,
+        Double subFcf,
+        Double subIrr,
+        Double subGeo,
+        Double subTime,
+
+        long version,
+        OffsetDateTime updatedAt,
+        Long updatedBy) {
+}
