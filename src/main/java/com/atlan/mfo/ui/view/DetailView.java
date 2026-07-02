@@ -2,10 +2,12 @@ package com.atlan.mfo.ui.view;
 
 import com.atlan.mfo.model.DirectDeal;
 import com.atlan.mfo.model.FundInvestment;
+import com.atlan.mfo.model.FundVintage;
 import com.atlan.mfo.model.PipelineItem;
 import com.atlan.mfo.model.enums.Tier;
 import com.atlan.mfo.ui.util.Formatters;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -14,6 +16,8 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+
+import java.util.List;
 
 /**
  * Fiche détail en lecture seule (Phase 1). L'édition arrive en Phase 3.
@@ -41,19 +45,7 @@ public final class DetailView extends BorderPane {
         addRow(g1, "Capital envisagé", Formatters.money(f.commitment()));
         addRow(g1, "Prochaines étapes", Formatters.text(f.nextSteps()));
 
-        GridPane g2 = grid();
-        addRow(g2, "Millésime récent", Formatters.integer(f.recentVintage()));
-        addRow(g2, "DPI", Formatters.multiple(f.recentDpi()));
-        addRow(g2, "TVPI", Formatters.multiple(f.recentTvpi()));
-        addRow(g2, "IRR", Formatters.percent(f.recentIrr()));
-        addRow(g2, "MOIC", Formatters.multiple(f.recentMoic()));
-
-        GridPane g3 = grid();
-        addRow(g3, "Millésime antérieur", Formatters.integer(f.earlierVintage()));
-        addRow(g3, "DPI", Formatters.multiple(f.earlierDpi()));
-        addRow(g3, "TVPI", Formatters.multiple(f.earlierTvpi()));
-        addRow(g3, "IRR", Formatters.percent(f.earlierIrr()));
-        addRow(g3, "MOIC", Formatters.multiple(f.earlierMoic()));
+        Node vintages = vintageTable(f.vintages());
 
         GridPane g4 = grid();
         addRow(g4, "First close", Formatters.date(f.firstClose()));
@@ -61,8 +53,7 @@ public final class DetailView extends BorderPane {
 
         body.getChildren().addAll(
                 section("Général"), g1,
-                section("Performance — millésime récent"), g2,
-                section("Performance — millésime antérieur"), g3,
+                section("Millésimes (track record)"), vintages,
                 section("Timeline"), g4);
         if (f.comments() != null && !f.comments().isBlank()) {
             body.getChildren().addAll(section("Commentaires"), paragraph(f.comments()));
@@ -177,6 +168,39 @@ public final class DetailView extends BorderPane {
         g.getStyleClass().add("detail-grid");
         g.setHgap(24);
         g.setVgap(8);
+        return g;
+    }
+
+    /** Tableau des millésimes (plus récent en haut), ou message si aucun. */
+    private static Node vintageTable(List<FundVintage> vintages) {
+        if (vintages == null || vintages.isEmpty()) {
+            return paragraph("Aucun millésime communiqué.");
+        }
+        GridPane g = new GridPane();
+        g.getStyleClass().add("method-table");
+        g.setHgap(28);
+        g.setVgap(6);
+        String[] heads = {"Millésime", "DPI", "TVPI", "IRR", "MOIC"};
+        for (int c = 0; c < heads.length; c++) {
+            Label h = new Label(heads[c]);
+            h.getStyleClass().add("method-head");
+            g.add(h, c, 0);
+        }
+        int r = 1;
+        for (FundVintage v : vintages) {
+            String[] cells = {
+                    Integer.toString(v.vintageYear()),
+                    Formatters.multiple(v.dpi()),
+                    Formatters.multiple(v.tvpi()),
+                    Formatters.percent(v.irr()),
+                    Formatters.multiple(v.moic())};
+            for (int c = 0; c < cells.length; c++) {
+                Label cell = new Label(cells[c]);
+                cell.getStyleClass().add("method-cell");
+                g.add(cell, c, r);
+            }
+            r++;
+        }
         return g;
     }
 
