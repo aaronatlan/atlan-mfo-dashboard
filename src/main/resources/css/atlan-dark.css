@@ -553,3 +553,125 @@
     -fx-text-fill: -atlan-text-3;
     -fx-font-size: 11px;
 }
+
+/* ============================================================
+   Mode présentation (Phase 4)
+   ============================================================ */
+
+.presentation-root {
+    -fx-background-color: -atlan-bg;
+}
+
+.pres-topbar {
+    -fx-background-color: -atlan-nav;
+    -fx-padding: 14 26 14 26;
+    -fx-border-color: transparent transparent -atlan-line transparent;
+    -fx-border-width: 1;
+}
+
+.pres-brand {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-letter-spacing: 0.16em;
+}
+
+.pres-brand-sub {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 10px;
+    -fx-letter-spacing: 0.20em;
+    -fx-padding: 4 0 0 0;
+}
+
+.presentation-body {
+    -fx-padding: 44 60 30 60;
+}
+
+/* Chiffre-phare et métriques : Newsreader serif, blanc (§8.2) */
+.pres-hero-label {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 12px;
+    -fx-letter-spacing: 0.18em;
+}
+
+.pres-hero-value {
+    -fx-text-fill: -atlan-text;
+    -fx-font-family: "Newsreader";
+    -fx-font-size: 72px;
+    -fx-font-weight: bold;
+}
+
+.pres-metric-value {
+    -fx-text-fill: -atlan-text;
+    -fx-font-family: "Newsreader";
+    -fx-font-size: 34px;
+    -fx-font-weight: bold;
+}
+
+.pres-metric-label {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 10px;
+    -fx-letter-spacing: 0.14em;
+}
+
+.pres-section-title {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 11px;
+    -fx-letter-spacing: 0.16em;
+}
+
+/* Barres d'allocation (registre sobre, désaturé) */
+.bar-label {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 13px;
+}
+
+.bar-track {
+    -fx-background-color: -atlan-raised;
+    -fx-background-radius: 3;
+    -fx-min-height: 16;
+    -fx-pref-height: 16;
+}
+
+.bar-fill {
+    -fx-background-color: -atlan-text-2;
+    -fx-background-radius: 3;
+    -fx-min-height: 16;
+}
+
+.bar-value {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 13px;
+}
+
+/* Opportunités prioritaires */
+.pres-priority-row {
+    -fx-background-color: -atlan-card;
+    -fx-background-radius: 4;
+    -fx-padding: 10 16 10 16;
+}
+
+.pres-priority-name {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 14px;
+}
+
+.pres-priority-strategy {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 12px;
+}
+
+.pres-priority-score {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+/* Rappel de gouvernance en pied */
+.pres-governance {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 12px;
+    -fx-padding: 16 60 22 60;
+    -fx-border-color: -atlan-line transparent transparent transparent;
+    -fx-border-width: 1;
+}
