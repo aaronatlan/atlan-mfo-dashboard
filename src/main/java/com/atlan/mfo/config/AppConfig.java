@@ -19,12 +19,14 @@ public final class AppConfig {
     private final String dbUser;
     private final String dbPassword;
     private final boolean runMigrations;
+    private final String seedProfile;
 
-    private AppConfig(String dbUrl, String dbUser, String dbPassword, boolean runMigrations) {
+    private AppConfig(String dbUrl, String dbUser, String dbPassword, boolean runMigrations, String seedProfile) {
         this.dbUrl = dbUrl;
         this.dbUser = dbUser;
         this.dbPassword = dbPassword;
         this.runMigrations = runMigrations;
+        this.seedProfile = seedProfile;
     }
 
     /** Charge la configuration depuis l'environnement puis config.properties. */
@@ -36,6 +38,12 @@ public final class AppConfig {
         String password = firstNonBlank(System.getenv("ATLAN_DB_PASSWORD"), props.getProperty("db.password"));
         boolean migrations = Boolean.parseBoolean(
                 firstNonBlank(props.getProperty("db.runMigrations"), "true"));
+        // Profil de seed : dev (démo, défaut) | prod (admin seul) | none (aucun)
+        String seed = firstNonBlank(System.getenv("ATLAN_DB_SEED"),
+                firstNonBlank(props.getProperty("db.seed"), "dev")).toLowerCase();
+        if (!seed.equals("dev") && !seed.equals("prod") && !seed.equals("none")) {
+            throw new IllegalStateException("db.seed doit valoir dev, prod ou none (reçu : " + seed + ")");
+        }
 
         if (isBlank(url)) {
             throw new IllegalStateException(
@@ -43,7 +51,7 @@ public final class AppConfig {
                             + "(copier config.properties.example).");
         }
 
-        return new AppConfig(url, user == null ? "" : user, password == null ? "" : password, migrations);
+        return new AppConfig(url, user == null ? "" : user, password == null ? "" : password, migrations, seed);
     }
 
     private static Properties loadPropertiesFile() {
@@ -81,5 +89,10 @@ public final class AppConfig {
 
     public boolean runMigrations() {
         return runMigrations;
+    }
+
+    /** Profil de seed : {@code dev} | {@code prod} | {@code none}. */
+    public String seedProfile() {
+        return seedProfile;
     }
 }

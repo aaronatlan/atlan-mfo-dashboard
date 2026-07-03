@@ -1,15 +1,24 @@
 # Modèle de configuration locale — copier en `config.properties` (non versionné)
 # et renseigner les valeurs. Les variables d'environnement ATLAN_DB_URL,
-# ATLAN_DB_USER, ATLAN_DB_PASSWORD ont priorité sur ce fichier si définies.
+# ATLAN_DB_USER, ATLAN_DB_PASSWORD, ATLAN_DB_SEED ont priorité si définies.
 
-# URL JDBC PostgreSQL
+# --- DÉVELOPPEMENT (base locale) ---------------------------------------------
 db.url=jdbc:postgresql://localhost:5432/atlan_mfo
-
-# Identifiant du rôle applicatif unique
 db.user=
-
-# Mot de passe du rôle applicatif
 db.password=
-
-# Exécuter schema.sql + seed.sql au démarrage (true en dev, false ensuite)
+# Exécuter les migrations (schéma + seed) au démarrage
 db.runMigrations=true
+# Jeu de données : dev (démo) | prod (admin seul) | none (aucun)
+db.seed=dev
+
+# --- PRODUCTION (base centralisée partagée) ----------------------------------
+# Sur chaque poste client, pointer vers la base centrale, en TLS obligatoire,
+# avec le rôle applicatif à privilèges minimaux (voir db/roles.sql). Exemple :
+#
+#   db.url=jdbc:postgresql://db.exemple.interne:5432/atlan_mfo?sslmode=require
+#   db.user=atlan_app
+#   db.password=<mot de passe fort du rôle atlan_app>
+#   db.runMigrations=false      # le schéma est appliqué une fois, à l'installation
+#   db.seed=none                # aucune donnée de démo en production
+#
+# Voir DEPLOYMENT.md pour la procédure complète.

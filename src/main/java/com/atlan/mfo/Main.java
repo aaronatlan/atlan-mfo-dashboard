@@ -39,7 +39,7 @@ public class Main extends Application {
         AppConfig config = AppConfig.load();
         Database.init(config);
         if (config.runMigrations()) {
-            Migrations.run();
+            Migrations.run(config.seedProfile());
         }
         this.authService = new AuthService(new UserDao());
     }

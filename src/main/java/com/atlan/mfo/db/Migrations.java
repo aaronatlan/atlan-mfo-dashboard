@@ -8,7 +8,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
- * Exécute les scripts SQL embarqués ({@code db/schema.sql} puis {@code db/seed.sql}).
+ * Exécute les scripts SQL embarqués : {@code db/schema.sql} (structure) puis, selon
+ * le profil, {@code db/seed-<profil>.sql}.
  *
  * <p>Les scripts sont idempotents : ils peuvent être rejoués à chaque démarrage
  * sans effet de bord. Le driver PostgreSQL exécute plusieurs commandes séparées
@@ -17,18 +18,29 @@ import java.sql.Statement;
 public final class Migrations {
 
     private static final String SCHEMA = "/db/schema.sql";
-    private static final String SEED = "/db/seed.sql";
 
     private Migrations() {
     }
 
-    /** Exécute schema.sql puis seed.sql sur le pool courant. */
+    /** Exécute schema.sql puis le seed du profil « dev » (rétro-compatibilité). */
     public static void run() {
+        run("dev");
+    }
+
+    /**
+     * Exécute schema.sql, puis le seed du profil demandé.
+     *
+     * @param seedProfile {@code dev} | {@code prod} | {@code none} (aucun seed)
+     */
+    public static void run(String seedProfile) {
         String schema = readResource(SCHEMA);
-        String seed = readResource(SEED);
+        String seed = "none".equalsIgnoreCase(seedProfile)
+                ? null : readResource("/db/seed-" + seedProfile.toLowerCase() + ".sql");
         try (Connection conn = Database.dataSource().getConnection()) {
             execute(conn, schema);
-            execute(conn, seed);
+            if (seed != null) {
+                execute(conn, seed);
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Échec de l'exécution des migrations", e);
         }
