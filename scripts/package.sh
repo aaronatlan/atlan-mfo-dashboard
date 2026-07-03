@@ -31,6 +31,15 @@ fi
 
 echo "▸ jpackage (type=${TYPE})…"
 rm -rf target/installer
+
+# Signature macOS optionnelle : exporter MAC_SIGN_IDENTITY="Developer ID Application: … (TEAMID)"
+# pour signer avec un certificat Apple (préalable à la notarisation). Sinon signature ad-hoc.
+EXTRA_ARGS=()
+if [ "$(uname)" = "Darwin" ] && [ -n "${MAC_SIGN_IDENTITY:-}" ]; then
+  EXTRA_ARGS+=(--mac-sign --mac-signing-key-user-name "${MAC_SIGN_IDENTITY}")
+  echo "  (signature avec l'identité : ${MAC_SIGN_IDENTITY})"
+fi
+
 jpackage \
   --type "${TYPE}" \
   --name "${APP_NAME}" \
@@ -40,7 +49,8 @@ jpackage \
   --main-jar "${MAIN_JAR}" \
   --main-class "${MAIN_CLASS}" \
   --java-options "-Dfile.encoding=UTF-8" \
-  --dest target/installer
+  --dest target/installer \
+  "${EXTRA_ARGS[@]}"
 
 echo "▸ Terminé →"
 ls -la target/installer
