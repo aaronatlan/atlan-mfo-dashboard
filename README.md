@@ -49,6 +49,9 @@ Le seed crée un compte administrateur :
 Ce compte est marqué `must_change_password` : l'application impose un changement
 de mot de passe avant d'accéder aux écrans (voir §13.3 de la spec).
 
+Un compte **partner** de démonstration est aussi créé (`partner` / `partner`) :
+lecture seule, verrouillé en mode présentation (voir §6.3, §7).
+
 ## Tests
 
 ```bash

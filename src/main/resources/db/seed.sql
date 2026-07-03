@@ -12,6 +12,18 @@ VALUES (
 )
 ON CONFLICT (username) DO NOTHING;
 
+-- Compte partner de démonstration (lecture seule, verrouillé en mode présentation).
+-- Mot de passe : "partner". Hash BCrypt ($2y$12$…).
+INSERT INTO app_user (username, password_hash, full_name, role, must_change_password)
+VALUES (
+    'partner',
+    '$2y$12$9BIbOjAdlwYKekVTmuFj4.LxM4CLPgi32hx4TNOlAklGtKXPLGl36',
+    'Partner',
+    'PARTNER',
+    FALSE
+)
+ON CONFLICT (username) DO NOTHING;
+
 -- Fonds fictifs (insérés une seule fois, si la table est vide)
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM fund_investment) THEN
