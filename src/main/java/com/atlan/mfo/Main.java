@@ -10,6 +10,8 @@ import com.atlan.mfo.model.AppUser;
 import com.atlan.mfo.ui.controllers.ChangePasswordController;
 import com.atlan.mfo.ui.controllers.LoginController;
 import com.atlan.mfo.ui.controllers.MainShellController;
+import com.atlan.mfo.ui.util.PipelineLoader;
+import com.atlan.mfo.ui.view.PresentationView;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -70,12 +72,41 @@ public class Main extends Application {
         setScene(root, 420, 520);
     }
 
-    /** Coquille applicative (menu latéral + Pipeline summary). */
+    /**
+     * Après login : un partner atterrit (et reste) en mode présentation ; un
+     * analyste atterrit dans la coquille éditable (voir §7).
+     */
     public void showHome(AppUser user) {
         Session.setCurrentUser(user);
+        if (user.isPartner()) {
+            showPresentation(user);
+        } else {
+            showAnalystShell(user);
+        }
+    }
+
+    /** Coquille analyste (menu latéral + Pipeline summary, édition). */
+    public void showAnalystShell(AppUser user) {
+        stage.setFullScreen(false);
         MainShellController controller = new MainShellController(this, user);
         Parent root = load("/fxml/main.fxml", controller);
         setScene(root, 1240, 780);
+    }
+
+    /**
+     * Mode présentation (§6.3). L'analyste peut revenir à sa vue ; le partner est
+     * verrouillé ici (pas de retour), les deux peuvent passer en plein écran.
+     */
+    public void showPresentation(AppUser user) {
+        Runnable onExitToAnalyst = user.isAnalyst() ? () -> showAnalystShell(user) : null;
+        Runnable onFullScreen = () -> stage.setFullScreen(!stage.isFullScreen());
+        Runnable onLogout = () -> {
+            Session.clear();
+            showLogin();
+        };
+        PresentationView view = new PresentationView(
+                PipelineLoader.loadItems(), onExitToAnalyst, onFullScreen, onLogout);
+        setScene(view, 1280, 800);
     }
 
     /* ---- Helpers ---- */

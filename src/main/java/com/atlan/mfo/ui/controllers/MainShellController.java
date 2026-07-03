@@ -217,6 +217,11 @@ public class MainShellController {
     }
 
     @FXML
+    private void onPresentation() {
+        app.showPresentation(user);
+    }
+
+    @FXML
     private void onLogout() {
         Session.clear();
         app.showLogin();
