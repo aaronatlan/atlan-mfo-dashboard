@@ -6,6 +6,32 @@ sauvegardes. Décisions transverses : §13 de la spécification.
 
 ---
 
+## Démarrage rapide — production (base managée + IP fixe du bureau)
+
+Scénario retenu : PostgreSQL **managé** (région EU), **allowlist de l'IP publique
+du bureau**, **TLS**, postes **Windows** via CI. Détails dans les sections suivantes.
+
+1. **IP bureau** — depuis le bureau : `curl ifconfig.me` (confirmer une IP *statique* auprès du FAI).
+2. **Instance managée** — créer PostgreSQL 16 (région EU), allowlister l'IP bureau en `/32`, noter host/port + télécharger le **certificat CA**.
+3. **Init base** (une fois, depuis un poste allowlisté ; éditer d'abord `db/roles.sql`) :
+   ```bash
+   psql -f src/main/resources/db/schema.sql
+   psql -f src/main/resources/db/roles.sql
+   psql -f src/main/resources/db/seed-prod.sql
+   ```
+4. **Comptes** :
+   ```bash
+   scripts/user-add.sh <username> "<mot de passe temporaire>" "<Nom complet>" ANALYST|PARTNER
+   ```
+5. **Installeur Windows** — `git tag v1.0.0 && git push origin v1.0.0` → récupérer le `.msi` dans les artefacts du run GitHub Actions.
+6. **Poste** — installer le `.msi`, déposer `config.properties` (`sslmode=verify-full` + CA, `db.user=atlan_app`, `db.runMigrations=false`, `db.seed=none`).
+7. **1er login** — mot de passe temporaire → changement imposé.
+
+> Séquence validée en répétition (étapes 3-4) : schéma + rôle à privilèges minimaux
+> (`SELECT/INSERT/UPDATE/DELETE`, sans superuser ni DDL) + admin seul + comptes.
+
+---
+
 ## 1. Vue d'ensemble
 
 ```
