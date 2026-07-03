@@ -58,9 +58,34 @@ lecture seule, verrouillé en mode présentation (voir §6.3, §7).
 mvn test
 ```
 
+## Packaging (distribution)
+
+Génère un paquet natif autonome (runtime Java embarqué via `jlink`/`jpackage` ;
+aucun JDK requis sur le poste cible), voir §13.5 :
+
+```bash
+scripts/package.sh app-image     # bundle portable (.app / dossier)
+scripts/package.sh dmg           # installeur macOS
+scripts/package.sh msi           # installeur Windows (nécessite WiX)
+```
+
+Le résultat est écrit dans `target/installer/`.
+
+> **macOS + iCloud** : si le dépôt est dans un dossier synchronisé iCloud
+> (Bureau, Documents), la signature ad-hoc de `jpackage` échoue à cause de
+> l'attribut étendu `com.apple.FinderInfo`. Cloner/construire depuis un dossier
+> hors iCloud (ex. `~/dev/`) résout le problème.
+
+### Polices
+
+Le thème utilise **Inter** et **Newsreader**. Elles sont chargées depuis
+`src/main/resources/fonts/` si présentes (`Inter-Regular.ttf`,
+`Inter-SemiBold.ttf`, `Newsreader-Regular.ttf`), sinon fallback système propre.
+Déposer les TTF statiques dans ce dossier suffit à les embarquer.
+
 ## État d'avancement
 
-- **Phase 0 — Fondations** *(en cours)* : projet Maven, connexion HikariCP,
-  migrations, login + changement de mot de passe forcé.
+- **Phase 0 — Fondations**, **1 — Lecture**, **2 — Scoring**, **3 — Saisie**,
+  **4 — Modes & rôles**, **5 — Finitions**, **6 — Distribution** : livrées.
 
-Roadmap détaillée : §10 de la spec.
+Roadmap détaillée : §10 de la spec ; décisions transverses : §13.
