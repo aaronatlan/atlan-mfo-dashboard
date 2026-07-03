@@ -56,6 +56,41 @@ public final class UserDao {
         }
     }
 
+    /**
+     * Crée un utilisateur, ou réinitialise son mot de passe/rôle s'il existe déjà
+     * (provisioning en production, voir {@code AdminTool}).
+     *
+     * @return {@code true} si créé, {@code false} si mis à jour.
+     */
+    public boolean upsertUser(String username, String passwordHash, String fullName,
+                              Role role, boolean mustChangePassword) {
+        String sql = """
+                INSERT INTO app_user (username, password_hash, full_name, role, must_change_password)
+                VALUES (?, ?, ?, ?::app_role, ?)
+                ON CONFLICT (username) DO UPDATE
+                   SET password_hash = EXCLUDED.password_hash,
+                       full_name = EXCLUDED.full_name,
+                       role = EXCLUDED.role,
+                       must_change_password = EXCLUDED.must_change_password,
+                       active = TRUE
+                RETURNING (xmax = 0) AS inserted
+                """;
+        try (Connection conn = Database.dataSource().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, username);
+            ps.setString(2, passwordHash);
+            ps.setString(3, fullName);
+            ps.setString(4, role.name());
+            ps.setBoolean(5, mustChangePassword);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getBoolean("inserted");
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Création / mise à jour de l'utilisateur impossible", e);
+        }
+    }
+
     private AppUser mapUser(ResultSet rs) throws SQLException {
         return new AppUser(
                 rs.getLong("id"),
