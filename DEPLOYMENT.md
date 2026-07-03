@@ -174,7 +174,28 @@ de passe (§13.3).
 
 ---
 
-## 7. Mises à jour de l'application
+## 7. Réinitialiser le pipeline après un comité d'investissement
+
+Si le pipeline doit repartir de zéro après chaque réunion IC (ardoise vierge pour
+le cycle suivant), utiliser :
+
+```bash
+scripts/reset-pipeline.sh
+```
+
+Le script affiche l'état actuel (nombre de fonds, millésimes, deals, utilisateurs),
+demande de taper `RESET` pour confirmer, puis vide **uniquement** les tables du
+pipeline (`fund_investment`, `fund_vintage`, `direct_deal`). Les comptes
+utilisateurs (`app_user`) et le schéma sont conservés — pas besoin de recréer les
+accès à chaque cycle.
+
+⚠️ **Action irréversible.** Aucune sauvegarde automatique n'est faite par ce
+script : faire un `pg_dump` avant si l'historique du cycle doit être conservé
+(voir §6 ci-dessus), par exemple pour archivage ou revue a posteriori.
+
+---
+
+## 8. Mises à jour de l'application
 
 1. Incrémenter la version (`pom.xml`, `PKG_VERSION` dans `scripts/package.sh`).
 2. Reconstruire et re-signer les installeurs, les redistribuer.
@@ -184,7 +205,7 @@ de passe (§13.3).
 
 ---
 
-## 8. Résumé sécurité
+## 9. Résumé sécurité
 
 - Rôle base `atlan_app` à privilèges minimaux (pas de DDL, pas de superuser).
 - TLS obligatoire ; port base non exposé publiquement (VPN / allowlist).
@@ -201,7 +222,7 @@ de passe (§13.3).
 
 ---
 
-## 9. Recommandation d'hébergement (données privées)
+## 10. Recommandation d'hébergement (données privées)
 
 « Privé » n'impose pas « on-premise ». Un **PostgreSQL managé bien configuré** est
 souvent plus sûr qu'un serveur d'office auto-géré (correctifs, chiffrement et
@@ -224,7 +245,7 @@ les données ne quittent jamais les locaux.
 
 ---
 
-## 10. Construire les installeurs Windows
+## 11. Construire les installeurs Windows
 
 `jpackage` ne produit un paquet que **pour l'OS sur lequel il s'exécute** : on ne
 peut pas fabriquer un `.msi` Windows depuis un Mac. Deux options :
