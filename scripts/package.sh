@@ -50,7 +50,7 @@ jpackage \
   --main-class "${MAIN_CLASS}" \
   --java-options "-Dfile.encoding=UTF-8" \
   --dest target/installer \
-  "${EXTRA_ARGS[@]}"
+  ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}
 
 echo "▸ Terminé →"
 ls -la target/installer
