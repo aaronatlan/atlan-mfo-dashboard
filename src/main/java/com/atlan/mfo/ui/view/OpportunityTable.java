@@ -1,6 +1,7 @@
 package com.atlan.mfo.ui.view;
 
 import com.atlan.mfo.model.PipelineItem;
+import com.atlan.mfo.model.enums.Category;
 import com.atlan.mfo.model.enums.DealStatus;
 import com.atlan.mfo.model.enums.Tier;
 import com.atlan.mfo.ui.util.Formatters;
@@ -9,12 +10,14 @@ import javafx.collections.FXCollections;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.geometry.Pos;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -24,31 +27,41 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** Tableau d'opportunités avec filtres (stratégie, statut), recherche et tri (voir §6.1). */
+/** Tableau d'opportunités : filtres (stratégie, statut, tier, actifs), recherche et tri (voir §6.1). */
 public final class OpportunityTable extends VBox {
 
     private static final String ALL_STRATEGIES = "Toutes les stratégies";
     private static final String ALL_STATUSES = "Tous les statuts";
+    private static final String ALL_TIERS = "Tous les tiers";
 
+    private final int total;
+    private final boolean showStrategyFilter;
     private final FilteredList<PipelineItem> filtered;
+
     private final ComboBox<String> strategyFilter = new ComboBox<>();
     private final ComboBox<String> statusFilter = new ComboBox<>();
+    private final ComboBox<String> tierFilter = new ComboBox<>();
+    private final CheckBox activeOnly = new CheckBox("Actifs uniquement");
     private final TextField search = new TextField();
+    private final Label countLabel = new Label();
 
     public OpportunityTable(List<PipelineItem> items, Consumer<PipelineItem> onOpen, boolean showStrategyFilter) {
         getStyleClass().add("table-block");
         setSpacing(12);
+        this.total = items.size();
+        this.showStrategyFilter = showStrategyFilter;
 
         filtered = new FilteredList<>(FXCollections.observableArrayList(items), p -> true);
 
-        buildFilters(showStrategyFilter);
+        buildFilters();
         TableView<PipelineItem> table = buildTable(onOpen);
 
         VBox.setVgrow(table, Priority.ALWAYS);
-        getChildren().addAll(buildFilterRow(showStrategyFilter), table);
+        getChildren().addAll(buildFilterRow(), table);
+        updateCount();
     }
 
-    private HBox buildFilterRow(boolean showStrategyFilter) {
+    private HBox buildFilterRow() {
         HBox row = new HBox(10);
         row.getStyleClass().add("filter-row");
         row.setAlignment(Pos.CENTER_LEFT);
@@ -58,19 +71,25 @@ public final class OpportunityTable extends VBox {
         HBox.setHgrow(search, Priority.ALWAYS);
         search.setMaxWidth(Double.MAX_VALUE);
 
+        countLabel.getStyleClass().add("filter-count");
+
+        Label reset = new Label("Réinitialiser");
+        reset.getStyleClass().add("link-label");
+        reset.setOnMouseClicked(e -> resetFilters());
+
         if (showStrategyFilter) {
             row.getChildren().add(strategyFilter);
         }
-        row.getChildren().addAll(statusFilter, search);
+        row.getChildren().addAll(statusFilter, tierFilter, activeOnly, search, countLabel, reset);
         return row;
     }
 
-    private void buildFilters(boolean showStrategyFilter) {
+    private void buildFilters() {
         strategyFilter.getItems().add(ALL_STRATEGIES);
         strategyFilter.getItems().addAll(
-                com.atlan.mfo.model.enums.Category.BUYOUT_GROWTH_VC.label(),
-                com.atlan.mfo.model.enums.Category.SECONDARIES.label(),
-                com.atlan.mfo.model.enums.Category.PRIVATE_CREDIT.label(),
+                Category.BUYOUT_GROWTH_VC.label(),
+                Category.SECONDARIES.label(),
+                Category.PRIVATE_CREDIT.label(),
                 PipelineItem.DEALS_STRATEGY);
         strategyFilter.setValue(ALL_STRATEGIES);
 
@@ -80,14 +99,24 @@ public final class OpportunityTable extends VBox {
         }
         statusFilter.setValue(ALL_STATUSES);
 
+        tierFilter.getItems().add(ALL_TIERS);
+        for (Tier t : Tier.values()) {
+            tierFilter.getItems().add(t.label());
+        }
+        tierFilter.setValue(ALL_TIERS);
+
         strategyFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
         statusFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
+        tierFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
+        activeOnly.selectedProperty().addListener((o, a, b) -> applyPredicate());
         search.textProperty().addListener((o, a, b) -> applyPredicate());
     }
 
     private void applyPredicate() {
         String strat = strategyFilter.getValue();
         String status = statusFilter.getValue();
+        String tier = tierFilter.getValue();
+        boolean active = activeOnly.isSelected();
         String q = search.getText() == null ? "" : search.getText().trim().toLowerCase();
 
         filtered.setPredicate(item -> {
@@ -97,18 +126,36 @@ public final class OpportunityTable extends VBox {
             if (status != null && !ALL_STATUSES.equals(status) && !item.status().label().equals(status)) {
                 return false;
             }
-            if (!q.isEmpty() && !item.name().toLowerCase().contains(q)) {
+            if (tier != null && !ALL_TIERS.equals(tier)
+                    && (item.tier() == null || !item.tier().label().equals(tier))) {
                 return false;
             }
-            return true;
+            if (active && !item.isActive()) {
+                return false;
+            }
+            return q.isEmpty() || item.name().toLowerCase().contains(q);
         });
+        updateCount();
+    }
+
+    private void updateCount() {
+        int shown = filtered.size();
+        countLabel.setText(shown == total ? total + " opportunités" : shown + " / " + total);
+    }
+
+    private void resetFilters() {
+        strategyFilter.setValue(ALL_STRATEGIES);
+        statusFilter.setValue(ALL_STATUSES);
+        tierFilter.setValue(ALL_TIERS);
+        activeOnly.setSelected(false);
+        search.clear();
     }
 
     private TableView<PipelineItem> buildTable(Consumer<PipelineItem> onOpen) {
         TableView<PipelineItem> table = new TableView<>();
         table.getStyleClass().add("opportunity-table");
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        table.setPlaceholder(new Label("Aucune opportunité"));
+        table.setPlaceholder(new Label("Aucune opportunité ne correspond aux filtres"));
 
         TableColumn<PipelineItem, String> nameCol = new TableColumn<>("Nom");
         nameCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().name()));
@@ -154,6 +201,10 @@ public final class OpportunityTable extends VBox {
         sorted.comparatorProperty().bind(table.comparatorProperty());
         table.setItems(sorted);
 
+        // Tri par défaut : score décroissant (§6.1)
+        scoreCol.setSortType(TableColumn.SortType.DESCENDING);
+        table.getSortOrder().add(scoreCol);
+
         table.setRowFactory(tv -> {
             var r = new javafx.scene.control.TableRow<PipelineItem>();
             r.setOnMouseClicked(e -> {
@@ -161,6 +212,7 @@ public final class OpportunityTable extends VBox {
                     onOpen.accept(r.getItem());
                 }
             });
+            Tooltip.install(r, new Tooltip("Double-cliquer pour ouvrir la fiche"));
             return r;
         });
 
