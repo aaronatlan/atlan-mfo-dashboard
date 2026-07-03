@@ -172,3 +172,55 @@ de passe (§13.3).
 > confiance, sur VPN/TLS, c'est acceptable. Pour une sécurité renforcée, l'étape
 > suivante serait d'intercaler une **API backend** entre l'application et la base,
 > afin que les secrets et la logique restent côté serveur.
+
+---
+
+## 9. Recommandation d'hébergement (données privées)
+
+« Privé » n'impose pas « on-premise ». Un **PostgreSQL managé bien configuré** est
+souvent plus sûr qu'un serveur d'office auto-géré (correctifs, chiffrement et
+sauvegardes pris en charge par le fournisseur).
+
+**Recommandé : PostgreSQL managé**, avec région dans la juridiction du client
+(résidence des données), chiffrement au repos, TLS, **allowlist d'IP** et
+sauvegardes automatiques. Fournisseurs avec allowlist + région EU : Azure Database
+for PostgreSQL, AWS RDS, Scaleway, OVHcloud, Neon.
+
+**On-premise** seulement si une contrainte contractuelle/réglementaire impose que
+les données ne quittent jamais les locaux.
+
+### Allowlist d'IP — condition de fonctionnement
+
+- **Postes à IP fixe (bureau)** → allowlister l'IP publique du bureau. Simple et robuste.
+- **Postes mobiles (IP changeante)** → l'allowlist les bloque : prévoir un **VPN
+  d'entreprise à IP de sortie fixe** (on allowliste l'IP du VPN), ou faire passer
+  les connexions par le réseau du bureau.
+
+---
+
+## 10. Construire les installeurs Windows
+
+`jpackage` ne produit un paquet que **pour l'OS sur lequel il s'exécute** : on ne
+peut pas fabriquer un `.msi` Windows depuis un Mac. Deux options :
+
+1. **CI (recommandé)** — le workflow [`.github/workflows/package.yml`](.github/workflows/package.yml)
+   construit automatiquement l'installeur Windows (`.msi`) et macOS (`.dmg`) sur des
+   runners GitHub, à chaque tag de version :
+   ```bash
+   git tag v1.0.0 && git push origin v1.0.0
+   ```
+   Les installeurs sont ensuite téléchargeables dans les artefacts du run.
+
+2. **Machine Windows** — installer un JDK 21+ et **WiX Toolset 3.x**, puis :
+   ```bash
+   scripts/package.sh msi
+   ```
+
+### Signature Windows (Authenticode)
+
+Pour éviter l'avertissement SmartScreen, signer le `.msi` avec un certificat de
+signature de code :
+```
+signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 "Atlan MFO Dashboard-1.0.0.msi"
+```
+En CI, ajouter le certificat en secret et une étape `signtool` après le build.

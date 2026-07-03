@@ -1,0 +1,46 @@
+name: Package installers
+
+# Construit les installeurs natifs sur chaque OS cible (jpackage ne produit un
+# paquet que pour l'OS où il tourne). Déclenché sur un tag de version (vX.Y.Z)
+# ou manuellement. Les installeurs sont publiés en artefacts téléchargeables.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            type: msi
+          - os: macos-latest
+            type: dmg
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer le JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Installer WiX (Windows, requis par jpackage pour le .msi)
+        if: runner.os == 'Windows'
+        run: choco install wixtoolset --no-progress -y
+
+      - name: Construire l'installeur
+        shell: bash
+        run: ./scripts/package.sh ${{ matrix.type }}
+
+      - name: Publier l'artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlan-mfo-${{ matrix.os }}
+          path: target/installer/*
+          if-no-files-found: error
