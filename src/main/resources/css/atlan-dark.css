@@ -313,6 +313,47 @@
     -fx-border-color: -atlan-accent;
 }
 
+.filter-count {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 11px;
+    -fx-min-width: 96;
+    -fx-alignment: CENTER-RIGHT;
+}
+
+.link-label {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 11px;
+    -fx-underline: true;
+    -fx-cursor: hand;
+}
+
+.link-label:hover {
+    -fx-text-fill: -atlan-accent-hover;
+}
+
+/* Case à cocher */
+.check-box {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 12px;
+}
+
+.check-box > .box {
+    -fx-background-color: -atlan-card;
+    -fx-border-color: -atlan-line-strong;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-padding: 3;
+}
+
+.check-box:selected > .box {
+    -fx-background-color: -atlan-accent;
+    -fx-border-color: -atlan-accent;
+}
+
+.check-box:selected > .box > .mark {
+    -fx-background-color: -atlan-text;
+}
+
 /* ---- Tableau ---- */
 .opportunity-table {
     -fx-background-color: transparent;
@@ -674,4 +715,102 @@
     -fx-padding: 16 60 22 60;
     -fx-border-color: -atlan-line transparent transparent transparent;
     -fx-border-width: 1;
+}
+
+/* ============================================================
+   Finitions globales (Phase 5)
+   ============================================================ */
+
+/* Barres de défilement sombres */
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical,
+.scroll-bar:horizontal {
+    -fx-background-color: transparent;
+    -fx-pref-width: 10;
+    -fx-pref-height: 10;
+}
+
+.scroll-bar .track {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: -atlan-line-strong;
+    -fx-background-radius: 6;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: -atlan-text-3;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button,
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-background-color: transparent;
+    -fx-pref-width: 0;
+    -fx-pref-height: 0;
+}
+
+.corner {
+    -fx-background-color: transparent;
+}
+
+/* Flèche de tri des colonnes */
+.opportunity-table .column-header .arrow {
+    -fx-background-color: -atlan-text-3;
+}
+
+.opportunity-table .column-header .sort-order-dot {
+    -fx-background-color: -atlan-accent;
+}
+
+/* Combo focus cohérent avec les champs */
+.combo-box:focused {
+    -fx-border-color: -atlan-accent;
+}
+
+/* Infobulles */
+.tooltip {
+    -fx-background-color: -atlan-raised;
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 11px;
+    -fx-background-radius: 4;
+    -fx-border-color: -atlan-line-strong;
+    -fx-border-radius: 4;
+    -fx-padding: 5 9 5 9;
+}
+
+/* Boîtes de dialogue (conflit d'édition) */
+.dialog-pane {
+    -fx-background-color: -atlan-card;
+}
+
+.dialog-pane .label {
+    -fx-text-fill: -atlan-text;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: -atlan-nav;
+}
+
+.dialog-pane .header-panel .label {
+    -fx-text-fill: -atlan-text;
+}
+
+.dialog-pane .button {
+    -fx-background-color: -atlan-accent-wash;
+    -fx-border-color: -atlan-accent;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-text-fill: -atlan-text;
+    -fx-cursor: hand;
+}
+
+.dialog-pane .button:hover {
+    -fx-background-color: -atlan-accent;
 }
