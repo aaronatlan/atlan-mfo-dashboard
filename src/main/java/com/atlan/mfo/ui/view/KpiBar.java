@@ -15,7 +15,7 @@ public final class KpiBar extends HBox {
 
     public KpiBar(List<PipelineItem> items) {
         getStyleClass().add("kpi-bar");
-        setSpacing(14);
+        setSpacing(16);
 
         List<PipelineItem> active = items.stream().filter(PipelineItem::isActive).toList();
 

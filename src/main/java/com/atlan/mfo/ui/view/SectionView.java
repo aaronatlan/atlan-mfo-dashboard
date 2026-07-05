@@ -17,7 +17,7 @@ public final class SectionView extends VBox {
 
     public SectionView(String title, List<PipelineItem> items, Consumer<PipelineItem> onOpen, Runnable onNew) {
         getStyleClass().add("view-root");
-        setSpacing(16);
+        setSpacing(22);
 
         Label header = new Label(title);
         header.getStyleClass().add("view-title");

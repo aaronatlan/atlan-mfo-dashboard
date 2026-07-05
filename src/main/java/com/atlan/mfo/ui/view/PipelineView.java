@@ -13,7 +13,7 @@ public final class PipelineView extends VBox {
 
     public PipelineView(List<PipelineItem> items, Consumer<PipelineItem> onOpen) {
         getStyleClass().add("view-root");
-        setSpacing(16);
+        setSpacing(22);
 
         Label header = new Label("Pipeline summary");
         header.getStyleClass().add("view-title");

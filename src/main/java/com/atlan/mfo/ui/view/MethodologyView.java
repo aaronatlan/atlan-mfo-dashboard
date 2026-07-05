@@ -17,16 +17,7 @@ public final class MethodologyView extends ScrollPane {
 
         body.getChildren().addAll(
                 title("Méthodologie de scoring"),
-                paragraph("Le score est un support de décision. Le comité d'investissement conserve "
-                        + "l'entière autorité ; une revue humaine est requise à tous les niveaux."),
-
-                section("Formule de normalisation (commune aux 3 grilles)"),
-                paragraph("Earned = somme des sous-scores des métriques communiquées.\n"
-                        + "Possible = somme des points max des métriques communiquées.\n"
-                        + "Score = MIN( Earned / MAX(Possible, 80) × 100 , 95 ).\n\n"
-                        + "Une métrique non communiquée est exclue du calcul (jamais scorée à 0). "
-                        + "Plancher du dénominateur à 80, plafond du score à 95."),
-
+ 
                 section("Grille A — Buyout, growth, VC (et Secondaries)"),
                 gridTable(new String[][]{
                         {"Composant", "Points", "Cible"},
