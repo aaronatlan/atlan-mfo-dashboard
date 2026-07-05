@@ -30,7 +30,16 @@
 
 .auth-root {
     -fx-background-color: -atlan-bg;
-    -fx-padding: 48 44 48 44;
+    -fx-padding: 40;
+}
+
+.auth-card {
+    -fx-background-color: -atlan-card;
+    -fx-background-radius: 10;
+    -fx-border-color: -atlan-line-strong;
+    -fx-border-radius: 10;
+    -fx-padding: 44 40 40 40;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 30, 0, 0, 10);
 }
 
 .brand-mark {
@@ -68,10 +77,10 @@
 
 .text-field,
 .password-field {
-    -fx-background-color: -atlan-card;
-    -fx-background-radius: 4;
+    -fx-background-color: -atlan-raised;
+    -fx-background-radius: 6;
     -fx-border-color: -atlan-line-strong;
-    -fx-border-radius: 4;
+    -fx-border-radius: 6;
     -fx-text-fill: -atlan-text;
     -fx-prompt-text-fill: -atlan-text-3;
     -fx-font-size: 13px;
@@ -86,20 +95,19 @@
 /* ---- Boutons ---- */
 
 .primary-button {
-    -fx-background-color: -atlan-accent-wash;
-    -fx-border-color: -atlan-accent;
-    -fx-border-radius: 4;
-    -fx-background-radius: 4;
+    -fx-background-color: -atlan-accent;
+    -fx-border-color: transparent;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
     -fx-text-fill: -atlan-text;
     -fx-font-size: 13px;
     -fx-font-weight: bold;
-    -fx-padding: 10 18 10 18;
+    -fx-padding: 10 20 10 20;
     -fx-cursor: hand;
 }
 
 .primary-button:hover {
-    -fx-background-color: -atlan-accent;
-    -fx-border-color: -atlan-accent-hover;
+    -fx-background-color: -atlan-accent-hover;
 }
 
 /* ---- Accueil provisoire (Phase 0) ---- */
@@ -138,7 +146,7 @@
 /* ---- Barre supérieure ---- */
 .topbar {
     -fx-background-color: -atlan-nav;
-    -fx-padding: 12 18 12 18;
+    -fx-padding: 16 24 16 24;
     -fx-border-color: transparent transparent -atlan-line transparent;
     -fx-border-width: 1;
 }
@@ -166,11 +174,11 @@
 .ghost-button {
     -fx-background-color: transparent;
     -fx-border-color: -atlan-line-strong;
-    -fx-border-radius: 4;
-    -fx-background-radius: 4;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
     -fx-text-fill: -atlan-text-2;
     -fx-font-size: 12px;
-    -fx-padding: 6 12 6 12;
+    -fx-padding: 7 14 7 14;
     -fx-cursor: hand;
 }
 
@@ -182,9 +190,9 @@
 /* ---- Menu latéral ---- */
 .sidebar {
     -fx-background-color: -atlan-nav;
-    -fx-padding: 16 12 16 12;
-    -fx-min-width: 220;
-    -fx-pref-width: 220;
+    -fx-padding: 22 14 22 14;
+    -fx-min-width: 236;
+    -fx-pref-width: 236;
     -fx-border-color: transparent -atlan-line transparent transparent;
     -fx-border-width: 1;
 }
@@ -198,11 +206,11 @@
 
 .nav-button {
     -fx-background-color: transparent;
-    -fx-background-radius: 4;
+    -fx-background-radius: 6;
     -fx-text-fill: -atlan-text-2;
     -fx-font-size: 13px;
     -fx-alignment: CENTER-LEFT;
-    -fx-padding: 9 12 9 12;
+    -fx-padding: 10 14 10 14;
     -fx-cursor: hand;
 }
 
@@ -214,6 +222,7 @@
 .nav-button:selected {
     -fx-background-color: -atlan-accent-wash;
     -fx-text-fill: -atlan-text;
+    -fx-font-weight: bold;
     -fx-background-radius: 6;
 }
 
@@ -239,22 +248,22 @@
 }
 
 .kpi-card {
-    -fx-background-color: transparent;
-    -fx-background-radius: 6;
-    -fx-border-color: -atlan-line-strong;
-    -fx-border-radius: 6;
-    -fx-padding: 20 22 18 22;
+    -fx-background-color: -atlan-card;
+    -fx-background-radius: 8;
+    -fx-border-color: -atlan-line;
+    -fx-border-radius: 8;
+    -fx-padding: 20 24 18 24;
 }
 
 .kpi-value {
     -fx-text-fill: -atlan-text;
-    -fx-font-size: 36px;
+    -fx-font-size: 34px;
     -fx-font-weight: bold;
 }
 
 .kpi-label {
     -fx-text-fill: -atlan-text-3;
-    -fx-font-size: 9px;
+    -fx-font-size: 10px;
     -fx-letter-spacing: 0.15em;
     -fx-padding: 8 0 0 0;
 }
@@ -266,10 +275,10 @@
 
 .combo-box {
     -fx-background-color: -atlan-card;
-    -fx-background-radius: 4;
+    -fx-background-radius: 6;
     -fx-border-color: -atlan-line-strong;
-    -fx-border-radius: 4;
-    -fx-min-width: 190;
+    -fx-border-radius: 6;
+    -fx-min-width: 180;
 }
 
 .combo-box .list-cell {
@@ -304,9 +313,9 @@
 
 .search-field {
     -fx-background-color: -atlan-card;
-    -fx-background-radius: 4;
+    -fx-background-radius: 6;
     -fx-border-color: -atlan-line-strong;
-    -fx-border-radius: 4;
+    -fx-border-radius: 6;
     -fx-text-fill: -atlan-text;
     -fx-prompt-text-fill: -atlan-text-3;
     -fx-padding: 7 12 7 12;
@@ -407,6 +416,20 @@
 
 .opportunity-table .table-row-cell:empty {
     -fx-background-color: transparent;
+}
+
+/* Hiérarchie des colonnes : nom en avant, contexte en retrait */
+.opportunity-table .col-primary {
+    -fx-text-fill: -atlan-text;
+    -fx-font-weight: bold;
+}
+
+.opportunity-table .col-secondary {
+    -fx-text-fill: -atlan-text-2;
+}
+
+.opportunity-table .placeholder .label {
+    -fx-text-fill: -atlan-text-3;
 }
 
 /* ---- Tiers : point coloré + libellé (§8.1) ---- */
@@ -578,10 +601,10 @@
 /* Panneau de score en direct */
 .score-panel {
     -fx-background-color: -atlan-card;
-    -fx-background-radius: 4;
+    -fx-background-radius: 8;
     -fx-border-color: -atlan-line;
-    -fx-border-radius: 4;
-    -fx-padding: 16 18 16 18;
+    -fx-border-radius: 8;
+    -fx-padding: 18 20 18 20;
 }
 
 .score-panel-caption {
@@ -643,15 +666,15 @@
 
 .pres-hero-value {
     -fx-text-fill: -atlan-text;
-    -fx-font-family: "Newsreader";
-    -fx-font-size: 72px;
+    -fx-font-family: "Newsreader", "Georgia", serif;
+    -fx-font-size: 84px;
     -fx-font-weight: bold;
 }
 
 .pres-metric-value {
     -fx-text-fill: -atlan-text;
-    -fx-font-family: "Newsreader";
-    -fx-font-size: 34px;
+    -fx-font-family: "Newsreader", "Georgia", serif;
+    -fx-font-size: 38px;
     -fx-font-weight: bold;
 }
 
@@ -694,8 +717,10 @@
 /* Opportunités prioritaires */
 .pres-priority-row {
     -fx-background-color: -atlan-card;
-    -fx-background-radius: 4;
-    -fx-padding: 10 16 10 16;
+    -fx-background-radius: 6;
+    -fx-border-color: -atlan-line;
+    -fx-border-radius: 6;
+    -fx-padding: 12 18 12 18;
 }
 
 .pres-priority-name {

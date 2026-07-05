@@ -5,30 +5,32 @@
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      alignment="CENTER"
-      spacing="10"
-      styleClass="auth-root">
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           styleClass="auth-root">
 
-    <Label styleClass="brand-mark" text="ATLAN" />
-    <Label styleClass="brand-sub" text="MFO DASHBOARD" />
+    <VBox alignment="CENTER" spacing="10" styleClass="auth-card"
+          maxWidth="380" maxHeight="-Infinity">
 
-    <Region prefHeight="24" />
+        <Label styleClass="brand-mark" text="ATLAN" />
+        <Label styleClass="brand-sub" text="MFO DASHBOARD" />
 
-    <Label styleClass="field-label" text="IDENTIFIANT" maxWidth="Infinity" />
-    <TextField fx:id="usernameField" promptText="identifiant" />
+        <Region prefHeight="22" />
 
-    <Label styleClass="field-label" text="MOT DE PASSE" maxWidth="Infinity" />
-    <PasswordField fx:id="passwordField" promptText="mot de passe" onAction="#onLogin" />
+        <Label styleClass="field-label" text="IDENTIFIANT" maxWidth="Infinity" />
+        <TextField fx:id="usernameField" promptText="identifiant" />
 
-    <Label fx:id="errorLabel" styleClass="error-label" maxWidth="Infinity" wrapText="true" />
+        <Label styleClass="field-label" text="MOT DE PASSE" maxWidth="Infinity" />
+        <PasswordField fx:id="passwordField" promptText="mot de passe" onAction="#onLogin" />
 
-    <Region prefHeight="8" />
+        <Label fx:id="errorLabel" styleClass="error-label" maxWidth="Infinity" wrapText="true" />
 
-    <Button text="Se connecter" onAction="#onLogin" defaultButton="true"
-            styleClass="primary-button" maxWidth="Infinity" />
-</VBox>
+        <Region prefHeight="10" />
 
+        <Button text="Se connecter" onAction="#onLogin" defaultButton="true"
+                styleClass="primary-button" maxWidth="Infinity" />
+    </VBox>
+</StackPane>

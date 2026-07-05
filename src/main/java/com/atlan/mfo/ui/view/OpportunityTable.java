@@ -159,12 +159,15 @@ public final class OpportunityTable extends VBox {
         TableColumn<PipelineItem, String> nameCol = new TableColumn<>("Nom");
         nameCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().name()));
         nameCol.setMaxWidth(3000);
+        nameCol.getStyleClass().add("col-primary");     // nom en avant (blanc, semi-gras)
 
         TableColumn<PipelineItem, String> stratCol = new TableColumn<>("Stratégie");
         stratCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().strategy()));
+        stratCol.getStyleClass().add("col-secondary");  // texte en retrait
 
         TableColumn<PipelineItem, String> statusCol = new TableColumn<>("Statut");
         statusCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().status().label()));
+        statusCol.getStyleClass().add("col-secondary");
 
         TableColumn<PipelineItem, Integer> scoreCol = new TableColumn<>("Score");
         scoreCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().score()));
