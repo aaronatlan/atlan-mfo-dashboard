@@ -10,10 +10,14 @@ import java.util.Set;
  */
 public final class ScoringProfile {
 
-    /** Métrique en ratio : {@code sous-score = MIN(valeur / cible, 1) × points}. */
+    /**
+     * Métrique en ratio : {@code sous-score = CLAMP(valeur / cible, 0, 1) × points}.
+     * Plancher à 0 : une métrique négative (ex. IRR d'un fonds perdant) vaut 0 point
+     * mais ne retranche jamais de points (§5.1).
+     */
     public record Ratio(double points, double target) {
         public double subScore(double value) {
-            return Math.min(value / target, 1.0) * points;
+            return Math.max(0.0, Math.min(value / target, 1.0)) * points;
         }
     }
 

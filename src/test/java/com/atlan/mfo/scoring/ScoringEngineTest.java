@@ -82,6 +82,20 @@ class ScoringEngineTest {
     }
 
     @Test
+    void negativeMetricScoresZeroNotNegative() {
+        // IRR négatif (fonds perdant) : sous-score 0, jamais négatif ; la métrique
+        // reste communiquée (compte dans Possible).
+        FundInvestment f = fund(Category.BUYOUT_GROWTH_VC, "US", null,
+                List.of(v(2021, 0.65, -0.10, 2.1)));
+        ScoreBreakdown b = engine.score(f, REF);
+        assertEquals(0.0, sub(b, "IRR"), 1e-9);
+        assertEquals(true, communicated(b, "IRR"));
+        // Earned = 24.4 (DPI) + 0 (IRR) + 16.8 (MOIC) + 15 (géo) = 56.2 ; Possible = 90
+        // Score = 56.2/90*100 = 62.4 → 62
+        assertEquals(62, b.score());
+    }
+
+    @Test
     void noDataScoresZeroCaution() {
         FundInvestment f = fund(Category.BUYOUT_GROWTH_VC, null, null,
                 List.of(v(2021, null, null, null)));
