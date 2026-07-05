@@ -432,9 +432,12 @@
     -fx-text-fill: -atlan-text-3;
 }
 
-/* Colonne score : centrée (cellules et en-tête), en gras */
+/* Colonne score : centrée horizontalement, en gras. TOP_CENTER (et non CENTER) :
+   avec le padding vertical de 14px, le centrage vertical du skin JavaFX décale le
+   texte de padding/2 vers le haut ; l'ancrage TOP aligne avec les autres colonnes
+   (contenu = hauteur du texte, donc visuellement centré). */
 .opportunity-table .col-score {
-    -fx-alignment: CENTER;
+    -fx-alignment: TOP_CENTER;
     -fx-font-weight: bold;
 }
 

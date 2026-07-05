@@ -13,7 +13,7 @@ cd "$(dirname "$0")/.."
 
 APP_NAME="Atlan MFO Dashboard"
 JAR_VERSION="0.1.0"                 # version du projet Maven (nom du jar)
-PKG_VERSION="1.0.2"                 # version du paquet natif (macOS exige un 1er nombre ≥ 1)
+PKG_VERSION="1.0.3"                 # version du paquet natif (macOS exige un 1er nombre ≥ 1)
 MAIN_JAR="atlan-mfo-dashboard-${JAR_VERSION}.jar"
 MAIN_CLASS="com.atlan.mfo.Launcher"
 TYPE="${1:-app-image}"

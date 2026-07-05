@@ -4,7 +4,6 @@ import com.atlan.mfo.model.PipelineItem;
 import com.atlan.mfo.model.enums.Category;
 import com.atlan.mfo.model.enums.DealStatus;
 import com.atlan.mfo.model.enums.Tier;
-import com.atlan.mfo.ui.util.Formatters;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.FilteredList;
@@ -169,16 +168,12 @@ public final class OpportunityTable extends VBox {
         statusCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().status().label()));
         statusCol.getStyleClass().add("col-secondary");
 
+        // Cellule par défaut : une cellule custom + classe CSS de colonne décale le
+        // texte verticalement (travers du skin JavaFX vérifié par mesure). Le score
+        // n'est jamais null en pratique (recalcul systématique par le moteur, §13.4).
         TableColumn<PipelineItem, Integer> scoreCol = new TableColumn<>("Score");
         scoreCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().score()));
         scoreCol.setComparator(Comparator.nullsFirst(Comparator.naturalOrder()));
-        scoreCol.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(Integer value, boolean empty) {
-                super.updateItem(value, empty);
-                setText(empty ? null : Formatters.score(value));
-            }
-        });
         scoreCol.getStyleClass().add("col-score");   // centré + gras (CSS)
 
         TableColumn<PipelineItem, PipelineItem> tierCol = new TableColumn<>("Tier");
