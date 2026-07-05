@@ -31,7 +31,9 @@ createdb atlan_mfo
 ```
 
 Au démarrage, si `db.runMigrations=true`, l'application exécute
-`src/main/resources/db/schema.sql` puis `seed.sql` (idempotents).
+`src/main/resources/db/schema.sql` puis le seed du profil choisi via `db.seed`
+(`dev` = données de démonstration, `prod` = admin seul, `none` = aucun). Tous
+les scripts sont idempotents.
 
 ## Lancer
 
@@ -39,18 +41,17 @@ Au démarrage, si `db.runMigrations=true`, l'application exécute
 mvn clean javafx:run
 ```
 
-## Premier login
+## Premier login (seed de développement, `db.seed=dev`)
 
-Le seed crée un compte administrateur :
+Le seed **dev** crée deux comptes de démonstration :
 
-- identifiant : `admin`
-- mot de passe : `admin`
+- `admin` / `admin` — analyste ; `must_change_password` : l'application impose
+  un changement de mot de passe avant d'accéder aux écrans (voir §13.3 de la spec) ;
+- `partner` / `partner` — lecture seule, verrouillé en mode présentation (§6.3, §7).
 
-Ce compte est marqué `must_change_password` : l'application impose un changement
-de mot de passe avant d'accéder aux écrans (voir §13.3 de la spec).
-
-Un compte **partner** de démonstration est aussi créé (`partner` / `partner`) :
-lecture seule, verrouillé en mode présentation (voir §6.3, §7).
+En **production** (`db.seed=prod`), seul un compte `admin` à mot de passe
+temporaire est créé ; les autres utilisateurs sont provisionnés via
+`scripts/user-add.sh` (voir [DEPLOYMENT.md](DEPLOYMENT.md)).
 
 ## Tests
 

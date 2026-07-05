@@ -73,7 +73,7 @@ atlan-mfo-dashboard/
     │   │   │   └── AppConfig.java    # lecture config / variables d'env
     │   │   ├── db/
     │   │   │   ├── Database.java     # DataSource HikariCP, init
-    │   │   │   └── Migrations.java   # exécution schema.sql / seed.sql
+    │   │   │   └── Migrations.java   # exécution schema.sql + seed-<profil>.sql (dev|prod|none)
     │   │   ├── model/
     │   │   │   ├── FundInvestment.java
     │   │   │   ├── DirectDeal.java
@@ -105,7 +105,9 @@ atlan-mfo-dashboard/
     │       ├── fonts/                       # Inter + Newsreader (TTF bundled)
     │       └── db/
     │           ├── schema.sql
-    │           └── seed.sql                # données fictives de démarrage
+    │           ├── seed-dev.sql            # données fictives de démarrage (dev)
+    │           ├── seed-prod.sql           # admin seul, sans données de démo (production)
+    │           └── roles.sql               # rôle applicatif à privilèges minimaux (production)
     └── test/
         └── java/com/atlan/mfo/scoring/     # tests du moteur de scoring
 ```
@@ -261,6 +263,7 @@ Score     = MIN( Earned / MAX(Possible, 80) * 100 , 95 )
 Règles :
 
 - Une métrique **non communiquée** (`NULL`) est **exclue** du calcul : elle ne compte ni dans `Earned` ni dans `Possible`. Elle n'est jamais pénalisée comme un zéro.
+- Chaque sous-score a un **plancher à 0** : une métrique communiquée mais négative (ex. IRR d'un fonds perdant) vaut 0 point — elle compte dans `Possible` mais ne retranche jamais de points d'`Earned`.
 - Le dénominateur a un **plancher à 80** : cela empêche des données éparses de gonfler artificiellement le score.
 - Le score est **plafonné à 95** : aucune opportunité n'apparaît « parfaite ».
 - Le score arrondi à l'entier est affiché.
@@ -385,7 +388,7 @@ Coquille applicative : **menu latéral** fixe à gauche, contenu à droite, barr
 
 ### 6.1 Écrans (vue analyste)
 
-1. **Pipeline summary** (accueil) — bande de KPI (deals actifs, capital en revue, score moyen, nombre en tier Strong) puis tableau global de toutes les opportunités, filtrable par stratégie et statut, avec recherche. Colonnes : nom, stratégie, statut, score, tier. Tri par colonne. Double-clic sur une ligne → ouvre la fiche. Le score affiché en liste est **recalculé en direct** à l'ouverture, jamais lu depuis `score_snapshot` (voir §13.4). *(Note de phasage : tant que le moteur de scoring (Phase 2) n'est pas branché, la Phase 1 affiche `score_snapshot` ; le recalcul live remplace cette source en Phase 2.)*
+1. **Pipeline summary** (accueil) — bande de KPI (deals actifs, capital en revue, score moyen, nombre en tier Strong) puis tableau global de toutes les opportunités, filtrable par stratégie et statut, avec recherche. Colonnes : nom, stratégie, statut, score, tier. Tri par colonne. Double-clic sur une ligne → ouvre la fiche. Le score affiché en liste est **recalculé en direct** à l'ouverture, jamais lu depuis `score_snapshot` (voir §13.4).
 
    Définition des KPI : **deals actifs** = opportunités dont le statut n'est ni `APPROVED` ni `DECLINED_LOST` ; **capital en revue** = somme des `commitment` de ces opportunités actives ; **score moyen** et **tier Strong** sont calculés sur ce même sous-ensemble actif.
 2. **Buyout, growth, VC** — liste filtrée + fiche fonds.
@@ -416,7 +419,7 @@ La bascule se fait via le toggle en barre supérieure pour un analyste. Un partn
 - Écran de login au démarrage : identifiant + mot de passe, vérifiés contre `app_user` (hash BCrypt). La session en cours conserve l'utilisateur et son rôle.
 - **ANALYST** : accès complet lecture/écriture, atterrit en vue analyste, peut basculer en présentation.
 - **PARTNER** : lecture seule, atterrit et reste en mode présentation ; les écrans de saisie et boutons d'édition ne lui sont pas proposés.
-- Aucune donnée sensible ni identifiant de base n'est stockée en clair dans le code. Le premier utilisateur administrateur est créé par le script `seed.sql`.
+- Aucune donnée sensible ni identifiant de base n'est stockée en clair dans le code. Le premier utilisateur administrateur est créé par le seed (`seed-dev.sql` en développement, `seed-prod.sql` en production).
 - **Changement de mot de passe forcé** : l'admin (et tout utilisateur provisionné avec un mot de passe temporaire) porte `must_change_password = TRUE`. Après une authentification réussie, l'utilisateur est routé vers l'écran `change-password.fxml` **avant** d'accéder à l'application, tant que ce drapeau est vrai (voir §13.3).
 
 ---
@@ -487,7 +490,8 @@ Les tiers utilisent un **point coloré + libellé**, jamais une pastille pleine 
 
 ## 9. Configuration et secrets
 
-- Connexion base fournie par variables d'environnement : `ATLAN_DB_URL`, `ATLAN_DB_USER`, `ATLAN_DB_PASSWORD`. À défaut, un fichier local `config.properties` (présent seulement en local, **jamais versionné**).
+- Connexion base fournie par variables d'environnement : `ATLAN_DB_URL`, `ATLAN_DB_USER`, `ATLAN_DB_PASSWORD` (et `ATLAN_DB_SEED` pour le profil de seed). À défaut, un fichier local `config.properties` (présent seulement en local, **jamais versionné**).
+- Clés de comportement : `db.runMigrations` (true en dev, false en production une fois le schéma appliqué) et `db.seed` (`dev` | `prod` | `none`).
 - Un fichier `config.properties.example` versionné documente les clés attendues, sans valeurs.
 - `.gitignore` exclut `config.properties`, les cibles de build (`target/`), et tout fichier de secret.
 
@@ -497,7 +501,7 @@ Les tiers utilisent un **point coloré + libellé**, jamais une pastille pleine 
 
 Chaque phase correspond à un lot cohérent, à committer et pousser au fil de l'eau (voir §11).
 
-- **Phase 0 — Fondations** : projet Maven, `pom.xml`, connexion HikariCP, exécution de `schema.sql` + `seed.sql`, écran de login fonctionnel + changement de mot de passe forcé au 1er login (§13.3).
+- **Phase 0 — Fondations** : projet Maven, `pom.xml`, connexion HikariCP, exécution de `schema.sql` + seed, écran de login fonctionnel + changement de mot de passe forcé au 1er login (§13.3).
 - **Phase 1 — Lecture** : modèles + DAO (fonds, deals, users), écran Pipeline summary avec KPI et tableau global filtrable, listes par section en lecture.
 - **Phase 2 — Scoring** : refonte du stockage des millésimes (`fund_vintage`, modèle + DAO, adaptation de la fiche/seed), `ScoringEngine` + `ScoringProfile` (3 grilles, agrégation multi-millésimes pondérée par récence §5.5), `MetricParser`, `GeographyMatcher` (normalisation §13.1), `TimelineScorer`, tests unitaires JUnit couvrant les 3 grilles et les cas limites (données éparses, plancher 80, plafond 95, un vs plusieurs millésimes, exemples §5.8 et §5.9), et bascule des listes sur le recalcul live (§13.4).
 - **Phase 3 — Saisie** : fiches d'édition fonds (3 catégories) et deal direct, avec scoring en direct, sélecteurs de géographie canoniques (§13.1), création / modification / enregistrement via DAO avec verrou optimiste (§13.2).
@@ -564,7 +568,7 @@ UPDATE fund_investment
 
 ### 13.3 Changement de mot de passe au premier login
 
-- Colonne **`must_change_password BOOLEAN NOT NULL DEFAULT FALSE`** dans `app_user` ; l'admin créé par `seed.sql` est provisionné à `TRUE`.
+- Colonne **`must_change_password BOOLEAN NOT NULL DEFAULT FALSE`** dans `app_user` ; l'admin créé par le seed est provisionné à `TRUE`.
 - Après une authentification réussie, si `must_change_password = TRUE`, l'utilisateur est routé vers **`change-password.fxml`** (`ChangePasswordController`) **avant** d'accéder à la coquille applicative.
 - Nouveau mot de passe : longueur minimale imposée + champ de confirmation, haché en BCrypt, puis `must_change_password` repassé à `FALSE`. Même mécanisme pour tout futur utilisateur provisionné avec un mot de passe temporaire.
 

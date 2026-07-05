@@ -1,5 +1,6 @@
 # Build
 target/
+*.log
 
 # Secrets / config locale (jamais versionnés)
 config.properties
