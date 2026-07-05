@@ -179,7 +179,7 @@ public final class OpportunityTable extends VBox {
                 setText(empty ? null : Formatters.score(value));
             }
         });
-        scoreCol.setStyle("-fx-alignment: CENTER-RIGHT; -fx-font-weight: bold;");
+        scoreCol.getStyleClass().add("col-score");   // centré + gras (CSS)
 
         TableColumn<PipelineItem, PipelineItem> tierCol = new TableColumn<>("Tier");
         tierCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));

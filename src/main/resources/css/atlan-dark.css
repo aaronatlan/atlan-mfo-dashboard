@@ -432,6 +432,16 @@
     -fx-text-fill: -atlan-text-3;
 }
 
+/* Colonne score : centrée (cellules et en-tête), en gras */
+.opportunity-table .col-score {
+    -fx-alignment: CENTER;
+    -fx-font-weight: bold;
+}
+
+.opportunity-table .col-score .label {
+    -fx-alignment: CENTER;
+}
+
 /* ---- Tiers : point coloré + libellé (§8.1) ---- */
 .tier-dot {
     -fx-min-width: 9;
