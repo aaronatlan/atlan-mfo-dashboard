@@ -38,8 +38,20 @@ public final class PipelineResetTool {
                 return;
             }
 
+            // DELETE plutôt que TRUNCATE : le rôle applicatif de production (atlan_app)
+            // n'a pas le privilège TRUNCATE (roles.sql, moindre privilège). Transaction
+            // unique ; l'ordre respecte les FK (fund_vintage cascade via fund_investment).
+            conn.setAutoCommit(false);
             try (Statement stmt = conn.createStatement()) {
-                stmt.execute("TRUNCATE TABLE fund_vintage, fund_investment, direct_deal RESTART IDENTITY");
+                stmt.execute("DELETE FROM fund_vintage");
+                stmt.execute("DELETE FROM fund_investment");
+                stmt.execute("DELETE FROM direct_deal");
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
             }
 
             System.out.println();
