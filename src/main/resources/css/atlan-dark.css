@@ -450,6 +450,64 @@
     -fx-font-size: 13px;
 }
 
+/* ---- Fiche détail : cartes deux colonnes ---- */
+.detail-layout {
+    -fx-padding: 18 8 24 2;
+}
+
+.detail-card {
+    -fx-background-color: -atlan-card;
+    -fx-background-radius: 8;
+    -fx-border-color: -atlan-line;
+    -fx-border-radius: 8;
+    -fx-padding: 18 22 20 22;
+}
+
+.detail-card-title {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 10px;
+    -fx-letter-spacing: 0.15em;
+}
+
+/* Barres de sous-score (registre sobre, désaturé comme les barres d'allocation) */
+.score-bar-label {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 12px;
+}
+
+.score-bar-track {
+    -fx-background-color: -atlan-raised;
+    -fx-background-radius: 4;
+    -fx-min-height: 8;
+    -fx-pref-height: 8;
+    -fx-max-height: 8;
+}
+
+.score-bar-fill {
+    -fx-background-color: -atlan-text-2;
+    -fx-background-radius: 4;
+    -fx-min-height: 8;
+    -fx-max-height: 8;
+}
+
+.score-bar-value {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.score-bar-total {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.score-bar-total-row {
+    -fx-padding: 10 0 0 0;
+    -fx-border-color: -atlan-line transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
 /* ---- Fiche détail / méthodologie ---- */
 .detail-scroll {
     -fx-background-color: transparent;

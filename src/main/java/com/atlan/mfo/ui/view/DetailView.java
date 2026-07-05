@@ -7,23 +7,26 @@ import com.atlan.mfo.model.PipelineItem;
 import com.atlan.mfo.model.ScoreBreakdown;
 import com.atlan.mfo.model.ScoreComponent;
 import com.atlan.mfo.ui.util.Formatters;
+import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.util.List;
 
 /**
- * Fiche détail en lecture seule (Phase 1). L'édition arrive en Phase 3.
- * Le score affiché reste le {@code score_snapshot} ; le recalcul en direct
- * (§13.4) est branché en Phase 2.
+ * Fiche détail en lecture seule : cartes sur deux colonnes, score en barres de
+ * progression. Le score affiché est recalculé en direct (§13.4).
  */
 public final class DetailView extends BorderPane {
 
@@ -36,9 +39,6 @@ public final class DetailView extends BorderPane {
         v.setTop(v.header(f.name(), f.category().label() + "  ·  " + f.status().label(),
                 breakdown, onBack, onEdit));
 
-        VBox body = new VBox(18);
-        body.getStyleClass().add("detail-body");
-
         GridPane g1 = grid();
         addRow(g1, "Géographie", Formatters.text(f.geography()));
         addRow(g1, "Classe d'actifs", Formatters.text(f.assetClass()));
@@ -46,22 +46,22 @@ public final class DetailView extends BorderPane {
         addRow(g1, "Capital envisagé", Formatters.money(f.commitment()));
         addRow(g1, "Prochaines étapes", Formatters.text(f.nextSteps()));
 
-        Node vintages = vintageTable(f.vintages());
-
         GridPane g4 = grid();
         addRow(g4, "First close", Formatters.date(f.firstClose()));
         addRow(g4, "Final close", Formatters.date(f.finalClose()));
 
-        body.getChildren().addAll(
-                section("Détail du score"), scoreTable(breakdown),
-                section("Général"), g1,
-                section("Millésimes (track record)"), vintages,
-                section("Timeline"), g4);
+        GridPane layout = twoColumns();
+        layout.add(card("Détail du score", scoreBars(breakdown)), 0, 0);
+        layout.add(card("Général", g1), 1, 0);
+        layout.add(card("Millésimes (track record)", vintageTable(f.vintages())), 0, 1);
+        layout.add(card("Timeline", g4), 1, 1);
         if (f.comments() != null && !f.comments().isBlank()) {
-            body.getChildren().addAll(section("Commentaires"), paragraph(f.comments()));
+            Node comments = card("Commentaires", paragraph(f.comments()));
+            layout.add(comments, 0, 2);
+            GridPane.setColumnSpan(comments, 2);
         }
 
-        v.setCenter(scroll(body));
+        v.setCenter(scroll(layout));
         return v;
     }
 
@@ -69,9 +69,6 @@ public final class DetailView extends BorderPane {
         DetailView v = new DetailView();
         v.setTop(v.header(d.name(), PipelineItem.DEALS_STRATEGY + "  ·  " + d.status().label(),
                 breakdown, onBack, onEdit));
-
-        VBox body = new VBox(18);
-        body.getStyleClass().add("detail-body");
 
         GridPane g1 = grid();
         addRow(g1, "Secteur", Formatters.text(d.industry()));
@@ -103,19 +100,21 @@ public final class DetailView extends BorderPane {
         addRow(g4, "Deadline", Formatters.date(d.dealDeadline()));
         addRow(g4, "Sortie cible", Formatters.date(d.targetExit()));
 
-        body.getChildren().addAll(
-                section("Détail du score"), scoreTable(breakdown),
-                section("Général"), g1,
-                section("Performance financière"), g2,
-                section("Retours attendus"), g3,
-                section("Timeline"), g4);
+        GridPane layout = twoColumns();
+        layout.add(card("Détail du score", scoreBars(breakdown)), 0, 0);
+        layout.add(card("Général", g1), 1, 0);
+        layout.add(card("Performance financière", g2), 0, 1);
+        layout.add(card("Retours attendus", g3), 1, 1);
+        layout.add(card("Timeline", g4), 0, 2);
         if (d.comments() != null && !d.comments().isBlank()) {
-            body.getChildren().addAll(section("Commentaires"), paragraph(d.comments()));
+            layout.add(card("Commentaires", paragraph(d.comments())), 1, 2);
         }
 
-        v.setCenter(scroll(body));
+        v.setCenter(scroll(layout));
         return v;
     }
+
+    /* ---- En-tête ---- */
 
     private HBox header(String name, String subtitle, ScoreBreakdown breakdown, Runnable onBack, Runnable onEdit) {
         Button back = new Button("← Retour");
@@ -139,7 +138,7 @@ public final class DetailView extends BorderPane {
         scoreBox.getChildren().addAll(scoreVal, OpportunityTable.tierNode(breakdown.tier()));
 
         Region spacer = new Region();
-        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
         HBox bar = new HBox(16, back, titles, spacer, edit, scoreBox);
         bar.setAlignment(Pos.CENTER_LEFT);
@@ -147,49 +146,78 @@ public final class DetailView extends BorderPane {
         return bar;
     }
 
-    /** Tableau du détail du score : composant, sous-score / max, ou « exclu ». */
-    private static Node scoreTable(ScoreBreakdown breakdown) {
+    /* ---- Score en barres de progression ---- */
+
+    private static Node scoreBars(ScoreBreakdown b) {
+        VBox rows = new VBox(12);
+        for (ScoreComponent c : b.components()) {
+            Label name = new Label(c.label());
+            name.getStyleClass().add("score-bar-label");
+            name.setMinWidth(120);
+
+            Region fill = new Region();
+            fill.getStyleClass().add("score-bar-fill");
+            StackPane track = new StackPane(fill);
+            track.getStyleClass().add("score-bar-track");
+            track.setAlignment(Pos.CENTER_LEFT);
+            HBox.setHgrow(track, Priority.ALWAYS);
+            double fraction = c.communicated() && c.maxPoints() > 0 ? c.subScore() / c.maxPoints() : 0;
+            fill.maxWidthProperty().bind(track.widthProperty().multiply(fraction));
+
+            Label value = new Label(c.communicated()
+                    ? String.format("%.1f / %.0f", c.subScore(), c.maxPoints())
+                    : "exclu");
+            value.getStyleClass().add("score-bar-value");
+            value.setMinWidth(74);
+            value.setAlignment(Pos.CENTER_RIGHT);
+
+            HBox row = new HBox(12, name, track, value);
+            row.setAlignment(Pos.CENTER_LEFT);
+            rows.getChildren().add(row);
+        }
+
+        Label totalLabel = new Label("Total");
+        totalLabel.getStyleClass().add("score-bar-total");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        Label totalValue = new Label(b.score() + "  ·  " + b.tier().label());
+        totalValue.getStyleClass().add("score-bar-total");
+        HBox total = new HBox(totalLabel, spacer, totalValue);
+        total.getStyleClass().add("score-bar-total-row");
+
+        rows.getChildren().add(total);
+        return rows;
+    }
+
+    /* ---- Cartes et mise en page ---- */
+
+    private static GridPane twoColumns() {
         GridPane g = new GridPane();
-        g.getStyleClass().add("method-table");
-        g.setHgap(28);
-        g.setVgap(6);
-        String[] heads = {"Composant", "Sous-score", "Max"};
-        for (int c = 0; c < heads.length; c++) {
-            Label h = new Label(heads[c]);
-            h.getStyleClass().add("method-head");
-            g.add(h, c, 0);
-        }
-        int r = 1;
-        for (ScoreComponent comp : breakdown.components()) {
-            String value = comp.communicated() ? String.format("%.1f", comp.subScore()) : "exclu";
-            String[] cells = {comp.label(), value, String.format("%.0f", comp.maxPoints())};
-            for (int c = 0; c < cells.length; c++) {
-                Label cell = new Label(cells[c]);
-                cell.getStyleClass().add("method-cell");
-                g.add(cell, c, r);
-            }
-            r++;
-        }
-        Label total = new Label("Total");
-        total.getStyleClass().add("method-head");
-        Label totalVal = new Label(breakdown.score() + "  (" + breakdown.tier().label() + ")");
-        totalVal.getStyleClass().add("method-head");
-        g.add(total, 0, r);
-        g.add(totalVal, 1, r);
+        g.getStyleClass().add("detail-layout");
+        g.setHgap(16);
+        g.setVgap(16);
+        ColumnConstraints half = new ColumnConstraints();
+        half.setPercentWidth(50);
+        half.setHalignment(HPos.LEFT);
+        g.getColumnConstraints().addAll(half, half);
         return g;
     }
 
-    private static ScrollPane scroll(VBox body) {
+    private static VBox card(String title, Node content) {
+        Label t = new Label(title.toUpperCase());
+        t.getStyleClass().add("detail-card-title");
+        VBox box = new VBox(14, t, content);
+        box.getStyleClass().add("detail-card");
+        box.setMaxWidth(Double.MAX_VALUE);
+        box.setMaxHeight(Double.MAX_VALUE);
+        return box;
+    }
+
+    private static ScrollPane scroll(Node body) {
         ScrollPane sp = new ScrollPane(body);
         sp.setFitToWidth(true);
         sp.getStyleClass().add("detail-scroll");
         return sp;
-    }
-
-    private static Label section(String title) {
-        Label l = new Label(title.toUpperCase());
-        l.getStyleClass().add("detail-section");
-        return l;
     }
 
     private static Label paragraph(String text) {
@@ -203,8 +231,20 @@ public final class DetailView extends BorderPane {
         GridPane g = new GridPane();
         g.getStyleClass().add("detail-grid");
         g.setHgap(24);
-        g.setVgap(8);
+        g.setVgap(10);
         return g;
+    }
+
+    private static void addRow(GridPane g, String key, String value) {
+        int r = g.getChildren().size() / 2;   // 2 cellules (clé, valeur) par ligne
+        Label k = new Label(key);
+        k.getStyleClass().add("detail-key");
+        k.setMinWidth(150);
+        Label v = new Label(value);
+        v.getStyleClass().add("detail-value");
+        v.setWrapText(true);
+        g.add(k, 0, r);
+        g.add(v, 1, r);
     }
 
     /** Tableau des millésimes (plus récent en haut), ou message si aucun. */
@@ -215,7 +255,7 @@ public final class DetailView extends BorderPane {
         GridPane g = new GridPane();
         g.getStyleClass().add("method-table");
         g.setHgap(28);
-        g.setVgap(6);
+        g.setVgap(8);
         String[] heads = {"Millésime", "DPI", "TVPI", "IRR", "MOIC"};
         for (int c = 0; c < heads.length; c++) {
             Label h = new Label(heads[c]);
@@ -238,15 +278,5 @@ public final class DetailView extends BorderPane {
             r++;
         }
         return g;
-    }
-
-    private static void addRow(GridPane g, String key, String value) {
-        int r = g.getChildren().size() / 2;   // 2 cellules (clé, valeur) par ligne
-        Label k = new Label(key);
-        k.getStyleClass().add("detail-key");
-        Label v = new Label(value);
-        v.getStyleClass().add("detail-value");
-        g.add(k, 0, r);
-        g.add(v, 1, r);
     }
 }
