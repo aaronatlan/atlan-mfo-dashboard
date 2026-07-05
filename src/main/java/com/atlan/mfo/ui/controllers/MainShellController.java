@@ -212,6 +212,11 @@ public class MainShellController {
         alert.setTitle("Conflit d'édition");
         alert.setHeaderText("Enregistrement refusé");
         alert.setContentText(message + "\n\nLes données à jour vont être rechargées ; réappliquez vos modifications.");
+        // Les dialogues ont leur propre scène : sans cela, le thème ne s'applique pas.
+        var css = getClass().getResource("/css/atlan-dark.css");
+        if (css != null) {
+            alert.getDialogPane().getStylesheets().add(css.toExternalForm());
+        }
         alert.showAndWait();
         reloadAndReturn();
     }

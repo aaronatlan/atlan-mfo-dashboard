@@ -34,7 +34,14 @@ public final class AdminTool {
         String username = args[0];
         char[] password = args[1].toCharArray();
         String fullName = args[2];
-        Role role = args.length >= 4 ? Role.valueOf(args[3].toUpperCase()) : Role.ANALYST;
+        Role role;
+        try {
+            role = args.length >= 4 ? Role.valueOf(args[3].toUpperCase()) : Role.ANALYST;
+        } catch (IllegalArgumentException e) {
+            System.err.println("Rôle inconnu : " + args[3] + " (attendu : ANALYST ou PARTNER)");
+            System.exit(2);
+            return;
+        }
 
         AppConfig config = AppConfig.load();
         Database.init(config);

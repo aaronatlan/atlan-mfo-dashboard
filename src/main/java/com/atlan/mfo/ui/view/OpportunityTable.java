@@ -154,7 +154,7 @@ public final class OpportunityTable extends VBox {
     private TableView<PipelineItem> buildTable(Consumer<PipelineItem> onOpen) {
         TableView<PipelineItem> table = new TableView<>();
         table.getStyleClass().add("opportunity-table");
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         table.setPlaceholder(new Label("Aucune opportunité ne correspond aux filtres"));
 
         TableColumn<PipelineItem, String> nameCol = new TableColumn<>("Nom");
