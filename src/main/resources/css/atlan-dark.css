@@ -278,8 +278,11 @@
     -fx-padding: 4 8 4 8;
 }
 
-.combo-box .arrow,
 .combo-box .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.combo-box .arrow {
     -fx-background-color: -atlan-text-3;
 }
 
@@ -418,6 +421,11 @@
 .tier-strong   { -fx-background-color: -atlan-strong; }
 .tier-moderate { -fx-background-color: -atlan-moderate; }
 .tier-caution  { -fx-background-color: -atlan-caution; }
+
+.tier-name {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 13px;
+}
 
 /* ---- Fiche détail / méthodologie ---- */
 .detail-scroll {

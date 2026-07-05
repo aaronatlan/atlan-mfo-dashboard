@@ -17,7 +17,6 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -177,7 +176,7 @@ public final class OpportunityTable extends VBox {
                 setText(empty ? null : Formatters.score(value));
             }
         });
-        scoreCol.setStyle("-fx-alignment: CENTER-RIGHT;");
+        scoreCol.setStyle("-fx-alignment: CENTER-RIGHT; -fx-font-weight: bold;");
 
         TableColumn<PipelineItem, PipelineItem> tierCol = new TableColumn<>("Tier");
         tierCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
@@ -212,7 +211,6 @@ public final class OpportunityTable extends VBox {
                     onOpen.accept(r.getItem());
                 }
             });
-            Tooltip.install(r, new Tooltip("Double-cliquer pour ouvrir la fiche"));
             return r;
         });
 
@@ -230,6 +228,7 @@ public final class OpportunityTable extends VBox {
         Region dot = new Region();
         dot.getStyleClass().addAll("tier-dot", "tier-" + tier.name().toLowerCase());
         Label label = new Label(tier.label());
+        label.getStyleClass().add("tier-name");   // sinon le texte reste sombre dans les cellules
         box.getChildren().addAll(dot, label);
         return box;
     }
