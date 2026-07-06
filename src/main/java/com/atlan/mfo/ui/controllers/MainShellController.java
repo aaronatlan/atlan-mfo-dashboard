@@ -231,6 +231,8 @@ public class MainShellController {
         ButtonType delete = new ButtonType("Supprimer", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
         ButtonType cancel = new ButtonType("Annuler", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
         alert.getButtonTypes().setAll(cancel, delete);
+        alert.setGraphic(null);                       // retire l'icône « ? » système
+        alert.getDialogPane().setGraphic(null);
         var css = getClass().getResource("/css/atlan-dark.css");
         if (css != null) {
             alert.getDialogPane().getStylesheets().add(css.toExternalForm());
@@ -243,6 +245,8 @@ public class MainShellController {
         alert.setTitle("Conflit d'édition");
         alert.setHeaderText("Enregistrement refusé");
         alert.setContentText(message + "\n\nLes données à jour vont être rechargées ; réappliquez vos modifications.");
+        alert.setGraphic(null);
+        alert.getDialogPane().setGraphic(null);
         // Les dialogues ont leur propre scène : sans cela, le thème ne s'applique pas.
         var css = getClass().getResource("/css/atlan-dark.css");
         if (css != null) {
