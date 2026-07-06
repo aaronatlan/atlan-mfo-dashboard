@@ -395,7 +395,7 @@ Coquille applicative : **menu latéral** fixe à gauche, contenu à droite, barr
 3. **Secondaries** — même liste et même fiche que Buyout/growth/VC (`category = SECONDARIES`).
 4. **Private credit** — même structure fonds, grille de scoring B.
 5. **Co-investissement et direct** — liste + fiche deal (champs opérationnels).
-6. **Scoring methodology** — page de référence en lecture seule affichant les 3 grilles, la formule de normalisation et les tiers. Sert de documentation intégrée.
+6. **Scoring methodology** — page **éditable** : les points (poids) et cibles de chaque grille, ainsi que les paramètres globaux (demi-vie des millésimes, plancher, plafond), sont modifiables et persistés (table `scoring_param`). Enregistrer recalcule tous les scores. Les régions géographiques préférées et les paliers de timeline (en jours) restent fixes. Un bouton rétablit les valeurs par défaut.
 
 ### 6.2 Fiche de saisie / édition — scoring en direct
 

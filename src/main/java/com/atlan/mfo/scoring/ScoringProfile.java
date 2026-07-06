@@ -92,4 +92,77 @@ public final class ScoringProfile {
 
         return new ScoringProfile(80, 95, 4, gridA, gridB, gridC);
     }
+
+    /* ---- Sérialisation clé→valeur (méthodologie éditable, §5) ---- */
+
+    /** Représentation plate des paramètres numériques (points, cibles, global). */
+    public java.util.Map<String, Double> toMap() {
+        var m = new java.util.LinkedHashMap<String, Double>();
+        putFundGrid(m, "gridA", gridA);
+        putFundGrid(m, "gridB", gridB);
+        m.put("gridC.cagr.points", gridC.cagr().points());
+        m.put("gridC.cagr.target", gridC.cagr().target());
+        m.put("gridC.margin.points", gridC.margin().points());
+        m.put("gridC.margin.target", gridC.margin().target());
+        m.put("gridC.fcf.points", gridC.fcf().points());
+        m.put("gridC.fcf.target", gridC.fcf().target());
+        m.put("gridC.irr.points", gridC.irr().points());
+        m.put("gridC.irr.target", gridC.irr().target());
+        m.put("gridC.geo.points", gridC.geo().matchPoints());
+        m.put("gridC.geo.other", gridC.geo().otherPoints());
+        m.put("gridC.timeline.points", gridC.timelinePoints());
+        m.put("global.possibleFloor", possibleFloor);
+        m.put("global.scoreCap", scoreCap);
+        m.put("global.vintageHalfLife", vintageHalfLife);
+        return m;
+    }
+
+    private static void putFundGrid(java.util.Map<String, Double> m, String p, FundGrid g) {
+        m.put(p + ".dpi.points", g.dpi().points());
+        m.put(p + ".dpi.target", g.dpi().target());
+        m.put(p + ".irr.points", g.irr().points());
+        m.put(p + ".irr.target", g.irr().target());
+        m.put(p + ".moic.points", g.moic().points());
+        m.put(p + ".moic.target", g.moic().target());
+        m.put(p + ".geo.points", g.geo().matchPoints());
+        m.put(p + ".geo.other", g.geo().otherPoints());
+        m.put(p + ".timeline.points", g.timelinePoints());
+    }
+
+    /**
+     * Construit un profil depuis des surcharges clé→valeur ; toute clé absente prend
+     * sa valeur par défaut. Les ensembles géographiques et paliers de timeline (en
+     * jours) restent fixes (non éditables).
+     */
+    public static ScoringProfile fromMap(java.util.Map<String, Double> overrides) {
+        var d = defaults().toMap();
+        java.util.function.Function<String, Double> g =
+                k -> overrides.getOrDefault(k, d.get(k));
+        Set<String> fundPref = Set.of("US", "EUROPE", "UK", "DACH");
+        Set<String> dealPref = Set.of("US", "EUROPE", "UK");
+
+        FundGrid a = fundGridFrom(g, "gridA", fundPref);
+        FundGrid b = fundGridFrom(g, "gridB", fundPref);
+        DealGrid c = new DealGrid(
+                new Ratio(g.apply("gridC.cagr.points"), g.apply("gridC.cagr.target")),
+                new Ratio(g.apply("gridC.margin.points"), g.apply("gridC.margin.target")),
+                new Ratio(g.apply("gridC.fcf.points"), g.apply("gridC.fcf.target")),
+                new Ratio(g.apply("gridC.irr.points"), g.apply("gridC.irr.target")),
+                new Geo(g.apply("gridC.geo.points"), g.apply("gridC.geo.other"), dealPref),
+                g.apply("gridC.timeline.points"));
+
+        return new ScoringProfile(
+                g.apply("global.possibleFloor"), g.apply("global.scoreCap"),
+                g.apply("global.vintageHalfLife"), a, b, c);
+    }
+
+    private static FundGrid fundGridFrom(java.util.function.Function<String, Double> g,
+                                         String p, Set<String> pref) {
+        return new FundGrid(
+                new Ratio(g.apply(p + ".dpi.points"), g.apply(p + ".dpi.target")),
+                new Ratio(g.apply(p + ".irr.points"), g.apply(p + ".irr.target")),
+                new Ratio(g.apply(p + ".moic.points"), g.apply(p + ".moic.target")),
+                new Geo(g.apply(p + ".geo.points"), g.apply(p + ".geo.other"), pref),
+                g.apply(p + ".timeline.points"));
+    }
 }

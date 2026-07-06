@@ -127,3 +127,10 @@ CREATE TABLE IF NOT EXISTS direct_deal (
 -- Ajouts additifs idempotents (pour les bases créées avant l'ajout de colonnes)
 ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS commitment NUMERIC;
 ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS commitment NUMERIC;
+
+-- Paramètres de scoring modifiables (méthodologie éditable, §5). Clé → valeur ;
+-- si une clé est absente, le moteur utilise sa valeur par défaut.
+CREATE TABLE IF NOT EXISTS scoring_param (
+    name  TEXT PRIMARY KEY,
+    value NUMERIC NOT NULL
+);

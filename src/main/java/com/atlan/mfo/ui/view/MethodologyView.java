@@ -1,70 +1,217 @@
 package com.atlan.mfo.ui.view;
 
+import com.atlan.mfo.scoring.ScoringProfile;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
-/** Page de référence : grilles de scoring, normalisation et tiers (voir §6.1, §5). */
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.Consumer;
+
+/**
+ * Méthodologie de scoring — <b>éditable</b> (voir §5). Permet d'ajuster les points
+ * (poids) et cibles de chaque grille, plus les paramètres globaux. Enregistrer
+ * recalcule tous les scores. Les régions géographiques préférées et les paliers de
+ * timeline (en jours) restent fixes.
+ */
 public final class MethodologyView extends ScrollPane {
 
-    public MethodologyView() {
+    private static final String GOVERNANCE =
+            "Le score est un support de décision. Le comité d'investissement conserve l'entière "
+                    + "autorité ; une revue humaine est requise à tous les niveaux. Modifier la "
+                    + "méthodologie recalcule les scores de toutes les opportunités.";
+
+    private final Map<String, Double> current;
+    private final Map<String, TextField> fields = new LinkedHashMap<>();
+    private final Consumer<Map<String, Double>> onSave;
+    private final Label errorLabel = new Label();
+
+    public MethodologyView(ScoringProfile profile, Consumer<Map<String, Double>> onSave) {
+        this.current = profile.toMap();
+        this.onSave = onSave;
         getStyleClass().add("detail-scroll");
         setFitToWidth(true);
 
         VBox body = new VBox(18);
         body.getStyleClass().add("detail-body");
 
+        errorLabel.getStyleClass().add("error-label");
+        errorLabel.setManaged(false);
+
         body.getChildren().addAll(
                 title("Méthodologie de scoring"),
- 
-                section("Grille A — Buyout, growth, VC (et Secondaries)"),
-                gridTable(new String[][]{
-                        {"Composant", "Points", "Cible"},
-                        {"DPI", "30", "0,8x"},
-                        {"IRR", "25", "0,30"},
-                        {"MOIC", "20", "2,5x"},
-                        {"Géographie", "15", "US / EU / UK / DACH"},
-                        {"Timeline", "10", "proximité final close"}}),
-
-                section("Grille B — Private credit"),
-                gridTable(new String[][]{
-                        {"Composant", "Points", "Cible"},
-                        {"DPI", "30", "0,7x"},
-                        {"IRR", "25", "0,20"},
-                        {"MOIC", "20", "1,8x"},
-                        {"Géographie", "15", "US / EU / UK / DACH"},
-                        {"Timeline", "10", "proximité final close"}}),
-
-                section("Grille C — Co-investissement et direct"),
-                gridTable(new String[][]{
-                        {"Composant", "Points", "Cible"},
-                        {"Revenue CAGR", "25", "0,40"},
-                        {"EBITDA Margin", "20", "0,35"},
-                        {"FCF Conversion", "10", "0,90"},
-                        {"Expected IRR", "25", "0,30"},
-                        {"Géographie", "10", "US / EU / UK"},
-                        {"Timeline", "10", "proximité deadline"}}),
-
-                section("Tiers"),
-                gridTable(new String[][]{
-                        {"Score", "Tier", "Action"},
-                        {"70 – 95", "Strong", "Vote IC"},
-                        {"40 – 69", "Moderate", "DD approfondie"},
-                        {"0 – 39", "Caution", "Décliner / retravailler"}}));
+                paragraph(GOVERNANCE),
+                fundGridCard("Grille A — Buyout, growth, VC (et Secondaries)", "gridA"),
+                fundGridCard("Grille B — Private credit", "gridB"),
+                dealGridCard(),
+                globalCard(),
+                actions());
 
         setContent(body);
+    }
+
+    /* ---- Cartes de grille ---- */
+
+    private VBox fundGridCard(String heading, String p) {
+        GridPane g = table();
+        int r = header(g);
+        r = ratioRow(g, r, "DPI", p + ".dpi");
+        r = ratioRow(g, r, "IRR", p + ".irr");
+        r = ratioRow(g, r, "MOIC", p + ".moic");
+        r = geoRow(g, r, p + ".geo");
+        timelineRow(g, r, p + ".timeline");
+        return card(heading, g);
+    }
+
+    private VBox dealGridCard() {
+        GridPane g = table();
+        int r = header(g);
+        r = ratioRow(g, r, "Revenue CAGR", "gridC.cagr");
+        r = ratioRow(g, r, "EBITDA Margin", "gridC.margin");
+        r = ratioRow(g, r, "FCF Conversion", "gridC.fcf");
+        r = ratioRow(g, r, "Expected IRR", "gridC.irr");
+        r = geoRow(g, r, "gridC.geo");
+        timelineRow(g, r, "gridC.timeline");
+        return card("Grille C — Co-investissement et direct", g);
+    }
+
+    private VBox globalCard() {
+        GridPane g = new GridPane();
+        g.getStyleClass().add("form-grid");
+        g.setHgap(18);
+        g.setVgap(10);
+        int r = 0;
+        r = globalRow(g, r, "Demi-vie des millésimes (ans)", "global.vintageHalfLife");
+        r = globalRow(g, r, "Plancher du dénominateur", "global.possibleFloor");
+        globalRow(g, r, "Plafond du score", "global.scoreCap");
+        return card("Paramètres globaux", g);
+    }
+
+    /* ---- Lignes ---- */
+
+    private int header(GridPane g) {
+        String[] heads = {"Composant", "Points", "Cible"};
+        for (int c = 0; c < heads.length; c++) {
+            Label h = new Label(heads[c]);
+            h.getStyleClass().add("method-head");
+            g.add(h, c, 0);
+        }
+        return 1;
+    }
+
+    private int ratioRow(GridPane g, int r, String label, String base) {
+        g.add(cell(label), 0, r);
+        g.add(field(base + ".points"), 1, r);
+        g.add(field(base + ".target"), 2, r);
+        return r + 1;
+    }
+
+    private int geoRow(GridPane g, int r, String base) {
+        g.add(cell("Géographie (match · autre)"), 0, r);
+        g.add(field(base + ".points"), 1, r);
+        g.add(field(base + ".other"), 2, r);
+        return r + 1;
+    }
+
+    private int timelineRow(GridPane g, int r, String base) {
+        g.add(cell("Timeline (≤30/60/90 j fixes)"), 0, r);
+        g.add(field(base + ".points"), 1, r);
+        return r + 1;
+    }
+
+    private int globalRow(GridPane g, int r, String label, String key) {
+        Label l = new Label(label);
+        l.getStyleClass().add("detail-key");
+        l.setMinWidth(220);
+        g.add(l, 0, r);
+        g.add(field(key), 1, r);
+        return r + 1;
+    }
+
+    /* ---- Actions ---- */
+
+    private HBox actions() {
+        Button save = new Button("Enregistrer la méthodologie");
+        save.getStyleClass().add("primary-button");
+        save.setOnAction(e -> save());
+
+        Button reset = new Button("Rétablir les valeurs par défaut");
+        reset.getStyleClass().add("ghost-button");
+        reset.setOnAction(e -> {
+            ScoringProfile.defaults().toMap().forEach((k, v) -> {
+                if (fields.containsKey(k)) {
+                    fields.get(k).setText(fmt(v));
+                }
+            });
+        });
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox box = new HBox(12, errorLabel, spacer, reset, save);
+        box.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        box.getStyleClass().add("method-actions");
+        return box;
+    }
+
+    private void save() {
+        hideError();
+        Map<String, Double> out = new LinkedHashMap<>();
+        for (var e : fields.entrySet()) {
+            String txt = e.getValue().getText();
+            try {
+                out.put(e.getKey(), Double.parseDouble(txt.trim().replace(",", ".")));
+            } catch (NumberFormatException ex) {
+                showError("Valeur invalide pour « " + e.getKey() + " » : " + txt);
+                return;
+            }
+        }
+        onSave.accept(out);
+    }
+
+    /* ---- Helpers ---- */
+
+    private TextField field(String key) {
+        TextField t = new TextField(fmt(current.getOrDefault(key, 0d)));
+        t.getStyleClass().add("form-control");
+        t.setMaxWidth(110);
+        t.setPrefWidth(110);
+        fields.put(key, t);
+        return t;
+    }
+
+    private static GridPane table() {
+        GridPane g = new GridPane();
+        g.getStyleClass().add("method-table");
+        g.setHgap(24);
+        g.setVgap(8);
+        return g;
+    }
+
+    private static VBox card(String heading, javafx.scene.Node content) {
+        Label t = new Label(heading.toUpperCase());
+        t.getStyleClass().add("detail-card-title");
+        VBox box = new VBox(14, t, content);
+        box.getStyleClass().add("detail-card");
+        box.setMaxWidth(Double.MAX_VALUE);
+        return box;
+    }
+
+    private static Label cell(String s) {
+        Label l = new Label(s);
+        l.getStyleClass().add("method-cell");
+        return l;
     }
 
     private static Label title(String t) {
         Label l = new Label(t);
         l.getStyleClass().add("detail-title");
-        return l;
-    }
-
-    private static Label section(String t) {
-        Label l = new Label(t.toUpperCase());
-        l.getStyleClass().add("detail-section");
         return l;
     }
 
@@ -75,18 +222,18 @@ public final class MethodologyView extends ScrollPane {
         return l;
     }
 
-    private static GridPane gridTable(String[][] rows) {
-        GridPane g = new GridPane();
-        g.getStyleClass().add("method-table");
-        g.setHgap(28);
-        g.setVgap(6);
-        for (int r = 0; r < rows.length; r++) {
-            for (int c = 0; c < rows[r].length; c++) {
-                Label cell = new Label(rows[r][c]);
-                cell.getStyleClass().add(r == 0 ? "method-head" : "method-cell");
-                g.add(cell, c, r);
-            }
-        }
-        return g;
+    private void showError(String message) {
+        errorLabel.setText(message);
+        errorLabel.setManaged(true);
+        errorLabel.setVisible(true);
+    }
+
+    private void hideError() {
+        errorLabel.setManaged(false);
+        errorLabel.setVisible(false);
+    }
+
+    private static String fmt(double v) {
+        return v == Math.rint(v) ? Long.toString((long) v) : Double.toString(v);
     }
 }

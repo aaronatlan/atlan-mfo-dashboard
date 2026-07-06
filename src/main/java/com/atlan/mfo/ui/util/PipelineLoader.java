@@ -2,6 +2,7 @@ package com.atlan.mfo.ui.util;
 
 import com.atlan.mfo.dao.DirectDealDao;
 import com.atlan.mfo.dao.FundInvestmentDao;
+import com.atlan.mfo.dao.ScoringConfig;
 import com.atlan.mfo.model.PipelineItem;
 import com.atlan.mfo.scoring.ScoringEngine;
 
@@ -16,7 +17,7 @@ public final class PipelineLoader {
     }
 
     public static List<PipelineItem> loadItems() {
-        ScoringEngine engine = new ScoringEngine();
+        ScoringEngine engine = new ScoringConfig().currentEngine();
         LocalDate today = LocalDate.now();
         List<PipelineItem> items = new ArrayList<>();
         new FundInvestmentDao().findAll()

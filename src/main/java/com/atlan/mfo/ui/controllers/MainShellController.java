@@ -10,6 +10,7 @@ import com.atlan.mfo.model.DirectDeal;
 import com.atlan.mfo.model.FundInvestment;
 import com.atlan.mfo.model.PipelineItem;
 import com.atlan.mfo.model.ScoreBreakdown;
+import com.atlan.mfo.dao.ScoringConfig;
 import com.atlan.mfo.model.enums.Category;
 import com.atlan.mfo.model.enums.Role;
 import com.atlan.mfo.scoring.ScoringEngine;
@@ -40,7 +41,8 @@ public class MainShellController {
 
     private final FundInvestmentDao fundDao = new FundInvestmentDao();
     private final DirectDealDao dealDao = new DirectDealDao();
-    private final ScoringEngine engine = new ScoringEngine();
+    private final ScoringConfig scoringConfig = new ScoringConfig();
+    private ScoringEngine engine = scoringConfig.currentEngine();
 
     private List<FundInvestment> funds;
     private List<DirectDeal> deals;
@@ -89,7 +91,26 @@ public class MainShellController {
                 this::dealsSection, false);
 
         addSectionLabel("RÉFÉRENCE");
-        addNav("Méthodologie", MethodologyView::new, false);
+        addNav("Méthodologie",
+                () -> new MethodologyView(scoringConfig.currentProfile(), this::saveMethodology), false);
+    }
+
+    /** Enregistre la méthodologie éditée puis recalcule tous les scores. */
+    private void saveMethodology(java.util.Map<String, Double> params) {
+        scoringConfig.save(params);
+        engine = scoringConfig.currentEngine();   // moteur reconstruit avec les nouveaux poids
+        loadData();                                // scores recalculés
+        Alert done = new Alert(Alert.AlertType.INFORMATION);
+        done.setTitle("Méthodologie");
+        done.setHeaderText("Méthodologie enregistrée");
+        done.setContentText("Les scores de toutes les opportunités ont été recalculés.");
+        done.setGraphic(null);
+        done.getDialogPane().setGraphic(null);
+        var css = getClass().getResource("/css/atlan-dark.css");
+        if (css != null) {
+            done.getDialogPane().getStylesheets().add(css.toExternalForm());
+        }
+        done.showAndWait();
     }
 
     private void addSectionLabel(String text) {
