@@ -2,11 +2,16 @@ package com.atlan.mfo.ui.view;
 
 import com.atlan.mfo.model.PipelineItem;
 import com.atlan.mfo.model.enums.Category;
+import com.atlan.mfo.model.enums.DealStatus;
 import com.atlan.mfo.model.enums.Tier;
 import com.atlan.mfo.ui.util.Formatters;
+import com.atlan.mfo.ui.util.FormControls;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -18,6 +23,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 /**
  * Mode présentation : épuré, lecture seule, pensé pour la projection en comité
@@ -29,15 +35,29 @@ public final class PresentationView extends BorderPane {
             "Le score est un support de décision. Le comité d'investissement conserve l'entière autorité ; "
                     + "une revue humaine est requise à tous les niveaux.";
 
-    public PresentationView(List<PipelineItem> items, Runnable onExitToAnalyst,
-                            Runnable onToggleFullScreen, Runnable onLogout) {
+    private final BiConsumer<PipelineItem, DealStatus> onStatusChange;
+
+    /**
+     * @param onStatusChange appelé quand un statut est changé (analyste) ; {@code null}
+     *                       pour un partner (statuts en lecture seule).
+     */
+    public PresentationView(List<PipelineItem> items, BiConsumer<PipelineItem, DealStatus> onStatusChange,
+                            Runnable onExitToAnalyst, Runnable onToggleFullScreen, Runnable onLogout) {
         getStyleClass().add("presentation-root");
+        this.onStatusChange = onStatusChange;
 
         List<PipelineItem> active = items.stream().filter(PipelineItem::isActive).toList();
 
         setTop(topBar(onExitToAnalyst, onToggleFullScreen, onLogout));
-        setCenter(body(active));
+        setCenter(scroll(body(active, items)));
         setBottom(governance());
+    }
+
+    private static ScrollPane scroll(Node content) {
+        ScrollPane sp = new ScrollPane(content);
+        sp.setFitToWidth(true);
+        sp.getStyleClass().add("pres-scroll");
+        return sp;
     }
 
     /* ---- Barre de contrôle ---- */
@@ -78,7 +98,7 @@ public final class PresentationView extends BorderPane {
 
     /* ---- Corps ---- */
 
-    private VBox body(List<PipelineItem> active) {
+    private VBox body(List<PipelineItem> active, List<PipelineItem> all) {
         double capital = active.stream().map(PipelineItem::commitment)
                 .filter(c -> c != null).mapToDouble(Double::doubleValue).sum();
         var avg = active.stream().map(PipelineItem::score)
@@ -96,7 +116,7 @@ public final class PresentationView extends BorderPane {
                 metric(avg.isPresent() ? Long.toString(Math.round(avg.getAsDouble())) : "—", "SCORE MOYEN"),
                 metric(Long.toString(strong), "TIER STRONG"));
 
-        VBox box = new VBox(28, hero, metrics, allocation(active), priorities(active));
+        VBox box = new VBox(28, hero, metrics, allocation(active), decisions(all));
         box.getStyleClass().add("presentation-body");
         return box;
     }
@@ -156,35 +176,55 @@ public final class PresentationView extends BorderPane {
         return row;
     }
 
-    /* ---- Opportunités prioritaires ---- */
+    /* ---- Opportunités : liste de décision (statut modifiable en comité) ---- */
 
-    private VBox priorities(List<PipelineItem> active) {
-        List<PipelineItem> top = active.stream()
+    private VBox decisions(List<PipelineItem> all) {
+        List<PipelineItem> sorted = all.stream()
                 .filter(i -> i.score() != null)
                 .sorted(Comparator.comparingInt(PipelineItem::score).reversed())
-                .limit(6)
                 .toList();
 
-        Label title = new Label("OPPORTUNITÉS PRIORITAIRES");
+        Label title = new Label(onStatusChange != null
+                ? "OPPORTUNITÉS — DÉCISIONS DE STATUT" : "OPPORTUNITÉS");
         title.getStyleClass().add("pres-section-title");
         VBox rows = new VBox(8);
-        for (PipelineItem i : top) {
-            rows.getChildren().add(priorityRow(i));
+        for (PipelineItem i : sorted) {
+            rows.getChildren().add(decisionRow(i));
         }
         return new VBox(14, title, rows);
     }
 
-    private HBox priorityRow(PipelineItem i) {
+    private HBox decisionRow(PipelineItem i) {
         Label name = new Label(i.name());
         name.getStyleClass().add("pres-priority-name");
+        name.setMinWidth(240);
         Label strat = new Label(i.strategy());
         strat.getStyleClass().add("pres-priority-strategy");
+        strat.setMinWidth(200);
+
+        Node statusNode;
+        if (onStatusChange != null) {
+            ComboBox<DealStatus> combo = FormControls.enumCombo(DealStatus.values(), DealStatus::label, false);
+            combo.setValue(i.status());
+            combo.getStyleClass().add("pres-status-combo");
+            combo.valueProperty().addListener((o, a, b) -> {
+                if (b != null && b != i.status()) {
+                    onStatusChange.accept(i, b);
+                }
+            });
+            statusNode = combo;
+        } else {
+            Label s = new Label(i.status().label());
+            s.getStyleClass().add("pres-priority-strategy");
+            statusNode = s;
+        }
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         Label score = new Label(Formatters.score(i.score()));
         score.getStyleClass().add("pres-priority-score");
 
-        HBox row = new HBox(16, name, strat, spacer, score, OpportunityTable.tierNode(i.tier()));
+        HBox row = new HBox(16, name, strat, spacer, statusNode, score, OpportunityTable.tierNode(i.tier()));
         row.setAlignment(Pos.CENTER_LEFT);
         row.getStyleClass().add("pres-priority-row");
         return row;

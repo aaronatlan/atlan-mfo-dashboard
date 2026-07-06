@@ -3,10 +3,14 @@ package com.atlan.mfo;
 import com.atlan.mfo.auth.AuthService;
 import com.atlan.mfo.auth.Session;
 import com.atlan.mfo.config.AppConfig;
+import com.atlan.mfo.dao.DirectDealDao;
+import com.atlan.mfo.dao.FundInvestmentDao;
 import com.atlan.mfo.dao.UserDao;
 import com.atlan.mfo.db.Database;
 import com.atlan.mfo.db.Migrations;
 import com.atlan.mfo.model.AppUser;
+import com.atlan.mfo.model.PipelineItem;
+import com.atlan.mfo.model.enums.DealStatus;
 import com.atlan.mfo.ui.controllers.ChangePasswordController;
 import com.atlan.mfo.ui.controllers.LoginController;
 import com.atlan.mfo.ui.controllers.MainShellController;
@@ -104,8 +108,19 @@ public class Main extends Application {
             Session.clear();
             showLogin();
         };
+        // L'analyste peut acter les décisions de statut en séance ; le partner reste en lecture seule (§7).
+        java.util.function.BiConsumer<PipelineItem, DealStatus> onStatusChange = user.isAnalyst()
+                ? (item, status) -> {
+            if (item.type() == PipelineItem.Type.FUND) {
+                new FundInvestmentDao().updateStatus(item.id(), status, user.id());
+            } else {
+                new DirectDealDao().updateStatus(item.id(), status, user.id());
+            }
+            showPresentation(user);   // recharge et reflète le nouveau statut
+        }
+                : null;
         PresentationView view = new PresentationView(
-                PipelineLoader.loadItems(), onExitToAnalyst, onFullScreen, onLogout);
+                PipelineLoader.loadItems(), onStatusChange, onExitToAnalyst, onFullScreen, onLogout);
         setScene(view, 1280, 800);
     }
 

@@ -802,6 +802,20 @@
 }
 
 /* Opportunités prioritaires */
+.pres-status-combo {
+    -fx-min-width: 170;
+    -fx-pref-width: 170;
+}
+
+.pres-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.pres-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
 .pres-priority-row {
     -fx-background-color: -atlan-card;
     -fx-background-radius: 6;

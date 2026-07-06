@@ -106,6 +106,24 @@ public final class FundInvestmentDao {
         }
     }
 
+    /** Change uniquement le statut (décision prise en comité, mode présentation §6.3). */
+    public void updateStatus(long id, com.atlan.mfo.model.enums.DealStatus status, long userId) {
+        String sql = """
+                UPDATE fund_investment
+                   SET status = ?::deal_status, version = version + 1, updated_at = now(), updated_by = ?
+                 WHERE id = ?
+                """;
+        try (Connection conn = Database.dataSource().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status.name());
+            ps.setLong(2, userId);
+            ps.setLong(3, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Changement de statut du fonds impossible", e);
+        }
+    }
+
     /** Supprime un fonds (ses millésimes sont supprimés en cascade, voir §4.2). */
     public void delete(long id) {
         try (Connection conn = Database.dataSource().getConnection();
