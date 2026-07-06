@@ -51,23 +51,23 @@ public final class DetailView extends BorderPane {
                 breakdown, onBack, onEdit, onDelete));
 
         GridPane g1 = grid();
-        addRow(g1, "Géographie", Formatters.text(f.geography()));
-        addRow(g1, "Classe d'actifs", Formatters.text(f.assetClass()));
+        addRow(g1, "Geography", Formatters.text(f.geography()));
+        addRow(g1, "Asset class", Formatters.text(f.assetClass()));
         addRow(g1, "Vs. benchmark", f.vsBenchmark() == null ? "—" : f.vsBenchmark().label());
-        addRow(g1, "Capital envisagé", Formatters.money(f.commitment()));
-        addRow(g1, "Prochaines étapes", Formatters.text(f.nextSteps()));
+        addRow(g1, "Planned commitment", Formatters.money(f.commitment()));
+        addRow(g1, "Next steps", Formatters.text(f.nextSteps()));
 
         GridPane g4 = grid();
         addRow(g4, "First close", Formatters.date(f.firstClose()));
         addRow(g4, "Final close", Formatters.date(f.finalClose()));
 
         GridPane layout = twoColumns();
-        layout.add(card("Détail du score", scoreBars(breakdown)), 0, 0);
-        layout.add(card("Général", g1), 1, 0);
-        layout.add(card("Millésimes (track record)", vintageTable(f.vintages())), 0, 1);
+        layout.add(card("Score breakdown", scoreBars(breakdown)), 0, 0);
+        layout.add(card("General", g1), 1, 0);
+        layout.add(card("Vintages (track record)", vintageTable(f.vintages())), 0, 1);
         layout.add(card("Timeline", g4), 1, 1);
         if (f.comments() != null && !f.comments().isBlank()) {
-            Node comments = card("Commentaires", paragraph(f.comments()));
+            Node comments = card("Comments", paragraph(f.comments()));
             layout.add(comments, 0, 2);
             GridPane.setColumnSpan(comments, 2);
         }
@@ -83,43 +83,43 @@ public final class DetailView extends BorderPane {
                 breakdown, onBack, onEdit, onDelete));
 
         GridPane g1 = grid();
-        addRow(g1, "Secteur", Formatters.text(d.industry()));
+        addRow(g1, "Industry", Formatters.text(d.industry()));
         addRow(g1, "GP / sponsor", Formatters.text(d.gp()));
-        addRow(g1, "Géographie", Formatters.text(d.geography()));
-        addRow(g1, "Type d'investissement", Formatters.text(d.invType()));
+        addRow(g1, "Geography", Formatters.text(d.geography()));
+        addRow(g1, "Investment type", Formatters.text(d.invType()));
         addRow(g1, "Vs. benchmark", d.vsBenchmark() == null ? "—" : d.vsBenchmark().label());
-        addRow(g1, "Capital envisagé", Formatters.money(d.commitment()));
-        addRow(g1, "Prochaines étapes", Formatters.text(d.nextSteps()));
+        addRow(g1, "Planned commitment", Formatters.money(d.commitment()));
+        addRow(g1, "Next steps", Formatters.text(d.nextSteps()));
 
         GridPane g2 = grid();
         addRow(g2, "Revenue", Formatters.money(d.revenue()));
         addRow(g2, "Revenue CAGR", Formatters.percent(d.cagrPct()));
         addRow(g2, "EBITDA", Formatters.money(d.ebitda()));
-        addRow(g2, "Croissance EBITDA", Formatters.percent(d.ebitdaGrPct()));
-        addRow(g2, "Marge EBITDA", Formatters.percent(d.ebitdaMgnPct()));
+        addRow(g2, "EBITDA growth", Formatters.percent(d.ebitdaGrPct()));
+        addRow(g2, "EBITDA margin", Formatters.percent(d.ebitdaMgnPct()));
         addRow(g2, "FCF", Formatters.money(d.fcf()));
-        addRow(g2, "Conversion FCF", Formatters.percent(d.fcfConvPct()));
+        addRow(g2, "FCF conversion", Formatters.percent(d.fcfConvPct()));
         addRow(g2, "EV", Formatters.money(d.ev()));
 
         GridPane g3 = grid();
-        addRow(g3, "Multiple d'entrée", Formatters.multiple(d.entryMult()));
-        addRow(g3, "Multiples comparables", Formatters.text(d.peersMult()));
-        addRow(g3, "Valeur de sortie", Formatters.money(d.exitVal()));
-        addRow(g3, "IRR attendu", Formatters.percent(d.expIrrPct()));
-        addRow(g3, "MOIC attendu", Formatters.multiple(d.expMoic()));
+        addRow(g3, "Entry multiple", Formatters.multiple(d.entryMult()));
+        addRow(g3, "Peer multiples", Formatters.text(d.peersMult()));
+        addRow(g3, "Exit value", Formatters.money(d.exitVal()));
+        addRow(g3, "Expected IRR", Formatters.percent(d.expIrrPct()));
+        addRow(g3, "Expected MOIC", Formatters.multiple(d.expMoic()));
 
         GridPane g4 = grid();
         addRow(g4, "Deadline", Formatters.date(d.dealDeadline()));
-        addRow(g4, "Sortie cible", Formatters.date(d.targetExit()));
+        addRow(g4, "Target exit", Formatters.date(d.targetExit()));
 
         GridPane layout = twoColumns();
-        layout.add(card("Détail du score", scoreBars(breakdown)), 0, 0);
-        layout.add(card("Général", g1), 1, 0);
-        layout.add(card("Performance financière", g2), 0, 1);
-        layout.add(card("Retours attendus", g3), 1, 1);
+        layout.add(card("Score breakdown", scoreBars(breakdown)), 0, 0);
+        layout.add(card("General", g1), 1, 0);
+        layout.add(card("Financial performance", g2), 0, 1);
+        layout.add(card("Expected returns", g3), 1, 1);
         layout.add(card("Timeline", g4), 0, 2);
         if (d.comments() != null && !d.comments().isBlank()) {
-            layout.add(card("Commentaires", paragraph(d.comments())), 1, 2);
+            layout.add(card("Comments", paragraph(d.comments())), 1, 2);
         }
 
         v.setCenter(scroll(layout));
@@ -130,7 +130,7 @@ public final class DetailView extends BorderPane {
 
     private HBox header(String name, String subtitle, ScoreBreakdown breakdown,
                         Runnable onBack, Runnable onEdit, Runnable onDelete) {
-        Button back = new Button("← Retour");
+        Button back = new Button("← Back");
         back.getStyleClass().add("ghost-button");
         back.setOnAction(e -> onBack.run());
 
@@ -152,13 +152,13 @@ public final class DetailView extends BorderPane {
         HBox bar = new HBox(16, back, titles, spacer);
         // Boutons d'action optionnels : absents en lecture seule (mode présentation).
         if (onDelete != null) {
-            Button delete = new Button("Supprimer");
+            Button delete = new Button("Delete");
             delete.getStyleClass().add("danger-button");
             delete.setOnAction(e -> onDelete.run());
             bar.getChildren().add(delete);
         }
         if (onEdit != null) {
-            Button edit = new Button("Éditer");
+            Button edit = new Button("Edit");
             edit.getStyleClass().add("primary-button");
             edit.setOnAction(e -> onEdit.run());
             bar.getChildren().add(edit);
@@ -189,7 +189,7 @@ public final class DetailView extends BorderPane {
 
             Label value = new Label(c.communicated()
                     ? String.format("%.1f / %.0f", c.subScore(), c.maxPoints())
-                    : "exclu");
+                    : "excluded");
             value.getStyleClass().add("score-bar-value");
             value.setMinWidth(74);
             value.setAlignment(Pos.CENTER_RIGHT);
@@ -273,13 +273,13 @@ public final class DetailView extends BorderPane {
     /** Tableau des millésimes (plus récent en haut), ou message si aucun. */
     private static Node vintageTable(List<FundVintage> vintages) {
         if (vintages == null || vintages.isEmpty()) {
-            return paragraph("Aucun millésime communiqué.");
+            return paragraph("No vintage reported.");
         }
         GridPane g = new GridPane();
         g.getStyleClass().add("method-table");
         g.setHgap(28);
         g.setVgap(8);
-        String[] heads = {"Millésime", "DPI", "TVPI", "IRR", "MOIC"};
+        String[] heads = {"Vintage", "DPI", "TVPI", "IRR", "MOIC"};
         for (int c = 0; c < heads.length; c++) {
             Label h = new Label(heads[c]);
             h.getStyleClass().add("method-head");

@@ -22,7 +22,7 @@ public final class ScoreBreakdownView extends VBox {
     public void update(ScoreBreakdown b) {
         getChildren().clear();
 
-        Label caption = new Label("SCORE EN DIRECT");
+        Label caption = new Label("LIVE SCORE");
         caption.getStyleClass().add("score-panel-caption");
 
         Label value = new Label(Integer.toString(b.score()));
@@ -38,7 +38,7 @@ public final class ScoreBreakdownView extends VBox {
         for (ScoreComponent c : b.components()) {
             Label label = new Label(c.label());
             label.getStyleClass().add("method-cell");
-            Label sub = new Label(c.communicated() ? String.format("%.1f", c.subScore()) : "exclu");
+            Label sub = new Label(c.communicated() ? String.format("%.1f", c.subScore()) : "excluded");
             sub.getStyleClass().add("method-cell");
             GridPane.setHalignment(sub, javafx.geometry.HPos.RIGHT);
             grid.add(label, 0, r);

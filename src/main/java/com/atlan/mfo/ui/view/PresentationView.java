@@ -34,8 +34,8 @@ import java.util.function.Function;
 public final class PresentationView extends BorderPane {
 
     private static final String GOVERNANCE =
-            "Le score est un support de décision. Le comité d'investissement conserve l'entière autorité ; "
-                    + "une revue humaine est requise à tous les niveaux.";
+            "The score is a decision-support tool. The investment committee retains full authority; "
+                    + "a human review is required at every stage.";
 
     private final BiConsumer<PipelineItem, DealStatus> onStatusChange;
     private final Consumer<PipelineItem> onOpen;
@@ -74,7 +74,7 @@ public final class PresentationView extends BorderPane {
     private HBox topBar(Runnable onExitToAnalyst, Runnable onToggleFullScreen, Runnable onLogout) {
         Label brand = new Label("ATLAN");
         brand.getStyleClass().add("pres-brand");
-        Label sub = new Label("COMITÉ D'INVESTISSEMENT");
+        Label sub = new Label("INVESTMENT COMMITTEE");
         sub.getStyleClass().add("pres-brand-sub");
         HBox left = new HBox(10, brand, sub);
         left.setAlignment(Pos.CENTER_LEFT);
@@ -84,17 +84,17 @@ public final class PresentationView extends BorderPane {
 
         HBox controls = new HBox(8);
         controls.setAlignment(Pos.CENTER_RIGHT);
-        Button fullscreen = new Button("Plein écran");
+        Button fullscreen = new Button("Full screen");
         fullscreen.getStyleClass().add("ghost-button");
         fullscreen.setOnAction(e -> onToggleFullScreen.run());
         controls.getChildren().add(fullscreen);
         if (onExitToAnalyst != null) {
-            Button analyst = new Button("Vue analyste");
+            Button analyst = new Button("Analyst view");
             analyst.getStyleClass().add("ghost-button");
             analyst.setOnAction(e -> onExitToAnalyst.run());
             controls.getChildren().add(analyst);
         }
-        Button logout = new Button("Déconnexion");
+        Button logout = new Button("Log out");
         logout.getStyleClass().add("ghost-button");
         logout.setOnAction(e -> onLogout.run());
         controls.getChildren().add(logout);
@@ -114,16 +114,16 @@ public final class PresentationView extends BorderPane {
                 .filter(s -> s != null).mapToInt(Integer::intValue).average();
         long strong = active.stream().filter(i -> i.tier() == Tier.STRONG).count();
 
-        Label heroLabel = new Label("CAPITAL EN REVUE");
+        Label heroLabel = new Label("CAPITAL UNDER REVIEW");
         heroLabel.getStyleClass().add("pres-hero-label");
         Label heroValue = new Label(Formatters.money(capital));
         heroValue.getStyleClass().add("pres-hero-value");
         VBox hero = new VBox(2, heroLabel, heroValue);
 
         HBox metrics = new HBox(40,
-                metric(Long.toString(active.size()), "OPPORTUNITÉS ACTIVES"),
-                metric(avg.isPresent() ? Long.toString(Math.round(avg.getAsDouble())) : "—", "SCORE MOYEN"),
-                metric(Long.toString(strong), "TIER STRONG"));
+                metric(Long.toString(active.size()), "ACTIVE OPPORTUNITIES"),
+                metric(avg.isPresent() ? Long.toString(Math.round(avg.getAsDouble())) : "—", "AVERAGE SCORE"),
+                metric(Long.toString(strong), "STRONG TIER"));
 
         VBox box = new VBox(28, hero, metrics, allocation(active), decisions(all));
         box.getStyleClass().add("presentation-body");
@@ -153,7 +153,7 @@ public final class PresentationView extends BorderPane {
         }
         double max = byStrategy.values().stream().mapToDouble(Double::doubleValue).max().orElse(0d);
 
-        Label title = new Label("ALLOCATION PAR STRATÉGIE");
+        Label title = new Label("ALLOCATION BY STRATEGY");
         title.getStyleClass().add("pres-section-title");
         VBox rows = new VBox(10);
         byStrategy.forEach((name, value) -> rows.getChildren().add(bar(name, value, max)));
@@ -194,7 +194,7 @@ public final class PresentationView extends BorderPane {
                 .toList();
 
         Label title = new Label(onStatusChange != null
-                ? "OPPORTUNITÉS — DÉCISIONS DE STATUT" : "OPPORTUNITÉS");
+                ? "OPPORTUNITIES — STATUS DECISIONS" : "OPPORTUNITIES");
         title.getStyleClass().add("pres-section-title");
         VBox rows = new VBox(8);
         for (PipelineItem i : sorted) {

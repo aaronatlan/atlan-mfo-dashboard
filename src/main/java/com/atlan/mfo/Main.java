@@ -158,17 +158,17 @@ public class Main extends Application {
                     .max(java.util.Comparator.comparingInt(com.atlan.mfo.model.FundVintage::vintageYear))
                     .orElse(null);
             if (newest == null) {
-                return "Aucun millésime communiqué";
+                return "No vintage reported";
             }
-            return "Millésime " + newest.vintageYear()
+            return "Vintage " + newest.vintageYear()
                     + "  ·  DPI " + Formatters.multiple(newest.dpi())
                     + "  ·  IRR " + Formatters.percent(newest.irr())
                     + "  ·  MOIC " + Formatters.multiple(newest.moic());
         }
         DirectDeal d = dealById.get(item.id());
         return "CAGR " + Formatters.percent(d.cagrPct())
-                + "  ·  IRR att. " + Formatters.percent(d.expIrrPct())
-                + "  ·  MOIC att. " + Formatters.multiple(d.expMoic());
+                + "  ·  Exp. IRR " + Formatters.percent(d.expIrrPct())
+                + "  ·  Exp. MOIC " + Formatters.multiple(d.expMoic());
     }
 
     /** Ouvre la fiche complète (lecture seule) d'une opportunité dans une fenêtre modale. */

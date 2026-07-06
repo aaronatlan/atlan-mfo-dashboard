@@ -42,9 +42,9 @@ public final class FundFormView extends BorderPane {
     private final ComboBox<BenchmarkStatus> benchCombo =
             FormControls.enumCombo(BenchmarkStatus.values(), BenchmarkStatus::label, true);
     private final ComboBox<String> geoCombo = FormControls.geographyCombo();
-    private final TextField nameField = FormControls.field("nom du fonds");
-    private final TextField assetClassField = FormControls.field("classe d'actifs");
-    private final TextField commitmentField = FormControls.field("ex. 25m ou 25000000");
+    private final TextField nameField = FormControls.field("fund name");
+    private final TextField assetClassField = FormControls.field("asset class");
+    private final TextField commitmentField = FormControls.field("e.g. 25m or 25000000");
     private final DatePicker firstClosePicker = new DatePicker();
     private final DatePicker finalClosePicker = new DatePicker();
     private final TextArea nextStepsArea = new TextArea();
@@ -62,7 +62,7 @@ public final class FundFormView extends BorderPane {
         this.onSave = onSave;
         getStyleClass().add("form-view");
 
-        setTop(header(existing == null ? "Nouveau fonds" : "Éditer — " + existing.name(), onCancel));
+        setTop(header(existing == null ? "New fund" : "Edit — " + existing.name(), onCancel));
         setCenter(buildBody());
         populate(defaultCategory);
         wireLiveScoring();
@@ -76,10 +76,10 @@ public final class FundFormView extends BorderPane {
         t.getStyleClass().add("view-title");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        Button cancel = new Button("Annuler");
+        Button cancel = new Button("Cancel");
         cancel.getStyleClass().add("ghost-button");
         cancel.setOnAction(e -> onCancel.run());
-        Button save = new Button("Enregistrer");
+        Button save = new Button("Save");
         save.getStyleClass().add("primary-button");
         save.setOnAction(e -> save());
         HBox bar = new HBox(12, t, spacer, cancel, save);
@@ -94,36 +94,36 @@ public final class FundFormView extends BorderPane {
         g.setHgap(16);
         g.setVgap(10);
         int r = 0;
-        r = row(g, r, "Catégorie", categoryCombo);
-        r = row(g, r, "Nom", nameField);
-        r = row(g, r, "Statut", statusCombo);
+        r = row(g, r, "Category", categoryCombo);
+        r = row(g, r, "Name", nameField);
+        r = row(g, r, "Status", statusCombo);
         r = row(g, r, "Vs. benchmark", benchCombo);
-        r = row(g, r, "Géographie", geoCombo);
-        r = row(g, r, "Classe d'actifs", assetClassField);
-        r = row(g, r, "Capital envisagé", commitmentField);
+        r = row(g, r, "Geography", geoCombo);
+        r = row(g, r, "Asset class", assetClassField);
+        r = row(g, r, "Planned commitment", commitmentField);
         r = row(g, r, "First close", firstClosePicker);
         r = row(g, r, "Final close", finalClosePicker);
 
-        Label vintTitle = new Label("MILLÉSIMES");
+        Label vintTitle = new Label("VINTAGES");
         vintTitle.getStyleClass().add("form-section");
-        Button addVintage = new Button("+ Ajouter un millésime");
+        Button addVintage = new Button("+ Add a vintage");
         addVintage.getStyleClass().add("ghost-button");
         addVintage.setOnAction(e -> {
             addVintageRow(null);
             recompute();
         });
 
-        nextStepsArea.setPromptText("prochaines étapes");
+        nextStepsArea.setPromptText("next steps");
         nextStepsArea.setPrefRowCount(2);
-        commentsArea.setPromptText("commentaires");
+        commentsArea.setPromptText("comments");
         commentsArea.setPrefRowCount(3);
 
         errorLabel.getStyleClass().add("error-label");
         errorLabel.setManaged(false);
 
         VBox form = new VBox(14, g, vintTitle, vintageHeader(), vintageBox, addVintage,
-                labeled("Prochaines étapes", nextStepsArea),
-                labeled("Commentaires", commentsArea),
+                labeled("Next steps", nextStepsArea),
+                labeled("Comments", commentsArea),
                 errorLabel);
         form.getStyleClass().add("form-body");
         ScrollPane scroll = new ScrollPane(form);
@@ -139,7 +139,7 @@ public final class FundFormView extends BorderPane {
     private HBox vintageHeader() {
         HBox h = new HBox(8);
         h.getStyleClass().add("vintage-head");
-        for (String s : new String[]{"Année", "DPI", "TVPI", "IRR", "MOIC", ""}) {
+        for (String s : new String[]{"Year", "DPI", "TVPI", "IRR", "MOIC", ""}) {
             Label l = new Label(s);
             l.getStyleClass().add("form-section");
             l.setMinWidth(70);
@@ -175,7 +175,7 @@ public final class FundFormView extends BorderPane {
     }
 
     private final class VintageRow {
-        final TextField year = small("aaaa");
+        final TextField year = small("yyyy");
         final TextField dpi = small("DPI");
         final TextField tvpi = small("TVPI");
         final TextField irr = small("IRR");
@@ -282,7 +282,7 @@ public final class FundFormView extends BorderPane {
 
     private void save() {
         if (tn(nameField.getText()) == null) {
-            showError("Le nom est obligatoire.");
+            showError("Name is required.");
             return;
         }
         FundInvestment f = currentFund();

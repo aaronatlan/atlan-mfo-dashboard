@@ -24,9 +24,9 @@ import java.util.function.Consumer;
 public final class MethodologyView extends ScrollPane {
 
     private static final String GOVERNANCE =
-            "Le score est un support de décision. Le comité d'investissement conserve l'entière "
-                    + "autorité ; une revue humaine est requise à tous les niveaux. Modifier la "
-                    + "méthodologie recalcule les scores de toutes les opportunités.";
+            "The score is a decision-support tool. The investment committee retains full "
+                    + "authority; a human review is required at every stage. Editing the "
+                    + "methodology recalculates the scores of all opportunities.";
 
     private final Map<String, Double> current;
     private final Map<String, TextField> fields = new LinkedHashMap<>();
@@ -46,10 +46,10 @@ public final class MethodologyView extends ScrollPane {
         errorLabel.setManaged(false);
 
         body.getChildren().addAll(
-                title("Méthodologie de scoring"),
+                title("Scoring methodology"),
                 paragraph(GOVERNANCE),
-                fundGridCard("Grille A — Buyout, growth, VC (et Secondaries)", "gridA"),
-                fundGridCard("Grille B — Private credit", "gridB"),
+                fundGridCard("Grid A — Buyout, growth, VC (and Secondaries)", "gridA"),
+                fundGridCard("Grid B — Private credit", "gridB"),
                 dealGridCard(),
                 globalCard(),
                 actions());
@@ -79,7 +79,7 @@ public final class MethodologyView extends ScrollPane {
         r = ratioRow(g, r, "Expected IRR", "gridC.irr");
         r = geoRow(g, r, "gridC.geo");
         timelineRow(g, r, "gridC.timeline");
-        return card("Grille C — Co-investissement et direct", g);
+        return card("Grid C — Co-investment and direct", g);
     }
 
     private VBox globalCard() {
@@ -88,16 +88,16 @@ public final class MethodologyView extends ScrollPane {
         g.setHgap(18);
         g.setVgap(10);
         int r = 0;
-        r = globalRow(g, r, "Demi-vie des millésimes (ans)", "global.vintageHalfLife");
-        r = globalRow(g, r, "Plancher du dénominateur", "global.possibleFloor");
-        globalRow(g, r, "Plafond du score", "global.scoreCap");
-        return card("Paramètres globaux", g);
+        r = globalRow(g, r, "Vintage half-life (years)", "global.vintageHalfLife");
+        r = globalRow(g, r, "Denominator floor", "global.possibleFloor");
+        globalRow(g, r, "Score cap", "global.scoreCap");
+        return card("Global parameters", g);
     }
 
     /* ---- Lignes ---- */
 
     private int header(GridPane g) {
-        String[] heads = {"Composant", "Points", "Cible"};
+        String[] heads = {"Component", "Points", "Target"};
         for (int c = 0; c < heads.length; c++) {
             Label h = new Label(heads[c]);
             h.getStyleClass().add("method-head");
@@ -114,14 +114,14 @@ public final class MethodologyView extends ScrollPane {
     }
 
     private int geoRow(GridPane g, int r, String base) {
-        g.add(cell("Géographie (match · autre)"), 0, r);
+        g.add(cell("Geography (match · other)"), 0, r);
         g.add(field(base + ".points"), 1, r);
         g.add(field(base + ".other"), 2, r);
         return r + 1;
     }
 
     private int timelineRow(GridPane g, int r, String base) {
-        g.add(cell("Timeline (≤30/60/90 j fixes)"), 0, r);
+        g.add(cell("Timeline (fixed ≤30/60/90 days)"), 0, r);
         g.add(field(base + ".points"), 1, r);
         return r + 1;
     }
@@ -138,11 +138,11 @@ public final class MethodologyView extends ScrollPane {
     /* ---- Actions ---- */
 
     private HBox actions() {
-        Button save = new Button("Enregistrer la méthodologie");
+        Button save = new Button("Save methodology");
         save.getStyleClass().add("primary-button");
         save.setOnAction(e -> save());
 
-        Button reset = new Button("Rétablir les valeurs par défaut");
+        Button reset = new Button("Restore default values");
         reset.getStyleClass().add("ghost-button");
         reset.setOnAction(e -> {
             ScoringProfile.defaults().toMap().forEach((k, v) -> {
@@ -168,7 +168,7 @@ public final class MethodologyView extends ScrollPane {
             try {
                 out.put(e.getKey(), Double.parseDouble(txt.trim().replace(",", ".")));
             } catch (NumberFormatException ex) {
-                showError("Valeur invalide pour « " + e.getKey() + " » : " + txt);
+                showError("Invalid value for \"" + e.getKey() + "\": " + txt);
                 return;
             }
         }

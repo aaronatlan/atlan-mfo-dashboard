@@ -38,24 +38,24 @@ public final class DealFormView extends BorderPane {
             FormControls.enumCombo(BenchmarkStatus.values(), BenchmarkStatus::label, true);
     private final ComboBox<String> geoCombo = FormControls.geographyCombo();
 
-    private final TextField nameField = FormControls.field("nom du deal");
-    private final TextField industryField = FormControls.field("secteur");
+    private final TextField nameField = FormControls.field("deal name");
+    private final TextField industryField = FormControls.field("industry");
     private final TextField gpField = FormControls.field("GP / sponsor");
-    private final TextField invTypeField = FormControls.field("type d'investissement");
-    private final TextField commitmentField = FormControls.field("ex. 40m");
+    private final TextField invTypeField = FormControls.field("investment type");
+    private final TextField commitmentField = FormControls.field("e.g. 40m");
     private final TextField revenueField = FormControls.field("revenue");
-    private final TextField cagrField = FormControls.field("ex. 47% ou 0.47");
+    private final TextField cagrField = FormControls.field("e.g. 47% or 0.47");
     private final TextField ebitdaField = FormControls.field("EBITDA");
-    private final TextField ebitdaGrField = FormControls.field("croissance EBITDA");
-    private final TextField ebitdaMgnField = FormControls.field("ex. 25% ou 0.25");
+    private final TextField ebitdaGrField = FormControls.field("EBITDA growth");
+    private final TextField ebitdaMgnField = FormControls.field("e.g. 25% or 0.25");
     private final TextField fcfField = FormControls.field("FCF");
-    private final TextField fcfConvField = FormControls.field("ex. 70% ou 0.70");
+    private final TextField fcfConvField = FormControls.field("e.g. 70% or 0.70");
     private final TextField evField = FormControls.field("EV");
-    private final TextField entryMultField = FormControls.field("multiple d'entrée");
-    private final TextField peersMultField = FormControls.field("ex. 20-40x (informatif)");
-    private final TextField exitValField = FormControls.field("valeur de sortie");
-    private final TextField expIrrField = FormControls.field("ex. 32% ou 0.32");
-    private final TextField expMoicField = FormControls.field("MOIC attendu");
+    private final TextField entryMultField = FormControls.field("entry multiple");
+    private final TextField peersMultField = FormControls.field("e.g. 20-40x (informational)");
+    private final TextField exitValField = FormControls.field("exit value");
+    private final TextField expIrrField = FormControls.field("e.g. 32% or 0.32");
+    private final TextField expMoicField = FormControls.field("expected MOIC");
     private final DatePicker deadlinePicker = new DatePicker();
     private final DatePicker targetExitPicker = new DatePicker();
     private final TextArea nextStepsArea = new TextArea();
@@ -71,7 +71,7 @@ public final class DealFormView extends BorderPane {
         this.onSave = onSave;
         getStyleClass().add("form-view");
 
-        setTop(header(existing == null ? "Nouveau deal" : "Éditer — " + existing.name(), onCancel));
+        setTop(header(existing == null ? "New deal" : "Edit — " + existing.name(), onCancel));
         setCenter(buildBody());
         populate();
         wireLiveScoring();
@@ -83,10 +83,10 @@ public final class DealFormView extends BorderPane {
         t.getStyleClass().add("view-title");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        Button cancel = new Button("Annuler");
+        Button cancel = new Button("Cancel");
         cancel.getStyleClass().add("ghost-button");
         cancel.setOnAction(e -> onCancel.run());
-        Button save = new Button("Enregistrer");
+        Button save = new Button("Save");
         save.getStyleClass().add("primary-button");
         save.setOnAction(e -> save());
         HBox bar = new HBox(12, t, spacer, cancel, save);
@@ -101,43 +101,43 @@ public final class DealFormView extends BorderPane {
         g.setHgap(16);
         g.setVgap(10);
         int r = 0;
-        r = row(g, r, "Nom", nameField);
-        r = row(g, r, "Statut", statusCombo);
+        r = row(g, r, "Name", nameField);
+        r = row(g, r, "Status", statusCombo);
         r = row(g, r, "Vs. benchmark", benchCombo);
-        r = row(g, r, "Secteur", industryField);
+        r = row(g, r, "Industry", industryField);
         r = row(g, r, "GP / sponsor", gpField);
-        r = row(g, r, "Géographie", geoCombo);
-        r = row(g, r, "Type d'investissement", invTypeField);
-        r = row(g, r, "Capital envisagé", commitmentField);
-        r = section(g, r, "PERFORMANCE FINANCIÈRE");
+        r = row(g, r, "Geography", geoCombo);
+        r = row(g, r, "Investment type", invTypeField);
+        r = row(g, r, "Planned commitment", commitmentField);
+        r = section(g, r, "FINANCIAL PERFORMANCE");
         r = row(g, r, "Revenue", revenueField);
         r = row(g, r, "Revenue CAGR", cagrField);
         r = row(g, r, "EBITDA", ebitdaField);
-        r = row(g, r, "Croissance EBITDA", ebitdaGrField);
-        r = row(g, r, "Marge EBITDA", ebitdaMgnField);
+        r = row(g, r, "EBITDA growth", ebitdaGrField);
+        r = row(g, r, "EBITDA margin", ebitdaMgnField);
         r = row(g, r, "FCF", fcfField);
-        r = row(g, r, "Conversion FCF", fcfConvField);
+        r = row(g, r, "FCF conversion", fcfConvField);
         r = row(g, r, "EV", evField);
-        r = section(g, r, "RETOURS ATTENDUS");
-        r = row(g, r, "Multiple d'entrée", entryMultField);
-        r = row(g, r, "Multiples comparables", peersMultField);
-        r = row(g, r, "Valeur de sortie", exitValField);
-        r = row(g, r, "IRR attendu", expIrrField);
-        r = row(g, r, "MOIC attendu", expMoicField);
+        r = section(g, r, "EXPECTED RETURNS");
+        r = row(g, r, "Entry multiple", entryMultField);
+        r = row(g, r, "Peer multiples", peersMultField);
+        r = row(g, r, "Exit value", exitValField);
+        r = row(g, r, "Expected IRR", expIrrField);
+        r = row(g, r, "Expected MOIC", expMoicField);
         r = section(g, r, "TIMELINE");
         r = row(g, r, "Deadline", deadlinePicker);
-        r = row(g, r, "Sortie cible", targetExitPicker);
+        r = row(g, r, "Target exit", targetExitPicker);
 
-        nextStepsArea.setPromptText("prochaines étapes");
+        nextStepsArea.setPromptText("next steps");
         nextStepsArea.setPrefRowCount(2);
-        commentsArea.setPromptText("commentaires");
+        commentsArea.setPromptText("comments");
         commentsArea.setPrefRowCount(3);
         errorLabel.getStyleClass().add("error-label");
         errorLabel.setManaged(false);
 
         VBox form = new VBox(14, g,
-                labeled("Prochaines étapes", nextStepsArea),
-                labeled("Commentaires", commentsArea),
+                labeled("Next steps", nextStepsArea),
+                labeled("Comments", commentsArea),
                 errorLabel);
         form.getStyleClass().add("form-body");
         ScrollPane scroll = new ScrollPane(form);
@@ -255,7 +255,7 @@ public final class DealFormView extends BorderPane {
 
     private void save() {
         if (tn(nameField.getText()) == null) {
-            showError("Le nom est obligatoire.");
+            showError("Name is required.");
             return;
         }
         DirectDeal d = currentDeal();
