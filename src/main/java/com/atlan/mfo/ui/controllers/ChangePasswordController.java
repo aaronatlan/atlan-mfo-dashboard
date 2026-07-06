@@ -42,11 +42,11 @@ public class ChangePasswordController {
         String confirm = confirmPasswordField.getText();
 
         if (pwd == null || pwd.length() < MIN_LENGTH) {
-            showError("Le mot de passe doit contenir au moins " + MIN_LENGTH + " caractères.");
+            showError("Password must be at least " + MIN_LENGTH + " characters long.");
             return;
         }
         if (!pwd.equals(confirm)) {
-            showError("Les deux mots de passe ne correspondent pas.");
+            showError("The two passwords do not match.");
             return;
         }
 

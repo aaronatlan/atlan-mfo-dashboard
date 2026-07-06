@@ -35,10 +35,10 @@ public final class KpiBar extends HBox {
                 .count();
 
         getChildren().addAll(
-                card(Long.toString(activeCount), "DEALS ACTIFS"),
-                card(Formatters.money(capital), "CAPITAL EN REVUE"),
-                card(avg.isPresent() ? Long.toString(Math.round(avg.getAsDouble())) : "—", "SCORE MOYEN"),
-                card(Long.toString(strongCount), "TIER STRONG"));
+                card(Long.toString(activeCount), "ACTIVE DEALS"),
+                card(Formatters.money(capital), "CAPITAL UNDER REVIEW"),
+                card(avg.isPresent() ? Long.toString(Math.round(avg.getAsDouble())) : "—", "AVERAGE SCORE"),
+                card(Long.toString(strongCount), "STRONG TIER"));
     }
 
     private VBox card(String value, String label) {

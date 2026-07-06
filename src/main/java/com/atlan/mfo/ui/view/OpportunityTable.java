@@ -28,9 +28,9 @@ import java.util.function.Consumer;
 /** Tableau d'opportunités : filtres (stratégie, statut, tier, actifs), recherche et tri (voir §6.1). */
 public final class OpportunityTable extends VBox {
 
-    private static final String ALL_STRATEGIES = "Toutes les stratégies";
-    private static final String ALL_STATUSES = "Tous les statuts";
-    private static final String ALL_TIERS = "Tous les tiers";
+    private static final String ALL_STRATEGIES = "All strategies";
+    private static final String ALL_STATUSES = "All statuses";
+    private static final String ALL_TIERS = "All tiers";
 
     private final int total;
     private final boolean showStrategyFilter;
@@ -39,10 +39,10 @@ public final class OpportunityTable extends VBox {
     private final ComboBox<String> strategyFilter = new ComboBox<>();
     private final ComboBox<String> statusFilter = new ComboBox<>();
     private final ComboBox<String> tierFilter = new ComboBox<>();
-    private final CheckBox activeOnly = new CheckBox("Actifs uniquement");
+    private final CheckBox activeOnly = new CheckBox("Active only");
     private final TextField search = new TextField();
     private final Label countLabel = new Label();
-    private final Label reset = new Label("Réinitialiser");
+    private final Label reset = new Label("Reset");
 
     public OpportunityTable(List<PipelineItem> items, Consumer<PipelineItem> onOpen, boolean showStrategyFilter) {
         getStyleClass().add("table-block");
@@ -65,7 +65,7 @@ public final class OpportunityTable extends VBox {
         row.getStyleClass().add("filter-row");
         row.setAlignment(Pos.CENTER_LEFT);
 
-        search.setPromptText("Rechercher…");
+        search.setPromptText("Search…");
         search.getStyleClass().add("search-field");
         HBox.setHgrow(search, Priority.ALWAYS);
         search.setMaxWidth(Double.MAX_VALUE);
@@ -146,7 +146,7 @@ public final class OpportunityTable extends VBox {
 
     private void updateCount() {
         int shown = filtered.size();
-        countLabel.setText(shown == total ? total + " opportunités" : shown + " / " + total);
+        countLabel.setText(shown == total ? total + " opportunities" : shown + " / " + total);
     }
 
     private void resetFilters() {
@@ -161,18 +161,18 @@ public final class OpportunityTable extends VBox {
         TableView<PipelineItem> table = new TableView<>();
         table.getStyleClass().add("opportunity-table");
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        table.setPlaceholder(new Label("Aucune opportunité ne correspond aux filtres"));
+        table.setPlaceholder(new Label("No opportunity matches the filters"));
 
-        TableColumn<PipelineItem, String> nameCol = new TableColumn<>("Nom");
+        TableColumn<PipelineItem, String> nameCol = new TableColumn<>("Name");
         nameCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().name()));
         nameCol.setMaxWidth(3000);
         nameCol.getStyleClass().add("col-primary");     // nom en avant (blanc, semi-gras)
 
-        TableColumn<PipelineItem, String> stratCol = new TableColumn<>("Stratégie");
+        TableColumn<PipelineItem, String> stratCol = new TableColumn<>("Strategy");
         stratCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().strategy()));
         stratCol.getStyleClass().add("col-secondary");  // texte en retrait
 
-        TableColumn<PipelineItem, String> statusCol = new TableColumn<>("Statut");
+        TableColumn<PipelineItem, String> statusCol = new TableColumn<>("Status");
         statusCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().status().label()));
         statusCol.getStyleClass().add("col-secondary");
 

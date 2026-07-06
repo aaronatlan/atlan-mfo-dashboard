@@ -23,7 +23,7 @@ public final class SectionView extends VBox {
         header.getStyleClass().add("view-title");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        Button add = new Button("+ Nouveau");
+        Button add = new Button("+ New");
         add.getStyleClass().add("primary-button");
         add.setOnAction(e -> onNew.run());
         HBox bar = new HBox(12, header, spacer, add);

@@ -39,7 +39,7 @@ public class LoginController {
         try {
             Optional<AppUser> user = authService.login(username, password);
             if (user.isEmpty()) {
-                showError("Identifiant ou mot de passe incorrect.");
+                showError("Incorrect username or password.");
                 passwordField.clear();
                 return;
             }

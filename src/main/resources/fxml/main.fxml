@@ -18,8 +18,8 @@
             <Label styleClass="topbar-brand-sub" text="MFO DASHBOARD" />
             <Region HBox.hgrow="ALWAYS" />
             <Label fx:id="userLabel" styleClass="topbar-user" />
-            <Button text="Mode présentation" onAction="#onPresentation" styleClass="ghost-button" />
-            <Button text="Déconnexion" onAction="#onLogout" styleClass="ghost-button" />
+            <Button text="Presentation mode" onAction="#onPresentation" styleClass="ghost-button" />
+            <Button text="Log out" onAction="#onLogout" styleClass="ghost-button" />
         </HBox>
     </top>
 

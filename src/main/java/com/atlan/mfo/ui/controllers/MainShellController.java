@@ -90,20 +90,20 @@ public class MainShellController {
         addNav(PipelineItem.DEALS_STRATEGY,
                 this::dealsSection, false);
 
-        addSectionLabel("RÉFÉRENCE");
-        addNav("Méthodologie",
+        addSectionLabel("REFERENCE");
+        addNav("Methodology",
                 () -> new MethodologyView(scoringConfig.currentProfile(), this::saveMethodology), false);
     }
 
-    /** Enregistre la méthodologie éditée puis recalcule tous les scores. */
+    /** Saves the edited methodology then recalculates all scores. */
     private void saveMethodology(java.util.Map<String, Double> params) {
         scoringConfig.save(params);
         engine = scoringConfig.currentEngine();   // moteur reconstruit avec les nouveaux poids
         loadData();                                // scores recalculés
         Alert done = new Alert(Alert.AlertType.INFORMATION);
-        done.setTitle("Méthodologie");
-        done.setHeaderText("Méthodologie enregistrée");
-        done.setContentText("Les scores de toutes les opportunités ont été recalculés.");
+        done.setTitle("Methodology");
+        done.setHeaderText("Methodology saved");
+        done.setContentText("All opportunity scores have been recalculated.");
         done.setGraphic(null);
         done.getDialogPane().setGraphic(null);
         var css = getClass().getResource("/css/atlan-dark.css");
@@ -190,14 +190,14 @@ public class MainShellController {
     }
 
     private void deleteFund(FundInvestment fund) {
-        if (confirmDelete("le fonds « " + fund.name() + " »")) {
+        if (confirmDelete("fund \"" + fund.name() + "\"")) {
             fundDao.delete(fund.id());
             reloadAndReturn();
         }
     }
 
     private void deleteDeal(DirectDeal deal) {
-        if (confirmDelete("le deal « " + deal.name() + " »")) {
+        if (confirmDelete("deal \"" + deal.name() + "\"")) {
             dealDao.delete(deal.id());
             reloadAndReturn();
         }
@@ -243,14 +243,14 @@ public class MainShellController {
         setContent(currentView.get());
     }
 
-    /** Dialogue de confirmation avant une suppression définitive. */
+    /** Confirmation dialog before a permanent deletion. */
     private boolean confirmDelete(String what) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Confirmer la suppression");
-        alert.setHeaderText("Supprimer " + what + " ?");
-        alert.setContentText("Cette action est définitive et irréversible.");
-        ButtonType delete = new ButtonType("Supprimer", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancel = new ButtonType("Annuler", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
+        alert.setTitle("Confirm deletion");
+        alert.setHeaderText("Delete " + what + "?");
+        alert.setContentText("This action is permanent and cannot be undone.");
+        ButtonType delete = new ButtonType("Delete", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancel = new ButtonType("Cancel", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
         alert.getButtonTypes().setAll(cancel, delete);
         alert.setGraphic(null);                       // retire l'icône « ? » système
         alert.getDialogPane().setGraphic(null);
@@ -263,9 +263,9 @@ public class MainShellController {
 
     private void conflict(String message) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("Conflit d'édition");
-        alert.setHeaderText("Enregistrement refusé");
-        alert.setContentText(message + "\n\nLes données à jour vont être rechargées ; réappliquez vos modifications.");
+        alert.setTitle("Edit conflict");
+        alert.setHeaderText("Save rejected");
+        alert.setContentText(message + "\n\nThe latest data will be reloaded; please reapply your changes.");
         alert.setGraphic(null);
         alert.getDialogPane().setGraphic(null);
         // Les dialogues ont leur propre scène : sans cela, le thème ne s'applique pas.
@@ -289,6 +289,6 @@ public class MainShellController {
     }
 
     private static String roleLabel(Role role) {
-        return role == Role.PARTNER ? "Partner" : "Analyste";
+        return role == Role.PARTNER ? "Partner" : "Analyst";
     }
 }

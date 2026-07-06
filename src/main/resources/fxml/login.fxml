@@ -20,17 +20,17 @@
 
         <Region prefHeight="22" />
 
-        <Label styleClass="field-label" text="IDENTIFIANT" maxWidth="Infinity" />
-        <TextField fx:id="usernameField" promptText="identifiant" />
+        <Label styleClass="field-label" text="USERNAME" maxWidth="Infinity" />
+        <TextField fx:id="usernameField" promptText="username" />
 
-        <Label styleClass="field-label" text="MOT DE PASSE" maxWidth="Infinity" />
-        <PasswordField fx:id="passwordField" promptText="mot de passe" onAction="#onLogin" />
+        <Label styleClass="field-label" text="PASSWORD" maxWidth="Infinity" />
+        <PasswordField fx:id="passwordField" promptText="password" onAction="#onLogin" />
 
         <Label fx:id="errorLabel" styleClass="error-label" maxWidth="Infinity" wrapText="true" />
 
         <Region prefHeight="10" />
 
-        <Button text="Se connecter" onAction="#onLogin" defaultButton="true"
+        <Button text="Log in" onAction="#onLogin" defaultButton="true"
                 styleClass="primary-button" maxWidth="Infinity" />
     </VBox>
 </StackPane>
