@@ -106,6 +106,17 @@ public final class FundInvestmentDao {
         }
     }
 
+    /** Supprime un fonds (ses millésimes sont supprimés en cascade, voir §4.2). */
+    public void delete(long id) {
+        try (Connection conn = Database.dataSource().getConnection();
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM fund_investment WHERE id = ?")) {
+            ps.setLong(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Suppression du fonds impossible", e);
+        }
+    }
+
     /**
      * Met à jour un fonds sous verrou optimiste (§13.2) et remplace ses millésimes.
      *

@@ -187,6 +187,22 @@
     -fx-text-fill: -atlan-text;
 }
 
+.danger-button {
+    -fx-background-color: transparent;
+    -fx-border-color: -atlan-caution;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-text-fill: -atlan-caution;
+    -fx-font-size: 13px;
+    -fx-padding: 9 18 9 18;
+    -fx-cursor: hand;
+}
+
+.danger-button:hover {
+    -fx-background-color: -atlan-caution;
+    -fx-text-fill: -atlan-text;
+}
+
 /* ---- Menu latéral ---- */
 .sidebar {
     -fx-background-color: -atlan-nav;

@@ -34,10 +34,11 @@ public final class DetailView extends BorderPane {
         getStyleClass().add("detail-view");
     }
 
-    public static DetailView ofFund(FundInvestment f, ScoreBreakdown breakdown, Runnable onBack, Runnable onEdit) {
+    public static DetailView ofFund(FundInvestment f, ScoreBreakdown breakdown,
+                                    Runnable onBack, Runnable onEdit, Runnable onDelete) {
         DetailView v = new DetailView();
         v.setTop(v.header(f.name(), f.category().label() + "  ·  " + f.status().label(),
-                breakdown, onBack, onEdit));
+                breakdown, onBack, onEdit, onDelete));
 
         GridPane g1 = grid();
         addRow(g1, "Géographie", Formatters.text(f.geography()));
@@ -65,10 +66,11 @@ public final class DetailView extends BorderPane {
         return v;
     }
 
-    public static DetailView ofDeal(DirectDeal d, ScoreBreakdown breakdown, Runnable onBack, Runnable onEdit) {
+    public static DetailView ofDeal(DirectDeal d, ScoreBreakdown breakdown,
+                                    Runnable onBack, Runnable onEdit, Runnable onDelete) {
         DetailView v = new DetailView();
         v.setTop(v.header(d.name(), PipelineItem.DEALS_STRATEGY + "  ·  " + d.status().label(),
-                breakdown, onBack, onEdit));
+                breakdown, onBack, onEdit, onDelete));
 
         GridPane g1 = grid();
         addRow(g1, "Secteur", Formatters.text(d.industry()));
@@ -116,7 +118,8 @@ public final class DetailView extends BorderPane {
 
     /* ---- En-tête ---- */
 
-    private HBox header(String name, String subtitle, ScoreBreakdown breakdown, Runnable onBack, Runnable onEdit) {
+    private HBox header(String name, String subtitle, ScoreBreakdown breakdown,
+                        Runnable onBack, Runnable onEdit, Runnable onDelete) {
         Button back = new Button("← Retour");
         back.getStyleClass().add("ghost-button");
         back.setOnAction(e -> onBack.run());
@@ -126,6 +129,10 @@ public final class DetailView extends BorderPane {
         Label sub = new Label(subtitle);
         sub.getStyleClass().add("detail-subtitle");
         VBox titles = new VBox(2, title, sub);
+
+        Button delete = new Button("Supprimer");
+        delete.getStyleClass().add("danger-button");
+        delete.setOnAction(e -> onDelete.run());
 
         Button edit = new Button("Éditer");
         edit.getStyleClass().add("primary-button");
@@ -140,7 +147,7 @@ public final class DetailView extends BorderPane {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        HBox bar = new HBox(16, back, titles, spacer, edit, scoreBox);
+        HBox bar = new HBox(16, back, titles, spacer, delete, edit, scoreBox);
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.getStyleClass().add("detail-header");
         return bar;

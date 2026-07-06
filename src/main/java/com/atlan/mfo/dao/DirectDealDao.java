@@ -81,6 +81,17 @@ public final class DirectDealDao {
         }
     }
 
+    /** Supprime un deal direct. */
+    public void delete(long id) {
+        try (Connection conn = Database.dataSource().getConnection();
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM direct_deal WHERE id = ?")) {
+            ps.setLong(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Suppression du deal impossible", e);
+        }
+    }
+
     /**
      * Met à jour un deal sous verrou optimiste (§13.2).
      *

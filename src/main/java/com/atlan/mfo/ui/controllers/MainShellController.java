@@ -22,6 +22,7 @@ import com.atlan.mfo.ui.view.SectionView;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
@@ -140,12 +141,12 @@ public class MainShellController {
         Runnable onBack = () -> setContent(currentView.get());
         if (item.type() == PipelineItem.Type.FUND) {
             funds.stream().filter(f -> f.id() == item.id()).findFirst()
-                    .ifPresent(f -> setContent(
-                            DetailView.ofFund(f, engine.score(f), onBack, () -> editFund(f))));
+                    .ifPresent(f -> setContent(DetailView.ofFund(
+                            f, engine.score(f), onBack, () -> editFund(f), () -> deleteFund(f))));
         } else {
             deals.stream().filter(d -> d.id() == item.id()).findFirst()
-                    .ifPresent(d -> setContent(
-                            DetailView.ofDeal(d, engine.score(d), onBack, () -> editDeal(d))));
+                    .ifPresent(d -> setContent(DetailView.ofDeal(
+                            d, engine.score(d), onBack, () -> editDeal(d), () -> deleteDeal(d))));
         }
     }
 
@@ -165,6 +166,20 @@ public class MainShellController {
 
     private void editDeal(DirectDeal deal) {
         setContent(new DealFormView(deal, engine, this::saveDeal, this::backToList));
+    }
+
+    private void deleteFund(FundInvestment fund) {
+        if (confirmDelete("le fonds « " + fund.name() + " »")) {
+            fundDao.delete(fund.id());
+            reloadAndReturn();
+        }
+    }
+
+    private void deleteDeal(DirectDeal deal) {
+        if (confirmDelete("le deal « " + deal.name() + " »")) {
+            dealDao.delete(deal.id());
+            reloadAndReturn();
+        }
     }
 
     private void saveFund(FundInvestment fund, ScoreBreakdown breakdown) {
@@ -205,6 +220,22 @@ public class MainShellController {
 
     private void backToList() {
         setContent(currentView.get());
+    }
+
+    /** Dialogue de confirmation avant une suppression définitive. */
+    private boolean confirmDelete(String what) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirmer la suppression");
+        alert.setHeaderText("Supprimer " + what + " ?");
+        alert.setContentText("Cette action est définitive et irréversible.");
+        ButtonType delete = new ButtonType("Supprimer", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancel = new ButtonType("Annuler", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
+        alert.getButtonTypes().setAll(cancel, delete);
+        var css = getClass().getResource("/css/atlan-dark.css");
+        if (css != null) {
+            alert.getDialogPane().getStylesheets().add(css.toExternalForm());
+        }
+        return alert.showAndWait().orElse(cancel) == delete;
     }
 
     private void conflict(String message) {
