@@ -18,7 +18,7 @@ MAIN_JAR="atlan-mfo-dashboard-${JAR_VERSION}.jar"
 MAIN_CLASS="com.atlan.mfo.Launcher"
 TYPE="${1:-app-image}"
 
-echo "▸ Build Maven (jar + dépendances)…"
+echo "▸ Maven build (jar + dependencies)…"
 mvn -q -DskipTests clean package
 
 # L'entrée jpackage = le jar principal + les dépendances (déjà dans dist-input/lib)
@@ -29,7 +29,7 @@ if [ "$(uname)" = "Darwin" ]; then
   xattr -cr target/dist-input 2>/dev/null || true
 fi
 
-echo "▸ jpackage (type=${TYPE})…"
+echo "▸ jpackage (type=${TYPE})..."
 rm -rf target/installer
 
 # Signature macOS optionnelle : exporter MAC_SIGN_IDENTITY="Developer ID Application: … (TEAMID)"
@@ -37,7 +37,7 @@ rm -rf target/installer
 EXTRA_ARGS=()
 if [ "$(uname)" = "Darwin" ] && [ -n "${MAC_SIGN_IDENTITY:-}" ]; then
   EXTRA_ARGS+=(--mac-sign --mac-signing-key-user-name "${MAC_SIGN_IDENTITY}")
-  echo "  (signature avec l'identité : ${MAC_SIGN_IDENTITY})"
+  echo "  (signing with identity: ${MAC_SIGN_IDENTITY})"
 fi
 
 jpackage \
@@ -52,5 +52,5 @@ jpackage \
   --dest target/installer \
   ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}
 
-echo "▸ Terminé →"
+echo "▸ Done →"
 ls -la target/installer

@@ -30,11 +30,11 @@ public final class PipelineResetTool {
         AppConfig config = AppConfig.load();
         Database.init(config);
         try (Connection conn = Database.dataSource().getConnection()) {
-            printCounts(conn, "État actuel");
+            printCounts(conn, "Current state");
 
             if (!confirmed) {
                 System.out.println();
-                System.out.println("Aucune modification effectuée (relancer avec --yes pour purger).");
+                System.out.println("No changes made (re-run with --yes to purge).");
                 return;
             }
 
@@ -55,18 +55,18 @@ public final class PipelineResetTool {
             }
 
             System.out.println();
-            System.out.println("Pipeline purgé (fund_investment, fund_vintage, direct_deal).");
-            System.out.println("Comptes utilisateurs (app_user) conservés.");
-            printCounts(conn, "État après purge");
+            System.out.println("Pipeline purged (fund_investment, fund_vintage, direct_deal).");
+            System.out.println("User accounts (app_user) kept intact.");
+            printCounts(conn, "State after purge");
         } catch (SQLException e) {
-            throw new IllegalStateException("Réinitialisation du pipeline impossible", e);
+            throw new IllegalStateException("Pipeline reset failed", e);
         } finally {
             Database.close();
         }
     }
 
     private static void printCounts(Connection conn, String label) throws SQLException {
-        System.out.println(label + " :");
+        System.out.println(label + ":");
         printCount(conn, "app_user");
         printCount(conn, "fund_investment");
         printCount(conn, "fund_vintage");

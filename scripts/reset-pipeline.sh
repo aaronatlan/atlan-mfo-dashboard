@@ -15,13 +15,13 @@ mvn -q -DskipTests compile >/dev/null
 mvn -q dependency:build-classpath -Dmdep.outputFile=target/cp.txt >/dev/null
 CP="target/classes:$(cat target/cp.txt)"
 
-echo "▸ État actuel du pipeline :"
+echo "▸ Current pipeline state:"
 java -cp "$CP" com.atlan.mfo.tools.PipelineResetTool
 echo
 
-read -r -p "Taper RESET en majuscules pour confirmer la purge définitive : " CONFIRM
+read -r -p "Type RESET in capitals to confirm the permanent purge: " CONFIRM
 if [ "$CONFIRM" != "RESET" ]; then
-  echo "Annulé (aucune modification)."
+  echo "Cancelled (no changes made)."
   exit 1
 fi
 

@@ -13,7 +13,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 if [ "$#" -lt 3 ]; then
-  echo "Usage : scripts/user-add.sh <username> <mot_de_passe> \"<Nom complet>\" [ANALYST|PARTNER]" >&2
+  echo "Usage: scripts/user-add.sh <username> <password> \"<Full name>\" [ANALYST|PARTNER]" >&2
   exit 2
 fi
 
