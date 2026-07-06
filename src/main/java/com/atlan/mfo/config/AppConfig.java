@@ -37,7 +37,8 @@ public final class AppConfig {
         String user = firstNonBlank(System.getenv("ATLAN_DB_USER"), props.getProperty("db.user"));
         String password = firstNonBlank(System.getenv("ATLAN_DB_PASSWORD"), props.getProperty("db.password"));
         boolean migrations = Boolean.parseBoolean(
-                firstNonBlank(props.getProperty("db.runMigrations"), "true"));
+                firstNonBlank(System.getenv("ATLAN_DB_RUN_MIGRATIONS"),
+                        firstNonBlank(props.getProperty("db.runMigrations"), "true")));
         // Profil de seed : dev (démo, défaut) | prod (admin seul) | none (aucun)
         String seed = firstNonBlank(System.getenv("ATLAN_DB_SEED"),
                 firstNonBlank(props.getProperty("db.seed"), "dev")).toLowerCase();
@@ -54,14 +55,31 @@ public final class AppConfig {
         return new AppConfig(url, user == null ? "" : user, password == null ? "" : password, migrations, seed);
     }
 
+    /**
+     * Cherche {@code config.properties} dans, par ordre de priorité :
+     * <ol>
+     *   <li>le répertoire courant (usage dev / lancement en ligne de commande) ;</li>
+     *   <li>{@code ~/.atlan-mfo/config.properties} (emplacement stable pour un poste
+     *       installé : indépendant du répertoire de travail, modifiable sans droits
+     *       administrateur — cf. app native lancée depuis le menu Démarrer/Dock).</li>
+     * </ol>
+     * Le premier fichier trouvé est utilisé. Les variables d'environnement
+     * {@code ATLAN_DB_*} restent prioritaires sur le contenu du fichier.
+     */
     private static Properties loadPropertiesFile() {
         Properties props = new Properties();
-        Path local = Path.of("config.properties");
-        if (Files.exists(local)) {
-            try (InputStream in = Files.newInputStream(local)) {
-                props.load(in);
-            } catch (IOException e) {
-                throw new IllegalStateException("Lecture de config.properties impossible", e);
+        Path[] candidates = {
+                Path.of("config.properties"),
+                Path.of(System.getProperty("user.home"), ".atlan-mfo", "config.properties"),
+        };
+        for (Path candidate : candidates) {
+            if (Files.exists(candidate)) {
+                try (InputStream in = Files.newInputStream(candidate)) {
+                    props.load(in);
+                } catch (IOException e) {
+                    throw new IllegalStateException("Lecture de " + candidate + " impossible", e);
+                }
+                break;
             }
         }
         return props;

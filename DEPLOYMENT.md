@@ -146,9 +146,14 @@ the machine.
 
 ### 5.3 Configuring the machine
 
-Place a `config.properties` next to the application (or set the
-`ATLAN_DB_*` environment variables), pointing to the central database, over
-TLS:
+Create a `config.properties` in the user profile — a stable location, read
+regardless of how the app is launched (Start menu / Dock) and editable
+without administrator rights:
+
+- **Windows**: `%USERPROFILE%\.atlan-mfo\config.properties`
+- **macOS / Linux**: `~/.atlan-mfo/config.properties`
+
+Point it at the central database, over TLS:
 
 ```properties
 db.url=jdbc:postgresql://db.client.internal:5432/atlan_mfo?sslmode=require
@@ -157,6 +162,13 @@ db.password=<strong password for the atlan_app role>
 db.runMigrations=false
 db.seed=none
 ```
+
+> The app also reads a `config.properties` in the current working directory
+> (handy in development), and the `ATLAN_DB_URL` / `ATLAN_DB_USER` /
+> `ATLAN_DB_PASSWORD` / `ATLAN_DB_SEED` / `ATLAN_DB_RUN_MIGRATIONS` environment
+> variables, which take priority over the file. **In production always set
+> `db.runMigrations=false` and `db.seed=none`** so an installed machine never
+> replays the schema or inserts demo data into the shared database.
 
 ### 5.4 First login
 
