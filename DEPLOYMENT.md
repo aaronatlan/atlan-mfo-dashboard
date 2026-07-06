@@ -1,273 +1,277 @@
-# Déploiement — Atlan MFO Dashboard
+# Deployment — Atlan MFO Dashboard
 
-Guide pour installer l'application chez un client (multi-family office) : base de
-données centralisée, comptes utilisateurs, installeurs par poste, sécurité et
-sauvegardes. Décisions transverses : §13 de la spécification.
+Guide for installing the application at a client site (multi-family office):
+centralized database, user accounts, per-machine installers, security and
+backups. Cross-cutting decisions: spec §13.
 
 ---
 
-## Démarrage rapide — production (base managée + IP fixe du bureau)
+## Quick start — production (managed database + fixed office IP)
 
-Scénario retenu : PostgreSQL **managé** (région EU), **allowlist de l'IP publique
-du bureau**, **TLS**, postes **Windows** via CI. Détails dans les sections suivantes.
+Chosen scenario: **managed** PostgreSQL (EU region), **allowlist of the
+office's public IP**, **TLS**, **Windows** machines via CI. Details in the
+sections below.
 
-1. **IP bureau** — depuis le bureau : `curl ifconfig.me` (confirmer une IP *statique* auprès du FAI).
-2. **Instance managée** — créer PostgreSQL 16 (région EU), allowlister l'IP bureau en `/32`, noter host/port + télécharger le **certificat CA**.
-3. **Init base** (une fois, depuis un poste allowlisté ; éditer d'abord `db/roles.sql`) :
+1. **Office IP** — from the office: `curl ifconfig.me` (confirm with the ISP that it is a *static* IP).
+2. **Managed instance** — create PostgreSQL 16 (EU region), allowlist the office IP as `/32`, note host/port + download the **CA certificate**.
+3. **Initialize the database** (once, from an allowlisted machine; edit `db/roles.sql` first):
    ```bash
    psql -f src/main/resources/db/schema.sql
    psql -f src/main/resources/db/roles.sql
    psql -f src/main/resources/db/seed-prod.sql
    ```
-4. **Comptes** :
+4. **Accounts**:
    ```bash
-   scripts/user-add.sh <username> "<mot de passe temporaire>" "<Nom complet>" ANALYST|PARTNER
+   scripts/user-add.sh <username> "<temporary password>" "<Full name>" ANALYST|PARTNER
    ```
-5. **Installeur Windows** — `git tag v1.0.0 && git push origin v1.0.0` → récupérer le `.msi` dans les artefacts du run GitHub Actions.
-6. **Poste** — installer le `.msi`, déposer `config.properties` (`sslmode=verify-full` + CA, `db.user=atlan_app`, `db.runMigrations=false`, `db.seed=none`).
-7. **1er login** — mot de passe temporaire → changement imposé.
+5. **Windows installer** — `git tag v1.0.0 && git push origin v1.0.0` → download the `.msi` from the GitHub Actions run artifacts.
+6. **Machine** — install the `.msi`, drop a `config.properties` (`sslmode=verify-full` + CA, `db.user=atlan_app`, `db.runMigrations=false`, `db.seed=none`).
+7. **First login** — temporary password → change enforced.
 
-> Séquence validée en répétition (étapes 3-4) : schéma + rôle à privilèges minimaux
-> (`SELECT/INSERT/UPDATE/DELETE`, sans superuser ni DDL) + admin seul + comptes.
-
----
-
-## 1. Vue d'ensemble
-
-```
-   Poste analyste ─┐
-   Poste partner  ─┼──(réseau, TLS)──▶  PostgreSQL centralisé (une seule base)
-   Poste analyste ─┘
-```
-
-- **Une seule base** partagée par tous les postes (les données sont communes).
-- **L'application** est installée sur chaque poste (installeur autonome, runtime
-  Java embarqué : aucun JDK à installer).
-- **Multi-utilisateur applicatif** : chacun a son compte dans `app_user`
-  (mot de passe BCrypt), avec un rôle `ANALYST` (lecture/écriture) ou `PARTNER`
-  (lecture seule, verrouillé en mode présentation).
-- L'application se connecte avec **un seul rôle base** (`atlan_app`) à privilèges
-  minimaux — jamais un superuser.
+> Sequence validated in a dry run (steps 3-4): schema + role with minimal
+> privileges (`SELECT/INSERT/UPDATE/DELETE`, no superuser or DDL) + admin-only
+> + accounts.
 
 ---
 
-## 2. Choisir où héberger la base
+## 1. Overview
 
-| Option | Quand la choisir | Exemples |
+```
+   Analyst machine ─┐
+   Partner machine ─┼──(network, TLS)──▶  Centralized PostgreSQL (single database)
+   Analyst machine ─┘
+```
+
+- **A single database** shared by all machines (data is common to everyone).
+- **The application** is installed on each machine (self-contained installer,
+  embedded Java runtime: no JDK to install).
+- **Application-level multi-user**: everyone has their own account in
+  `app_user` (BCrypt password), with an `ANALYST` role (read/write) or
+  `PARTNER` role (read-only, locked into presentation mode).
+- The application connects with **a single database role** (`atlan_app`) with
+  minimal privileges — never a superuser.
+
+---
+
+## 2. Choosing where to host the database
+
+| Option | When to choose it | Examples |
 |---|---|---|
-| **PostgreSQL managé (cloud)** | Simplicité : TLS, sauvegardes et mises à jour gérées | Neon, Supabase, AWS RDS, Azure Database for PostgreSQL, DigitalOcean |
-| **Serveur on-premise** | Les données doivent rester chez le client | VM / serveur interne, sous leur contrôle |
+| **Managed PostgreSQL (cloud)** | Simplicity: TLS, backups and updates managed for you | Neon, Supabase, AWS RDS, Azure Database for PostgreSQL, DigitalOcean |
+| **On-premise server** | Data must stay at the client's site | Internal VM / server, under their control |
 
-Dans les deux cas :
+In both cases:
 
-- **Ne jamais exposer le port 5432 en clair sur Internet.** Restreindre l'accès
-  par VPN, tunnel SSH, ou liste blanche d'IP.
-- **TLS obligatoire** côté client (`?sslmode=require` dans l'URL JDBC).
+- **Never expose port 5432 in the clear on the Internet.** Restrict access
+  via VPN, SSH tunnel, or IP allowlist.
+- **TLS mandatory** on the client side (`?sslmode=require` in the JDBC URL).
 
 ---
 
-## 3. Installation de la base (une seule fois)
+## 3. Installing the database (one time)
 
-Sur le serveur / l'instance managée, avec un compte **administrateur** PostgreSQL :
+On the server / managed instance, with a PostgreSQL **administrator**
+account:
 
 ```bash
-# 1. Créer la base
-createdb atlan_mfo            # ou via la console du fournisseur managé
+# 1. Create the database
+createdb atlan_mfo            # or via the managed provider's console
 
-# 2. Appliquer le schéma (structure) — depuis une copie du dépôt
+# 2. Apply the schema (structure) — from a copy of the repository
 psql -d atlan_mfo -f src/main/resources/db/schema.sql
 
-# 3. Créer le rôle applicatif à privilèges minimaux
-#    (éditer d'abord db/roles.sql : remplacer CHANGER_CE_MOT_DE_PASSE)
+# 3. Create the application role with minimal privileges
+#    (edit db/roles.sql first: replace CHANGE_THIS_PASSWORD)
 psql -d atlan_mfo -f src/main/resources/db/roles.sql
 
-# 4. Créer le compte administrateur applicatif initial (sans données de démo)
+# 4. Create the initial application administrator account (no demo data)
 psql -d atlan_mfo -f src/main/resources/db/seed-prod.sql
 ```
 
-Après cette étape :
+After this step:
 
-- Le rôle base `atlan_app` existe (lecture/écriture uniquement).
-- Un compte applicatif `admin` existe avec un mot de passe temporaire
-  (`Atlan-Setup-2026`) et l'obligation de le changer au premier login.
+- The database role `atlan_app` exists (read/write only).
+- An application account `admin` exists with a temporary password
+  (`Atlan-Setup-2026`) and is required to change it on first login.
 
-> En production, l'application tourne avec `db.runMigrations=false` : le schéma
-> n'est pas rejoué au démarrage (il a été appliqué ici, à la main, par le
-> propriétaire de la base).
+> In production, the application runs with `db.runMigrations=false`: the
+> schema is not replayed on startup (it was applied here, by hand, by the
+> database owner).
 
 ---
 
-## 4. Créer les comptes utilisateurs
+## 4. Creating user accounts
 
-Depuis une copie du dépôt, avec un `config.properties` pointant sur la base
-centrale, provisionner chaque personne (le mot de passe est temporaire ; l'usager
-le change à son premier login) :
+From a copy of the repository, with a `config.properties` pointing to the
+central database, provision each person (the password is temporary; the user
+changes it on first login):
 
 ```bash
-scripts/user-add.sh jdupont "MotDePasseTemporaire1" "Jean Dupont" ANALYST
-scripts/user-add.sh mlefevre "MotDePasseTemporaire2" "Marie Lefèvre" PARTNER
+scripts/user-add.sh jdupont "TemporaryPassword1" "Jean Dupont" ANALYST
+scripts/user-add.sh mlefevre "TemporaryPassword2" "Marie Lefevre" PARTNER
 ```
 
-L'outil hache le mot de passe en BCrypt et insère/rafraîchit le compte. Relancer
-la même commande pour **réinitialiser** le mot de passe d'un compte existant.
+The tool hashes the password with BCrypt and inserts/refreshes the account.
+Re-run the same command to **reset** an existing account's password.
 
 ---
 
-## 5. Installer l'application sur chaque poste
+## 5. Installing the application on each machine
 
-### 5.1 Construire l'installeur (une fois par plateforme cible)
+### 5.1 Building the installer (once per target platform)
 
 ```bash
 scripts/package.sh dmg     # macOS  → target/installer/*.dmg
-scripts/package.sh msi     # Windows (nécessite WiX Toolset) → *.msi
+scripts/package.sh msi     # Windows (requires WiX Toolset) → *.msi
 ```
 
-L'installeur embarque un runtime Java réduit : **rien d'autre à installer** sur
-le poste.
+The installer embeds a reduced Java runtime: **nothing else to install** on
+the machine.
 
-### 5.2 Signer (recommandé, sinon alertes de sécurité)
+### 5.2 Signing (recommended, otherwise security warnings)
 
-- **macOS** : signer avec un certificat *Developer ID Application* puis
-  **notariser** auprès d'Apple, sinon Gatekeeper affiche « développeur non
-  identifié ».
+- **macOS**: sign with a *Developer ID Application* certificate, then
+  **notarize** with Apple, otherwise Gatekeeper shows "unidentified
+  developer".
   ```bash
-  export MAC_SIGN_IDENTITY="Developer ID Application: Votre Nom (TEAMID)"
+  export MAC_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
   scripts/package.sh dmg
-  # puis notarisation :
+  # then notarization:
   xcrun notarytool submit "target/installer/Atlan MFO Dashboard-1.0.0.dmg" \
-      --apple-id "vous@exemple.com" --team-id "TEAMID" --password "<mdp app>" --wait
+      --apple-id "you@example.com" --team-id "TEAMID" --password "<app password>" --wait
   xcrun stapler staple "target/installer/Atlan MFO Dashboard-1.0.0.dmg"
   ```
-- **Windows** : signer le `.msi` avec `signtool` et un certificat de signature de
-  code (Authenticode).
+- **Windows**: sign the `.msi` with `signtool` and a code-signing
+  (Authenticode) certificate.
 
-### 5.3 Configurer le poste
+### 5.3 Configuring the machine
 
-Placer un `config.properties` à côté de l'application (ou définir les variables
-d'environnement `ATLAN_DB_*`), pointant vers la base centrale, en TLS :
+Place a `config.properties` next to the application (or set the
+`ATLAN_DB_*` environment variables), pointing to the central database, over
+TLS:
 
 ```properties
-db.url=jdbc:postgresql://db.client.interne:5432/atlan_mfo?sslmode=require
+db.url=jdbc:postgresql://db.client.internal:5432/atlan_mfo?sslmode=require
 db.user=atlan_app
-db.password=<mot de passe fort du rôle atlan_app>
+db.password=<strong password for the atlan_app role>
 db.runMigrations=false
 db.seed=none
 ```
 
-### 5.4 Premier login
+### 5.4 First login
 
-L'utilisateur ouvre l'application, se connecte avec son identifiant et son mot de
-passe temporaire, puis l'application **impose immédiatement** un changement de mot
-de passe (§13.3).
+The user opens the application, logs in with their username and temporary
+password, and the application **immediately enforces** a password change
+(§13.3).
 
 ---
 
-## 6. Sauvegardes
+## 6. Backups
 
-- **Managé** : activer les sauvegardes automatiques du fournisseur (point-in-time
-  recovery si disponible).
-- **On-premise** : planifier un `pg_dump` régulier, par exemple quotidien :
+- **Managed**: enable the provider's automatic backups (point-in-time
+  recovery if available).
+- **On-premise**: schedule a regular `pg_dump`, e.g. daily:
   ```bash
   pg_dump -Fc atlan_mfo > /backups/atlan_mfo_$(date +%F).dump
   ```
-  et tester régulièrement la restauration (`pg_restore`).
+  and regularly test restoring it (`pg_restore`).
 
 ---
 
-## 7. Réinitialiser le pipeline après un comité d'investissement
+## 7. Resetting the pipeline after an investment committee meeting
 
-Si le pipeline doit repartir de zéro après chaque réunion IC (ardoise vierge pour
-le cycle suivant), utiliser :
+If the pipeline needs to start fresh after each IC meeting (a clean slate for
+the next cycle), use:
 
 ```bash
 scripts/reset-pipeline.sh
 ```
 
-Le script affiche l'état actuel (nombre de fonds, millésimes, deals, utilisateurs),
-demande de taper `RESET` pour confirmer, puis vide **uniquement** les tables du
-pipeline (`fund_investment`, `fund_vintage`, `direct_deal`). Les comptes
-utilisateurs (`app_user`) et le schéma sont conservés — pas besoin de recréer les
-accès à chaque cycle.
+The script shows the current state (number of funds, vintages, deals,
+users), asks you to type `RESET` to confirm, then purges **only** the
+pipeline tables (`fund_investment`, `fund_vintage`, `direct_deal`). User
+accounts (`app_user`) and the schema are kept — no need to recreate access
+each cycle.
 
-⚠️ **Action irréversible.** Aucune sauvegarde automatique n'est faite par ce
-script : faire un `pg_dump` avant si l'historique du cycle doit être conservé
-(voir §6 ci-dessus), par exemple pour archivage ou revue a posteriori.
-
----
-
-## 8. Mises à jour de l'application
-
-1. Incrémenter la version (`pom.xml`, `PKG_VERSION` dans `scripts/package.sh`).
-2. Reconstruire et re-signer les installeurs, les redistribuer.
-3. Si le **schéma** évolue : appliquer les nouvelles migrations sur la base
-   centrale **une fois**, par le propriétaire, avant de déployer la nouvelle
-   version aux postes.
+⚠️ **Irreversible action.** No automatic backup is made by this script: run a
+`pg_dump` beforehand if the cycle's history needs to be kept (see §6 above),
+for example for archiving or later review.
 
 ---
 
-## 9. Résumé sécurité
+## 8. Updating the application
 
-- Rôle base `atlan_app` à privilèges minimaux (pas de DDL, pas de superuser).
-- TLS obligatoire ; port base non exposé publiquement (VPN / allowlist).
-- Mots de passe applicatifs hachés en BCrypt ; changement forcé au 1er login.
-- Aucune donnée de démo en production (`db.seed=none`).
-- `config.properties` contient des secrets → **jamais versionné** (déjà dans
-  `.gitignore`), distribué de façon sécurisée à chaque poste.
-
-> **Limite connue.** L'application parle directement à la base : les identifiants
-> du rôle `atlan_app` résident donc sur chaque poste. Pour une petite équipe de
-> confiance, sur VPN/TLS, c'est acceptable. Pour une sécurité renforcée, l'étape
-> suivante serait d'intercaler une **API backend** entre l'application et la base,
-> afin que les secrets et la logique restent côté serveur.
+1. Bump the version (`pom.xml`, `PKG_VERSION` in `scripts/package.sh`).
+2. Rebuild and re-sign the installers, redistribute them.
+3. If the **schema** changes: apply the new migrations on the central
+   database **once**, by the owner, before deploying the new version to the
+   machines.
 
 ---
 
-## 10. Recommandation d'hébergement (données privées)
+## 9. Security summary
 
-« Privé » n'impose pas « on-premise ». Un **PostgreSQL managé bien configuré** est
-souvent plus sûr qu'un serveur d'office auto-géré (correctifs, chiffrement et
-sauvegardes pris en charge par le fournisseur).
+- `atlan_app` database role with minimal privileges (no DDL, no superuser).
+- TLS mandatory; database port not exposed publicly (VPN / allowlist).
+- Application passwords hashed with BCrypt; change forced on first login.
+- No demo data in production (`db.seed=none`).
+- `config.properties` contains secrets → **never committed** (already in
+  `.gitignore`), distributed securely to each machine.
 
-**Recommandé : PostgreSQL managé**, avec région dans la juridiction du client
-(résidence des données), chiffrement au repos, TLS, **allowlist d'IP** et
-sauvegardes automatiques. Fournisseurs avec allowlist + région EU : Azure Database
-for PostgreSQL, AWS RDS, Scaleway, OVHcloud, Neon.
-
-**On-premise** seulement si une contrainte contractuelle/réglementaire impose que
-les données ne quittent jamais les locaux.
-
-### Allowlist d'IP — condition de fonctionnement
-
-- **Postes à IP fixe (bureau)** → allowlister l'IP publique du bureau. Simple et robuste.
-- **Postes mobiles (IP changeante)** → l'allowlist les bloque : prévoir un **VPN
-  d'entreprise à IP de sortie fixe** (on allowliste l'IP du VPN), ou faire passer
-  les connexions par le réseau du bureau.
+> **Known limitation.** The application talks directly to the database: the
+> `atlan_app` role's credentials therefore live on every machine. For a small
+> trusted team, over VPN/TLS, this is acceptable. For stronger security, the
+> next step would be to insert a **backend API** between the application and
+> the database, so that secrets and logic stay server-side.
 
 ---
 
-## 11. Construire les installeurs Windows
+## 10. Hosting recommendation (private data)
 
-`jpackage` ne produit un paquet que **pour l'OS sur lequel il s'exécute** : on ne
-peut pas fabriquer un `.msi` Windows depuis un Mac. Deux options :
+"Private" does not require "on-premise." A **well-configured managed
+PostgreSQL** is often safer than a self-managed office server (patches,
+encryption and backups handled by the provider).
 
-1. **CI (recommandé)** — le workflow [`.github/workflows/package.yml`](.github/workflows/package.yml)
-   construit automatiquement l'installeur Windows (`.msi`) et macOS (`.dmg`) sur des
-   runners GitHub, à chaque tag de version :
+**Recommended: managed PostgreSQL**, with a region in the client's
+jurisdiction (data residency), encryption at rest, TLS, **IP allowlist** and
+automatic backups. Providers with allowlist + EU region: Azure Database for
+PostgreSQL, AWS RDS, Scaleway, OVHcloud, Neon.
+
+**On-premise** only if a contractual/regulatory constraint requires that
+data never leave the premises.
+
+### IP allowlist — a condition for it to work
+
+- **Machines with a fixed IP (office)** → allowlist the office's public IP. Simple and robust.
+- **Mobile machines (changing IP)** → the allowlist blocks them: plan for a
+  **corporate VPN with a fixed exit IP** (allowlist the VPN's IP), or route
+  connections through the office network.
+
+---
+
+## 11. Building Windows installers
+
+`jpackage` only produces a package **for the OS it runs on**: you cannot
+build a Windows `.msi` from a Mac. Two options:
+
+1. **CI (recommended)** — the [`.github/workflows/package.yml`](.github/workflows/package.yml)
+   workflow automatically builds the Windows (`.msi`) and macOS (`.dmg`)
+   installer on GitHub runners, on every version tag:
    ```bash
    git tag v1.0.0 && git push origin v1.0.0
    ```
-   Les installeurs sont ensuite téléchargeables dans les artefacts du run.
+   The installers are then downloadable from the run's artifacts.
 
-2. **Machine Windows** — installer un JDK 21+ et **WiX Toolset 3.x**, puis :
+2. **Windows machine** — install a JDK 21+ and **WiX Toolset 3.x**, then:
    ```bash
    scripts/package.sh msi
    ```
 
-### Signature Windows (Authenticode)
+### Windows signing (Authenticode)
 
-Pour éviter l'avertissement SmartScreen, signer le `.msi` avec un certificat de
-signature de code :
+To avoid the SmartScreen warning, sign the `.msi` with a code-signing
+certificate:
 ```
 signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 "Atlan MFO Dashboard-1.0.0.msi"
 ```
-En CI, ajouter le certificat en secret et une étape `signtool` après le build.
+In CI, add the certificate as a secret and a `signtool` step after the build.

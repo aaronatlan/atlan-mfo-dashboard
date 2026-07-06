@@ -1,57 +1,57 @@
 # Atlan MFO Dashboard
 
-Application de bureau (JavaFX) de suivi du pipeline d'investissement d'un multi-family office.
-Voir la spécification complète : [`atlan-mfo-dashboard-spec.md`](atlan-mfo-dashboard-spec.md).
+Desktop application (JavaFX) for tracking a multi-family office's investment
+pipeline. See the full specification: [`atlan-mfo-dashboard-spec.md`](atlan-mfo-dashboard-spec.md).
 
-## Prérequis
+## Requirements
 
-- JDK 21+ (testé sous JDK 25, compilation ciblée Java 21)
+- JDK 21+ (tested on JDK 25, compiled targeting Java 21)
 - Maven 3.9+
 - PostgreSQL 15+
 
 ## Configuration
 
-La connexion est fournie soit par variables d'environnement, soit par un fichier
-local `config.properties` (jamais versionné) :
+The connection is provided either via environment variables, or via a local
+`config.properties` file (never committed):
 
 ```bash
 cp config.properties.example config.properties
-# puis renseigner db.url / db.user / db.password
+# then fill in db.url / db.user / db.password
 ```
 
-Variables d'environnement équivalentes (prioritaires) :
+Equivalent environment variables (take priority):
 `ATLAN_DB_URL`, `ATLAN_DB_USER`, `ATLAN_DB_PASSWORD`.
 
-## Base de données
+## Database
 
-Créer la base une fois :
+Create the database once:
 
 ```bash
 createdb atlan_mfo
 ```
 
-Au démarrage, si `db.runMigrations=true`, l'application exécute
-`src/main/resources/db/schema.sql` puis le seed du profil choisi via `db.seed`
-(`dev` = données de démonstration, `prod` = admin seul, `none` = aucun). Tous
-les scripts sont idempotents.
+On startup, if `db.runMigrations=true`, the application runs
+`src/main/resources/db/schema.sql` then the seed for the profile chosen via
+`db.seed` (`dev` = demo data, `prod` = admin only, `none` = none). All scripts
+are idempotent.
 
-## Lancer
+## Run
 
 ```bash
 mvn clean javafx:run
 ```
 
-## Premier login (seed de développement, `db.seed=dev`)
+## First login (development seed, `db.seed=dev`)
 
-Le seed **dev** crée deux comptes de démonstration :
+The **dev** seed creates two demo accounts:
 
-- `admin` / `admin` — analyste ; `must_change_password` : l'application impose
-  un changement de mot de passe avant d'accéder aux écrans (voir §13.3 de la spec) ;
-- `partner` / `partner` — lecture seule, verrouillé en mode présentation (§6.3, §7).
+- `admin` / `admin` — analyst; `must_change_password`: the application forces
+  a password change before accessing the screens (see spec §13.3);
+- `partner` / `partner` — read-only, locked into presentation mode (§6.3, §7).
 
-En **production** (`db.seed=prod`), seul un compte `admin` à mot de passe
-temporaire est créé ; les autres utilisateurs sont provisionnés via
-`scripts/user-add.sh` (voir [DEPLOYMENT.md](DEPLOYMENT.md)).
+In **production** (`db.seed=prod`), only an `admin` account with a temporary
+password is created; other users are provisioned via `scripts/user-add.sh`
+(see [DEPLOYMENT.md](DEPLOYMENT.md)).
 
 ## Tests
 
@@ -61,32 +61,33 @@ mvn test
 
 ## Packaging (distribution)
 
-Génère un paquet natif autonome (runtime Java embarqué via `jlink`/`jpackage` ;
-aucun JDK requis sur le poste cible), voir §13.5 :
+Produces a self-contained native package (Java runtime embedded via
+`jlink`/`jpackage`; no JDK required on the target machine), see §13.5:
 
 ```bash
-scripts/package.sh app-image     # bundle portable (.app / dossier)
-scripts/package.sh dmg           # installeur macOS
-scripts/package.sh msi           # installeur Windows (nécessite WiX)
+scripts/package.sh app-image     # portable bundle (.app / folder)
+scripts/package.sh dmg           # macOS installer
+scripts/package.sh msi           # Windows installer (requires WiX)
 ```
 
-Le résultat est écrit dans `target/installer/`.
+The result is written to `target/installer/`.
 
-> **macOS + iCloud** : si le dépôt est dans un dossier synchronisé iCloud
-> (Bureau, Documents), la signature ad-hoc de `jpackage` échoue à cause de
-> l'attribut étendu `com.apple.FinderInfo`. Cloner/construire depuis un dossier
-> hors iCloud (ex. `~/dev/`) résout le problème.
+> **macOS + iCloud**: if the repository is in an iCloud-synced folder
+> (Desktop, Documents), `jpackage`'s ad-hoc signing fails because of the
+> `com.apple.FinderInfo` extended attribute. Cloning/building from a folder
+> outside iCloud (e.g. `~/dev/`) resolves the issue.
 
-### Polices
+### Fonts
 
-Le thème utilise **Inter** et **Newsreader**. Elles sont chargées depuis
-`src/main/resources/fonts/` si présentes (`Inter-Regular.ttf`,
-`Inter-SemiBold.ttf`, `Newsreader-Regular.ttf`), sinon fallback système propre.
-Déposer les TTF statiques dans ce dossier suffit à les embarquer.
+The theme uses **Inter** and **Newsreader**. They are loaded from
+`src/main/resources/fonts/` if present (`Inter-Regular.ttf`,
+`Inter-SemiBold.ttf`, `Newsreader-Regular.ttf`), otherwise falling back
+cleanly to the system fonts. Dropping the static TTF files into this folder
+is enough to bundle them.
 
-## État d'avancement
+## Progress
 
-- **Phase 0 — Fondations**, **1 — Lecture**, **2 — Scoring**, **3 — Saisie**,
-  **4 — Modes & rôles**, **5 — Finitions**, **6 — Distribution** : livrées.
+- **Phase 0 — Foundations**, **1 — Read**, **2 — Scoring**, **3 — Data entry**,
+  **4 — Modes & roles**, **5 — Polish**, **6 — Distribution**: shipped.
 
-Roadmap détaillée : §10 de la spec ; décisions transverses : §13.
+Detailed roadmap: spec §10; cross-cutting decisions: §13.

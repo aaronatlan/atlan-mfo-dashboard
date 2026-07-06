@@ -5,11 +5,11 @@
 -- qui ne peut ni créer/supprimer des tables ni administrer la base : uniquement
 -- lire/écrire les données métier (voir DEPLOYMENT.md, §2).
 --
--- ⚠️  Remplacer 'CHANGER_CE_MOT_DE_PASSE' par un mot de passe fort avant exécution.
+-- ⚠️  Remplacer 'CHANGE_THIS_PASSWORD' par un mot de passe fort avant exécution.
 
 DO $$ BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'atlan_app') THEN
-    CREATE ROLE atlan_app LOGIN PASSWORD 'CHANGER_CE_MOT_DE_PASSE';
+    CREATE ROLE atlan_app LOGIN PASSWORD 'CHANGE_THIS_PASSWORD';
   END IF;
 END $$;
 
