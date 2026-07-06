@@ -1,79 +1,79 @@
-# Atlan MFO Dashboard — Spécification technique
+# Atlan MFO Dashboard — Technical Specification
 
-> Document de référence pour le développement avec Claude Code.
-> Application de suivi de pipeline d'investissement pour un multi-family office (MFO).
-> Objectif : remplacer un suivi Excel manuel par une application de bureau structurée, avec scoring automatique et deux modes de consultation.
+> Reference document for development with Claude Code.
+> Investment pipeline tracking application for a multi-family office (MFO).
+> Goal: replace a manual Excel-based tracker with a structured desktop application, with automatic scoring and two viewing modes.
 
 ---
 
-## 1. Objectif et périmètre
+## 1. Goal and scope
 
-Atlan est un multi-family office qui évalue en continu des opportunités d'investissement en marchés privés (fonds et deals directs). Le suivi se fait aujourd'hui à la main sur Excel : saisie répétitive, formules fragiles, pas de contrôle d'accès, pas de rendu propre pour le comité d'investissement (IC).
+Atlan is a multi-family office that continuously evaluates private-market investment opportunities (funds and direct deals). Tracking is currently done by hand in Excel: repetitive data entry, fragile formulas, no access control, no clean rendering for the investment committee (IC).
 
-L'application doit :
+The application must:
 
-- Centraliser toutes les opportunités du pipeline dans une base de données partagée.
-- Automatiser le calcul du score de chaque opportunité selon une méthodologie fixe (3 grilles).
-- Recalculer le score **en direct** pendant la saisie.
-- Offrir deux surfaces distinctes :
-  - **Vue analyste** — dense, éditable, surface de travail quotidienne.
-  - **Mode présentation** — épuré, en lecture seule, pour projeter en comité d'investissement.
-- Gérer plusieurs utilisateurs avec des rôles (analyste / partner).
+- Centralize all pipeline opportunities in a shared database.
+- Automate the score calculation for each opportunity according to a fixed methodology (3 grids).
+- Recalculate the score **live** while data is being entered.
+- Offer two distinct surfaces:
+  - **Analyst view** — dense, editable, the daily working surface.
+  - **Presentation mode** — clean, read-only, for projecting in investment committee.
+- Support multiple users with roles (analyst / partner).
 
-Le périmètre couvre quatre familles d'opportunités, réparties en deux structures de données :
+The scope covers four families of opportunities, split across two data structures:
 
-| Section | Structure de données | Grille de scoring |
+| Section | Data structure | Scoring grid |
 |---|---|---|
-| Buyout, growth, VC | Fonds | A |
-| Secondaries | Fonds (schéma identique à Buyout/growth/VC) | A |
-| Private credit | Fonds (schéma identique) | B |
-| Co-investissement et direct | Deal (schéma distinct) | C |
+| Buyout, growth, VC | Fund | A |
+| Secondaries | Fund (same schema as Buyout/growth/VC) | A |
+| Private credit | Fund (same schema) | B |
+| Co-investment and direct | Deal (distinct schema) | C |
 
 ---
 
-## 2. Stack technique
+## 2. Technical stack
 
-Décisions verrouillées :
+Locked-in decisions:
 
-- **Langage** : Java 21 (LTS).
-- **Interface** : JavaFX 21, avec FXML pour la structure des écrans et une feuille de style CSS JavaFX pour le thème.
-- **Base de données** : PostgreSQL 15+.
-- **Accès données** : JDBC pur via une couche DAO explicite, avec **HikariCP** pour le pool de connexions. Pas de Hibernate/JPA — SQL lisible et transparent, plus simple à auditer par un tiers.
-- **Build** : Maven.
-- **Hachage des mots de passe** : BCrypt (bibliothèque `at.favre.lib:bcrypt`).
-- **Tests** : JUnit 5, avec couverture prioritaire du moteur de scoring.
+- **Language**: Java 21 (LTS).
+- **UI**: JavaFX 21, with FXML for screen structure and a JavaFX CSS stylesheet for the theme.
+- **Database**: PostgreSQL 15+.
+- **Data access**: plain JDBC via an explicit DAO layer, with **HikariCP** for connection pooling. No Hibernate/JPA — readable, transparent SQL, easier for a third party to audit.
+- **Build**: Maven.
+- **Password hashing**: BCrypt (`at.favre.lib:bcrypt` library).
+- **Tests**: JUnit 5, with priority coverage of the scoring engine.
 
-L'application se connecte à PostgreSQL avec **un seul rôle applicatif** (identifiants dans la configuration, jamais en dur ni versionnés). Le multi-utilisateur est géré **au niveau applicatif** via une table `app_user`, pas via des rôles PostgreSQL par personne. Cela évite de diffuser des identifiants de base sur chaque poste.
+The application connects to PostgreSQL with **a single application role** (credentials in configuration, never hard-coded or committed). Multi-user support is handled **at the application level** via an `app_user` table, not via per-person PostgreSQL roles. This avoids distributing database credentials to every machine.
 
-### Dépendances Maven principales
+### Main Maven dependencies
 
 - `org.openjfx:javafx-controls:21`
 - `org.openjfx:javafx-fxml:21`
-- `org.postgresql:postgresql` (driver JDBC)
+- `org.postgresql:postgresql` (JDBC driver)
 - `com.zaxxer:HikariCP`
 - `at.favre.lib:bcrypt`
 - `org.junit.jupiter:junit-jupiter` (test)
-- `org.openjfx:javafx-maven-plugin` (exécution)
+- `org.openjfx:javafx-maven-plugin` (run)
 
 ---
 
-## 3. Architecture et structure du projet
+## 3. Architecture and project structure
 
 ```
 atlan-mfo-dashboard/
 ├── pom.xml
 ├── README.md
 ├── .gitignore
-├── config.properties.example        # modèle, sans secrets
+├── config.properties.example        # template, no secrets
 └── src/
     ├── main/
     │   ├── java/com/atlan/mfo/
-    │   │   ├── Main.java             # point d'entrée JavaFX (Application)
+    │   │   ├── Main.java             # JavaFX entry point (Application)
     │   │   ├── config/
-    │   │   │   └── AppConfig.java    # lecture config / variables d'env
+    │   │   │   └── AppConfig.java    # config / env variable reading
     │   │   ├── db/
-    │   │   │   ├── Database.java     # DataSource HikariCP, init
-    │   │   │   └── Migrations.java   # exécution schema.sql + seed-<profil>.sql (dev|prod|none)
+    │   │   │   ├── Database.java     # HikariCP DataSource, init
+    │   │   │   └── Migrations.java   # runs schema.sql + seed-<profile>.sql (dev|prod|none)
     │   │   ├── model/
     │   │   │   ├── FundInvestment.java
     │   │   │   ├── DirectDeal.java
@@ -84,41 +84,41 @@ atlan-mfo-dashboard/
     │   │   │   ├── FundInvestmentDao.java
     │   │   │   ├── DirectDealDao.java
     │   │   │   ├── UserDao.java
-    │   │   │   └── StaleDataException.java   # levée en cas de conflit d'édition (§13.2)
+    │   │   │   └── StaleDataException.java   # thrown on an edit conflict (§13.2)
     │   │   ├── scoring/
-    │   │   │   ├── ScoringEngine.java      # cœur : calcule ScoreBreakdown
-    │   │   │   ├── ScoringProfile.java     # poids et cibles des 3 grilles
+    │   │   │   ├── ScoringEngine.java      # core: computes ScoreBreakdown
+    │   │   │   ├── ScoringProfile.java     # weights and targets of the 3 grids
     │   │   │   ├── GeographyMatcher.java
     │   │   │   ├── TimelineScorer.java
-    │   │   │   └── MetricParser.java       # parse "0.10x", "13.7%", etc.
+    │   │   │   └── MetricParser.java       # parses "0.10x", "13.7%", etc.
     │   │   ├── auth/
     │   │   │   ├── AuthService.java
-    │   │   │   ├── Session.java            # utilisateur courant + rôle
+    │   │   │   ├── Session.java            # current user + role
     │   │   │   └── PasswordHasher.java
     │   │   ├── ui/
-    │   │   │   ├── controllers/            # un contrôleur par écran
-    │   │   │   └── util/                   # Formatters, bindings live-scoring
+    │   │   │   ├── controllers/            # one controller per screen
+    │   │   │   └── util/                   # Formatters, live-scoring bindings
     │   │   └── util/
     │   └── resources/
     │       ├── fxml/                       # login.fxml, change-password.fxml, main.fxml, pipeline.fxml, …
-    │       ├── css/atlan-dark.css          # thème institutionnel
+    │       ├── css/atlan-dark.css          # institutional theme
     │       ├── fonts/                       # Inter + Newsreader (TTF bundled)
     │       └── db/
     │           ├── schema.sql
-    │           ├── seed-dev.sql            # données fictives de démarrage (dev)
-    │           ├── seed-prod.sql           # admin seul, sans données de démo (production)
-    │           └── roles.sql               # rôle applicatif à privilèges minimaux (production)
+    │           ├── seed-dev.sql            # fictitious startup data (dev)
+    │           ├── seed-prod.sql           # admin only, no demo data (production)
+    │           └── roles.sql               # application role with minimal privileges (production)
     └── test/
-        └── java/com/atlan/mfo/scoring/     # tests du moteur de scoring
+        └── java/com/atlan/mfo/scoring/     # scoring engine tests
 ```
 
-Couches, du bas vers le haut : `db` → `dao` → `model` + `scoring` → `ui`. L'UI ne parle jamais directement à la base ; elle passe par les DAO. Le moteur de scoring est **pur** (aucune dépendance UI ou base) pour être testable en isolation.
+Layers, bottom to top: `db` → `dao` → `model` + `scoring` → `ui`. The UI never talks directly to the database; it goes through the DAOs. The scoring engine is **pure** (no UI or database dependency) so it can be tested in isolation.
 
 ---
 
-## 4. Modèle de données
+## 4. Data model
 
-Toutes les métriques financières sont stockées en numérique (`NUMERIC` / `double`), **nullable**. Une valeur `NULL` signifie « non communiquée » et est **exclue** du scoring (voir §5), jamais traitée comme zéro.
+All financial metrics are stored as numeric (`NUMERIC` / `double`), **nullable**. A `NULL` value means "not reported" and is **excluded** from scoring (see §5), never treated as zero.
 
 ### 4.1 Enums
 
@@ -126,11 +126,11 @@ Toutes les métriques financières sont stockées en numérique (`NUMERIC` / `do
 Category        : BUYOUT_GROWTH_VC | SECONDARIES | PRIVATE_CREDIT
 DealStatus      : INITIAL_REVIEW | SCREENING | DUE_DILIGENCE | IC_VOTE | APPROVED | DECLINED_LOST
 BenchmarkStatus : ABOVE_THRESHOLD | BELOW_THRESHOLD | NA
-Tier            : STRONG | MODERATE | CAUTION   (dérivé du score, non stocké en base)
+Tier            : STRONG | MODERATE | CAUTION   (derived from the score, not stored in the database)
 Role            : ANALYST | PARTNER
 ```
 
-### 4.2 Schéma PostgreSQL (`schema.sql`)
+### 4.2 PostgreSQL schema (`schema.sql`)
 
 ```sql
 CREATE TYPE category        AS ENUM ('BUYOUT_GROWTH_VC','SECONDARIES','PRIVATE_CREDIT');
@@ -145,11 +145,11 @@ CREATE TABLE app_user (
     full_name     TEXT NOT NULL,
     role          app_role NOT NULL DEFAULT 'ANALYST',
     active        BOOLEAN NOT NULL DEFAULT TRUE,
-    must_change_password BOOLEAN NOT NULL DEFAULT FALSE,  -- forcé au 1er login (voir §13.3)
+    must_change_password BOOLEAN NOT NULL DEFAULT FALSE,  -- forced on first login (see §13.3)
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Fonds : Buyout/growth/VC, Secondaries, Private credit
+-- Funds: Buyout/growth/VC, Secondaries, Private credit
 CREATE TABLE fund_investment (
     id             BIGSERIAL PRIMARY KEY,
     category       category NOT NULL,
@@ -157,11 +157,11 @@ CREATE TABLE fund_investment (
     next_steps     TEXT,
     status         deal_status NOT NULL DEFAULT 'INITIAL_REVIEW',
     vs_benchmark   benchmark_status DEFAULT 'NA',
-    geography      TEXT,                    -- token canonique : 'US','EUROPE','UK','DACH','GLOBAL','OTHER' (voir §13.1)
+    geography      TEXT,                    -- canonical token: 'US','EUROPE','UK','DACH','GLOBAL','OTHER' (see §13.1)
     asset_class    TEXT,
-    commitment     NUMERIC,                 -- capital envisagé par Atlan (KPI « capital en revue », §6.1)
+    commitment     NUMERIC,                 -- capital planned by Atlan (KPI "capital under review", §6.1)
 
-    -- Les millésimes (track record complet, N par fonds) sont dans fund_vintage.
+    -- Vintages (full track record, N per fund) live in fund_vintage.
 
     -- timeline
     first_close    DATE,
@@ -169,7 +169,7 @@ CREATE TABLE fund_investment (
 
     comments       TEXT,
 
-    -- snapshot du score au dernier enregistrement (affichage = recalcul live)
+    -- score snapshot at last save (display = live recalculation)
     score_snapshot INT,
     sub_dpi        NUMERIC,
     sub_irr        NUMERIC,
@@ -177,24 +177,24 @@ CREATE TABLE fund_investment (
     sub_geo        NUMERIC,
     sub_time       NUMERIC,
 
-    version        BIGINT NOT NULL DEFAULT 0,   -- verrou optimiste (voir §13.2)
+    version        BIGINT NOT NULL DEFAULT 0,   -- optimistic lock (see §13.2)
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_by     BIGINT REFERENCES app_user(id)
 );
 
--- Millésimes d'un fonds : track record complet, N par fonds (voir §5.5)
+-- A fund's vintages: full track record, N per fund (see §5.5)
 CREATE TABLE fund_vintage (
     id           BIGSERIAL PRIMARY KEY,
     fund_id      BIGINT NOT NULL REFERENCES fund_investment(id) ON DELETE CASCADE,
     vintage_year INT NOT NULL,
     dpi          NUMERIC,
     tvpi         NUMERIC,
-    irr          NUMERIC,                 -- fraction : 0.137 = 13.7 %
+    irr          NUMERIC,                 -- fraction: 0.137 = 13.7%
     moic         NUMERIC,
     UNIQUE (fund_id, vintage_year)
 );
 
--- Deals directs : Co-investissement et direct
+-- Direct deals: Co-investment and direct
 CREATE TABLE direct_deal (
     id             BIGSERIAL PRIMARY KEY,
     name           TEXT NOT NULL,
@@ -204,22 +204,22 @@ CREATE TABLE direct_deal (
     industry       TEXT,
     gp             TEXT,                    -- general partner / sponsor
     geography      TEXT,
-    inv_type       TEXT,                    -- ex. 'Direct/Growth Equity'
-    commitment     NUMERIC,                 -- capital envisagé par Atlan (KPI « capital en revue », §6.1)
+    inv_type       TEXT,                    -- e.g. 'Direct/Growth Equity'
+    commitment     NUMERIC,                 -- capital planned by Atlan (KPI "capital under review", §6.1)
 
-    -- performance financière (fractions pour les %)
+    -- financial performance (fractions for percentages)
     revenue        NUMERIC,
-    cagr_pct       NUMERIC,                 -- 0.47 = 47 %
+    cagr_pct       NUMERIC,                 -- 0.47 = 47%
     ebitda         NUMERIC,
     ebitda_gr_pct  NUMERIC,
-    ebitda_mgn_pct NUMERIC,                 -- 0.92 = 92 %
+    ebitda_mgn_pct NUMERIC,                 -- 0.92 = 92%
     fcf            NUMERIC,
     fcf_conv_pct   NUMERIC,
     ev             NUMERIC,
 
-    -- retours attendus
+    -- expected returns
     entry_mult     NUMERIC,
-    peers_mult     TEXT,                    -- souvent une fourchette, ex. '20-40x'
+    peers_mult     TEXT,                    -- often a range, e.g. '20-40x'
     exit_val       NUMERIC,
     exp_irr_pct    NUMERIC,
     exp_moic       NUMERIC,
@@ -238,129 +238,129 @@ CREATE TABLE direct_deal (
     sub_geo        NUMERIC,
     sub_time       NUMERIC,
 
-    version        BIGINT NOT NULL DEFAULT 0,   -- verrou optimiste (voir §13.2)
+    version        BIGINT NOT NULL DEFAULT 0,   -- optimistic lock (see §13.2)
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_by     BIGINT REFERENCES app_user(id)
 );
 ```
 
-**Convention d'unités** : tous les pourcentages et IRR sont stockés en **fraction décimale** (`0.137` pour 13,7 %). Les multiples (DPI, MOIC, TVPI) sont des nombres nus (`1.40` pour 1,40x). Le formatage d'affichage (suffixes `x`, `%`, `m`, `bn`) est géré par une couche `Formatters` côté UI. La saisie brute est normalisée à l'entrée par `MetricParser`.
+**Units convention**: all percentages and IRRs are stored as a **decimal fraction** (`0.137` for 13.7%). Multiples (DPI, MOIC, TVPI) are bare numbers (`1.40` for 1.40x). Display formatting (`x`, `%`, `m`, `bn` suffixes) is handled by a `Formatters` layer on the UI side. Raw input is normalized on entry by `MetricParser`.
 
 ---
 
-## 5. Moteur de scoring (cœur de l'application)
+## 5. Scoring engine (the core of the application)
 
-Le scoring est un module Java pur (`com.atlan.mfo.scoring`), sans dépendance UI ni base. Il prend une opportunité (fonds ou deal) et retourne un `ScoreBreakdown` : les sous-scores, le score total, et le tier.
+Scoring is a pure Java module (`com.atlan.mfo.scoring`), with no UI or database dependency. It takes an opportunity (fund or deal) and returns a `ScoreBreakdown`: the sub-scores, the total score, and the tier.
 
-### 5.1 Formule de normalisation (commune aux 3 grilles)
+### 5.1 Normalization formula (common to the 3 grids)
 
 ```
-Earned    = somme des sous-scores des métriques communiquées
-Possible  = somme des points max des métriques communiquées
+Earned    = sum of the sub-scores of reported metrics
+Possible  = sum of the max points of reported metrics
 Score     = MIN( Earned / MAX(Possible, 80) * 100 , 95 )
 ```
 
-Règles :
+Rules:
 
-- Une métrique **non communiquée** (`NULL`) est **exclue** du calcul : elle ne compte ni dans `Earned` ni dans `Possible`. Elle n'est jamais pénalisée comme un zéro.
-- Chaque sous-score a un **plancher à 0** : une métrique communiquée mais négative (ex. IRR d'un fonds perdant) vaut 0 point — elle compte dans `Possible` mais ne retranche jamais de points d'`Earned`.
-- Le dénominateur a un **plancher à 80** : cela empêche des données éparses de gonfler artificiellement le score.
-- Le score est **plafonné à 95** : aucune opportunité n'apparaît « parfaite ».
-- Le score arrondi à l'entier est affiché.
+- A metric that is **not reported** (`NULL`) is **excluded** from the calculation: it counts in neither `Earned` nor `Possible`. It is never penalized as a zero.
+- Each sub-score has a **floor of 0**: a reported but negative metric (e.g. the IRR of a losing fund) is worth 0 points — it counts in `Possible` but never subtracts points from `Earned`.
+- The denominator has a **floor of 80**: this prevents sparse data from artificially inflating the score.
+- The score is **capped at 95**: no opportunity ever appears "perfect."
+- The score is displayed rounded to an integer.
 
-### 5.2 Grille A — Buyout, growth, VC (et Secondaries)
+### 5.2 Grid A — Buyout, growth, VC (and Secondaries)
 
-| Composant | Points max | Cible | Formule du sous-score |
+| Component | Max points | Target | Sub-score formula |
 |---|---|---|---|
-| DPI | 30 | 0,8x | `MIN(DPI / 0.8, 1) * 30` |
-| IRR | 25 | 0,30 | `MIN(IRR / 0.3, 1) * 25` |
-| MOIC | 20 | 2,5x | `MIN(MOIC / 2.5, 1) * 20` |
-| Géographie | 15 | US / EU / UK / DACH | match = 15, autre = 8, non communiquée = exclue |
-| Timeline | 10 | proximité du final close | ≤30j = 10, ≤60j = 6, ≤90j = 3, sinon 0 |
+| DPI | 30 | 0.8x | `MIN(DPI / 0.8, 1) * 30` |
+| IRR | 25 | 0.30 | `MIN(IRR / 0.3, 1) * 25` |
+| MOIC | 20 | 2.5x | `MIN(MOIC / 2.5, 1) * 20` |
+| Geography | 15 | US / EU / UK / DACH | match = 15, other = 8, not reported = excluded |
+| Timeline | 10 | proximity to final close | ≤30d = 10, ≤60d = 6, ≤90d = 3, otherwise 0 |
 
-### 5.3 Grille B — Private credit
+### 5.3 Grid B — Private credit
 
-| Composant | Points max | Cible | Formule du sous-score |
+| Component | Max points | Target | Sub-score formula |
 |---|---|---|---|
-| DPI | 30 | 0,7x | `MIN(DPI / 0.7, 1) * 30` |
-| IRR | 25 | 0,20 | `MIN(IRR / 0.2, 1) * 25` |
-| MOIC | 20 | 1,8x | `MIN(MOIC / 1.8, 1) * 20` |
-| Géographie | 15 | US / EU / UK / DACH | match = 15, autre = 8, non communiquée = exclue |
-| Timeline | 10 | proximité du final close | ≤30j = 10, ≤60j = 6, ≤90j = 3, sinon 0 |
+| DPI | 30 | 0.7x | `MIN(DPI / 0.7, 1) * 30` |
+| IRR | 25 | 0.20 | `MIN(IRR / 0.2, 1) * 25` |
+| MOIC | 20 | 1.8x | `MIN(MOIC / 1.8, 1) * 20` |
+| Geography | 15 | US / EU / UK / DACH | match = 15, other = 8, not reported = excluded |
+| Timeline | 10 | proximity to final close | ≤30d = 10, ≤60d = 6, ≤90d = 3, otherwise 0 |
 
-### 5.4 Grille C — Co-investissement et direct
+### 5.4 Grid C — Co-investment and direct
 
-| Composant | Points max | Cible | Formule du sous-score |
+| Component | Max points | Target | Sub-score formula |
 |---|---|---|---|
-| Revenue CAGR | 25 | 0,40 | `MIN(CAGR / 0.4, 1) * 25` |
-| EBITDA Margin | 20 | 0,35 | `MIN(Margin / 0.35, 1) * 20` |
-| FCF Conversion | 10 | 0,90 | `MIN(Conv / 0.9, 1) * 10` |
-| Expected IRR | 25 | 0,30 | `MIN(IRR / 0.3, 1) * 25` |
-| Géographie | 10 | US / EU / UK | match = 10, autre = 5, non communiquée = exclue |
-| Timeline | 10 | proximité du deadline | ≤30j = 10, ≤60j = 6, ≤90j = 3, sinon 0 |
+| Revenue CAGR | 25 | 0.40 | `MIN(CAGR / 0.4, 1) * 25` |
+| EBITDA Margin | 20 | 0.35 | `MIN(Margin / 0.35, 1) * 20` |
+| FCF Conversion | 10 | 0.90 | `MIN(Conv / 0.9, 1) * 10` |
+| Expected IRR | 25 | 0.30 | `MIN(IRR / 0.3, 1) * 25` |
+| Geography | 10 | US / EU / UK | match = 10, other = 5, not reported = excluded |
+| Timeline | 10 | proximity to deadline | ≤30d = 10, ≤60d = 6, ≤90d = 3, otherwise 0 |
 
-### 5.5 Millésimes pris en compte pour le scoring des fonds
+### 5.5 Vintages taken into account for fund scoring
 
-Le scoring des fonds (grilles A et B) prend en compte **tous les millésimes** du fonds (table `fund_vintage`). Pour chaque métrique m ∈ {DPI, IRR, MOIC}, on calcule une valeur combinée **pondérée par la récence** du millésime, avant d'appliquer la formule de la grille :
+Fund scoring (grids A and B) takes into account **all vintages** of the fund (`fund_vintage` table). For each metric m ∈ {DPI, IRR, MOIC}, a combined value **weighted by recency** of the vintage is computed, before applying the grid's formula:
 
 ```
-âge_v     = année_du_millésime_le_plus_récent − vintage_year        (0 pour le plus récent)
-poids_v   = 0,5 ^ (âge_v / H)                                        (H = demi-vie, défaut 4 ans)
-blended_m = Σ(poids_v × m_v) / Σ(poids_v)   sur les millésimes v où m_v est communiquée
+age_v      = most_recent_vintage_year − vintage_year        (0 for the most recent)
+weight_v   = 0.5 ^ (age_v / H)                                (H = half-life, default 4 years)
+blended_m  = Σ(weight_v × m_v) / Σ(weight_v)   over vintages v where m_v is reported
 ```
 
-Principe :
+Principle:
 
-- **Récence** : le millésime le plus récent porte le poids 1 ; un millésime plus vieux de H années porte la moitié du poids, et ainsi de suite. La demi-vie `H` est centralisée dans `ScoringProfile` (ajustable).
-- **Référence intra-fonds** : l'âge se mesure par rapport au millésime le plus récent *du fonds* (pas à l'année civile), donc les poids ne dérivent pas avec le temps tant qu'aucun millésime n'est ajouté.
-- **Données manquantes** (cohérent avec §5.1) : un millésime dont la métrique m est non communiquée est exclu du calcul de `blended_m` (son poids et sa valeur sont ignorés) ; si **aucun** millésime ne communique m, la métrique est exclue de `Earned`/`Possible`.
+- **Recency**: the most recent vintage carries weight 1; a vintage that is H years older carries half the weight, and so on. The half-life `H` is centralized in `ScoringProfile` (adjustable).
+- **Intra-fund reference**: age is measured relative to the fund's own most recent vintage (not the calendar year), so weights do not drift over time as long as no vintage is added.
+- **Missing data** (consistent with §5.1): a vintage whose metric m is not reported is excluded from the `blended_m` calculation (its weight and value are ignored); if **no** vintage reports m, the metric is excluded from `Earned`/`Possible`.
 
-Les colonnes `sub_dpi`, `sub_irr`, `sub_moic` stockent le sous-score final (calculé sur la valeur combinée). Dans les grilles A et B (§5.2, §5.3), « DPI / IRR / MOIC » désignent ces valeurs combinées.
+The `sub_dpi`, `sub_irr`, `sub_moic` columns store the final sub-score (computed on the combined value). In grids A and B (§5.2, §5.3), "DPI / IRR / MOIC" refer to these combined values.
 
-> **Point de vigilance assumé** : la pondération par récence donne du poids aux millésimes jeunes, dont le DPI est structurellement bas (courbe en J). C'est un choix délibéré (refléter la stratégie actuelle du GP) ; augmenter la demi-vie `H` atténue l'effet si nécessaire.
+> **Deliberate trade-off**: recency weighting gives weight to young vintages, whose DPI is structurally low (J-curve effect). This is an intentional choice (to reflect the GP's current strategy); increasing the half-life `H` dampens the effect if needed.
 
-### 5.6 Tiers et gouvernance
+### 5.6 Tiers and governance
 
 | Score | Tier | Signal | Action |
 |---|---|---|---|
-| 70 – 95 | Strong | Confiance élevée | Vote IC |
-| 40 – 69 | Moderate | Prometteur, données à compléter | DD approfondie |
-| 0 – 39 | Caution | Faible ou données éparses | Décliner / retravailler |
+| 70 – 95 | Strong | High confidence | IC vote |
+| 40 – 69 | Moderate | Promising, data to complete | Further due diligence |
+| 0 – 39 | Caution | Weak or sparse data | Decline / rework |
 
-Rappel de gouvernance à afficher dans l'app (repris de la méthodologie) : **le score est un support de décision ; le comité d'investissement conserve l'entière autorité ; une revue humaine est requise à tous les niveaux.**
+Governance reminder to display in the app (taken from the methodology): **the score is a decision-support tool; the investment committee retains full authority; a human review is required at every stage.**
 
-### 5.7 Décisions d'interprétation à confirmer
+### 5.7 Interpretation decisions — confirmed
 
-- **Géographie / timeline non renseignées** : traitées comme « non communiquées » donc **exclues** du dénominateur (cohérent avec le principe « missing data excluded »), plutôt que scorées à 0. Interprétation **retenue**. La géographie est en outre normalisée vers un vocabulaire canonique pour éviter les non-match silencieux (voir §13.1).
-- **Timeline et écoulement du temps** : le sous-score timeline dépend de la date du jour par rapport au `final_close` / `deal_deadline`. Le score affiché est donc **toujours recalculé à l'ouverture** (il peut évoluer d'un jour à l'autre sans modification de la fiche). Le `score_snapshot` en base n'est qu'une photo mise à jour à chaque enregistrement, utilisée pour le tri rapide dans les listes.
-- **Entrées textuelles** (ex. `20-40x`, `20-30%`) : exclues du scoring automatique. La saisie doit se faire en décimale (point milieu). `peers_mult` reste un champ texte purement informatif.
+- **Geography / timeline not provided**: treated as "not reported" and therefore **excluded** from the denominator (consistent with the "missing data excluded" principle), rather than scored as 0. Interpretation **confirmed**. Geography is additionally normalized to a canonical vocabulary to avoid silent non-matches (see §13.1).
+- **Timeline and the passage of time**: the timeline sub-score depends on today's date relative to `final_close` / `deal_deadline`. The displayed score is therefore **always recalculated on open** (it can change from one day to the next without the record being edited). The `score_snapshot` in the database is just a snapshot updated on each save, used for fast sorting in lists.
+- **Text entries** (e.g. `20-40x`, `20-30%`): excluded from automatic scoring. Input must be decimal (period as separator). `peers_mult` remains a purely informational text field.
 
-### 5.8 Exemple de calcul (grille A, un seul millésime)
+### 5.8 Calculation example (grid A, single vintage)
 
-Fonds à **un seul millésime** (valeurs combinées = valeurs de ce millésime) : DPI = 0,65 / IRR = 0,24 / MOIC = 2,1 / géographie = US (match) / pas de final close renseigné.
+Fund with a **single vintage** (combined values = that vintage's values): DPI = 0.65 / IRR = 0.24 / MOIC = 2.1 / geography = US (match) / no final close provided.
 
 ```
 sub_dpi  = MIN(0.65/0.8, 1) * 30 = 24.4
 sub_irr  = MIN(0.24/0.3, 1) * 25 = 20.0
 sub_moic = MIN(2.1/2.5, 1) * 20  = 16.8
 sub_geo  = 15  (match)
-sub_time = exclu (pas de date)
+sub_time = excluded (no date)
 
 Earned   = 24.4 + 20.0 + 16.8 + 15 = 76.2
 Possible = 30 + 25 + 20 + 15 = 90
-Score    = MIN( 76.2 / MAX(90, 80) * 100, 95 ) = MIN(84.7, 95) = 85  → tier Strong
+Score    = MIN( 76.2 / MAX(90, 80) * 100, 95 ) = MIN(84.7, 95) = 85  → Strong tier
 ```
 
-### 5.9 Exemple de calcul (grille A, deux millésimes, pondération par récence)
+### 5.9 Calculation example (grid A, two vintages, recency weighting)
 
-Fonds avec deux millésimes (H = 4 ans), géographie = US (match), pas de final close.
+Fund with two vintages (H = 4 years), geography = US (match), no final close.
 
-| Millésime | Âge | Poids `0,5^(âge/4)` | DPI | IRR | MOIC |
+| Vintage | Age | Weight `0.5^(age/4)` | DPI | IRR | MOIC |
 |---|---|---|---|---|---|
-| 2022 (récent) | 0 | 1,000 | 0,30 | 0,26 | 1,9 |
-| 2018 | 4 | 0,500 | 1,10 | 0,20 | 2,2 |
+| 2022 (recent) | 0 | 1.000 | 0.30 | 0.26 | 1.9 |
+| 2018 | 4 | 0.500 | 1.10 | 0.20 | 2.2 |
 
-Valeurs combinées (Σ poids = 1,500) :
+Combined values (Σ weights = 1.500):
 
 ```
 blended_dpi  = (1.000×0.30 + 0.500×1.10) / 1.500 = 0.567
@@ -371,101 +371,101 @@ sub_dpi  = MIN(0.567/0.8, 1) * 30 = 21.3
 sub_irr  = MIN(0.240/0.3, 1) * 25 = 20.0
 sub_moic = MIN(2.00/2.5, 1) * 20  = 16.0
 sub_geo  = 15  (match)
-sub_time = exclu (pas de date)
+sub_time = excluded (no date)
 
 Earned   = 21.3 + 20.0 + 16.0 + 15 = 72.3
 Possible = 30 + 25 + 20 + 15 = 90
-Score    = MIN( 72.3 / MAX(90, 80) * 100, 95 ) = MIN(80.3, 95) = 80  → tier Strong
+Score    = MIN( 72.3 / MAX(90, 80) * 100, 95 ) = MIN(80.3, 95) = 80  → Strong tier
 ```
 
-Les deux exemples (§5.8 et §5.9) doivent figurer dans les tests unitaires du `ScoringEngine`.
+Both examples (§5.8 and §5.9) must appear as-is in the `ScoringEngine` unit tests.
 
 ---
 
-## 6. Écrans, navigation et comportements
+## 6. Screens, navigation and behavior
 
-Coquille applicative : **menu latéral** fixe à gauche, contenu à droite, barre supérieure avec la bascule de mode et l'utilisateur courant.
+Application shell: fixed **sidebar** on the left, content on the right, top bar with the mode toggle and the current user.
 
-### 6.1 Écrans (vue analyste)
+### 6.1 Screens (analyst view)
 
-1. **Pipeline summary** (accueil) — bande de KPI (deals actifs, capital en revue, score moyen, nombre en tier Strong) puis tableau global de toutes les opportunités, filtrable par stratégie et statut, avec recherche. Colonnes : nom, stratégie, statut, score, tier. Tri par colonne. Double-clic sur une ligne → ouvre la fiche. Le score affiché en liste est **recalculé en direct** à l'ouverture, jamais lu depuis `score_snapshot` (voir §13.4).
+1. **Pipeline summary** (home) — a KPI band (active deals, capital under review, average score, number in Strong tier) followed by a global table of all opportunities, filterable by strategy and status, with search. Columns: name, strategy, status, score, tier. Sortable by column. Double-click on a row → opens the record. The score shown in the list is **recalculated live** on open, never read from `score_snapshot` (see §13.4).
 
-   Définition des KPI : **deals actifs** = opportunités dont le statut n'est ni `APPROVED` ni `DECLINED_LOST` ; **capital en revue** = somme des `commitment` de ces opportunités actives ; **score moyen** et **tier Strong** sont calculés sur ce même sous-ensemble actif.
-2. **Buyout, growth, VC** — liste filtrée + fiche fonds.
-3. **Secondaries** — même liste et même fiche que Buyout/growth/VC (`category = SECONDARIES`).
-4. **Private credit** — même structure fonds, grille de scoring B.
-5. **Co-investissement et direct** — liste + fiche deal (champs opérationnels).
-6. **Scoring methodology** — page **éditable** : les points (poids) et cibles de chaque grille, ainsi que les paramètres globaux (demi-vie des millésimes, plancher, plafond), sont modifiables et persistés (table `scoring_param`). Enregistrer recalcule tous les scores. Les régions géographiques préférées et les paliers de timeline (en jours) restent fixes. Un bouton rétablit les valeurs par défaut.
+   KPI definitions: **active deals** = opportunities whose status is neither `APPROVED` nor `DECLINED_LOST`; **capital under review** = sum of the `commitment` of these active opportunities; **average score** and **Strong tier** are computed on this same active subset.
+2. **Buyout, growth, VC** — filtered list + fund record.
+3. **Secondaries** — same list and same record as Buyout/growth/VC (`category = SECONDARIES`).
+4. **Private credit** — same fund structure, scoring grid B.
+5. **Co-investment and direct** — list + deal record (operational fields).
+6. **Scoring methodology** — **editable** page: the points (weights) and targets of each grid, as well as the global parameters (vintage half-life, floor, cap), are editable and persisted (`scoring_param` table). Saving recalculates all scores. Preferred geographic regions and the timeline day thresholds remain fixed. A button restores the default values.
 
-### 6.2 Fiche de saisie / édition — scoring en direct
+### 6.2 Data entry / edit record — live scoring
 
-La fiche (fonds ou deal) est le remplacement direct de la saisie Excel. Comportement clé : **le score et tous les sous-scores se recalculent à chaque frappe.**
+The record (fund or deal) is the direct replacement for Excel data entry. Key behavior: **the score and all sub-scores recalculate on every keystroke.**
 
-Implémentation : les champs de saisie sont liés à des `Property` JavaFX ; un listener sur chaque métrique appelle `ScoringEngine.score(...)` et met à jour l'affichage du score, des sous-scores et du tier. Le calcul est instantané et local (pas d'accès base). L'enregistrement persiste la fiche + le `score_snapshot`, sous **verrou optimiste** sur `version` : si la fiche a été modifiée par un autre utilisateur entre-temps, l'analyste est prévenu au lieu d'écraser (voir §13.2).
+Implementation: input fields are bound to JavaFX `Property` objects; a listener on each metric calls `ScoringEngine.score(...)` and updates the display of the score, sub-scores and tier. The calculation is instant and local (no database access). Saving persists the record + the `score_snapshot`, under an **optimistic lock** on `version`: if the record was modified by another user in the meantime, the analyst is warned instead of overwriting it (see §13.2).
 
-Le sélecteur de catégorie en haut de la fiche fonds (Buyout/growth/VC · Secondaries · Private credit) détermine la grille appliquée et se reflète en direct dans le score.
+The category selector at the top of the fund record (Buyout/growth/VC · Secondaries · Private credit) determines which grid is applied and is reflected live in the score.
 
-### 6.3 Les deux modes
+### 6.3 The two modes
 
-- **Vue analyste** : tout ce qui précède — dense, éditable, filtres, boutons de saisie.
-- **Mode présentation** : lecture seule, épuré, pensé pour la projection en IC. Pas de menu latéral ni de filtres. Contenu : chiffre-phare (capital en revue), 3–4 métriques de tête, allocation par stratégie (barres), opportunités prioritaires (top par score), et le rappel de gouvernance en pied. Un mode plein écran est souhaitable.
+- **Analyst view**: everything above — dense, editable, filters, data-entry buttons.
+- **Presentation mode**: read-only, clean, designed for projection at IC. No sidebar or filters. Content: headline figure (capital under review), 3–4 top-level metrics, allocation by strategy (bars), priority opportunities (top by score), and the governance reminder in the footer. A full-screen mode is desirable.
 
-La bascule se fait via le toggle en barre supérieure pour un analyste. Un partner est **verrouillé** en mode présentation (voir §7).
-
----
-
-## 7. Authentification et rôles
-
-- Écran de login au démarrage : identifiant + mot de passe, vérifiés contre `app_user` (hash BCrypt). La session en cours conserve l'utilisateur et son rôle.
-- **ANALYST** : accès complet lecture/écriture, atterrit en vue analyste, peut basculer en présentation.
-- **PARTNER** : lecture seule, atterrit et reste en mode présentation ; les écrans de saisie et boutons d'édition ne lui sont pas proposés.
-- Aucune donnée sensible ni identifiant de base n'est stockée en clair dans le code. Le premier utilisateur administrateur est créé par le seed (`seed-dev.sql` en développement, `seed-prod.sql` en production).
-- **Changement de mot de passe forcé** : l'admin (et tout utilisateur provisionné avec un mot de passe temporaire) porte `must_change_password = TRUE`. Après une authentification réussie, l'utilisateur est routé vers l'écran `change-password.fxml` **avant** d'accéder à l'application, tant que ce drapeau est vrai (voir §13.3).
+The toggle is available in the top bar for an analyst. A partner is **locked** into presentation mode (see §7).
 
 ---
 
-## 8. Design system — thème institutionnel
+## 7. Authentication and roles
 
-Direction visuelle : « terminal financier institutionnel ». Couleur dominante **pétrole profond `#163B4A`** (fond et chrome), texte **blanc**, accent **bronze `#816430`** réservé aux actions et à l'élément actif. Chiffres tabulaires, angles nets (rayon 4 px), micro-labels en capitales espacées. Sobre, dense, distinct d'une interface grand public. Toutes les couleurs sont centralisées dans `atlan-dark.css` (couleurs nommées JavaFX) pour pouvoir changer d'accent ou passer en thème clair d'un seul endroit.
+- Login screen on startup: username + password, checked against `app_user` (BCrypt hash). The current session keeps the user and their role.
+- **ANALYST**: full read/write access, lands in the analyst view, can switch to presentation.
+- **PARTNER**: read-only, lands in and stays in presentation mode; data-entry screens and edit buttons are not offered.
+- No sensitive data or database credentials are stored in the clear in the code. The first administrator user is created by the seed (`seed-dev.sql` in development, `seed-prod.sql` in production).
+- **Forced password change**: the admin (and any user provisioned with a temporary password) carries `must_change_password = TRUE`. After a successful authentication, the user is routed to the `change-password.fxml` screen **before** accessing the application, as long as this flag is true (see §13.3).
+
+---
+
+## 8. Design system — institutional theme
+
+Visual direction: "institutional financial terminal." Dominant color **deep petrol `#163B4A`** (background and chrome), **white** text, **bronze `#816430`** accent reserved for actions and the active element. Tabular figures, sharp corners (4px radius), letter-spaced capitalized micro-labels. Austere, dense, distinct from a consumer-facing interface. All colors are centralized in `atlan-dark.css` (named JavaFX colors) so the accent can be changed, or a light theme introduced, from a single place.
 
 ### 8.1 Palette
 
-Palette ancrée sur trois couleurs : `#163B4A` (pétrole, dominante), blanc, `#816430` (bronze, accent). Les autres valeurs sont des nuances plus claires ou plus sombres dérivées de ces trois couleurs pour donner de la profondeur à l'interface.
+Palette anchored on three colors: `#163B4A` (petrol, dominant), white, `#816430` (bronze, accent). Other values are lighter or darker shades derived from these three colors to give the interface depth.
 
-| Rôle | Hex |
+| Role | Hex |
 |---|---|
-| Fond application (dominante) | `#163B4A` |
-| Fond navigation / barre | `#11303C` (pétrole assombri) |
-| Surface carte | `#1D4A5B` (pétrole éclairci) |
-| Surface surélevée / hover / sélection | `#245567` |
-| Filet (hairline) | `rgba(255,255,255,0.08)` |
-| Filet fort | `rgba(255,255,255,0.16)` |
-| Texte principal | `#FFFFFF` |
-| Texte secondaire | `#AEC3C9` (gris pétrolé clair) |
-| Texte tertiaire / labels | `#79949C` |
-| Accent bronze | `#816430` |
-| Accent bronze — hover | `#9A7A3C` |
-| Accent bronze — wash (fond bouton) | `rgba(129,100,48,0.16)` |
-| Tier Strong | `#6FA88C` (sauge) |
-| Tier Moderate | `#8FA0B2` (acier) |
-| Tier Caution | `#C0796A` (terre cuite) |
+| Application background (dominant) | `#163B4A` |
+| Navigation / bar background | `#11303C` (darkened petrol) |
+| Card surface | `#1D4A5B` (lightened petrol) |
+| Raised surface / hover / selection | `#245567` |
+| Hairline | `rgba(255,255,255,0.08)` |
+| Strong hairline | `rgba(255,255,255,0.16)` |
+| Primary text | `#FFFFFF` |
+| Secondary text | `#AEC3C9` (light petrol gray) |
+| Tertiary text / labels | `#79949C` |
+| Bronze accent | `#816430` |
+| Bronze accent — hover | `#9A7A3C` |
+| Bronze accent — wash (button background) | `rgba(129,100,48,0.16)` |
+| Strong tier | `#6FA88C` (sage) |
+| Moderate tier | `#8FA0B2` (steel) |
+| Caution tier | `#C0796A` (terracotta) |
 
-L'accent bronze est réservé aux éléments interactifs (boutons, bordure de l'élément actif). Les grands chiffres du mode présentation restent en **blanc** pour un rendu épuré ; le bronze ne sert que d'accent ponctuel.
+The bronze accent is reserved for interactive elements (buttons, active element border). The large figures in presentation mode stay **white** for a clean look; bronze is used only as an occasional accent.
 
-Les tiers utilisent un **point coloré + libellé**, jamais une pastille pleine (registre institutionnel sobre). Ce sont des indicateurs de statut fonctionnels, volontairement désaturés et distincts de la palette de marque, car ils doivent encoder trois niveaux de risque de façon lisible.
+Tiers use a **colored dot + label**, never a solid pill (sober institutional register). These are functional status indicators, intentionally desaturated and distinct from the brand palette, since they need to encode three risk levels legibly.
 
-### 8.2 Typographie
+### 8.2 Typography
 
-- **Inter** pour l'ensemble de l'interface et les données, avec chiffres tabulaires.
-- **Newsreader** (serif) réservé aux grands chiffres et titres du mode présentation, pour une touche éditoriale « salle de conseil ».
-- Les deux polices sont embarquées dans `resources/fonts/` et chargées via `Font.loadFont` au démarrage (fallback système si absentes).
-- Micro-labels de section : capitales, interlettrage ~0,1em, gris tertiaire.
+- **Inter** for the entire interface and data, with tabular figures.
+- **Newsreader** (serif) reserved for the large figures and headings of presentation mode, for an editorial "boardroom" touch.
+- Both fonts are bundled in `resources/fonts/` and loaded via `Font.loadFont` on startup (falling back to system fonts if absent).
+- Section micro-labels: capitals, ~0.1em letter-spacing, tertiary gray.
 
-### 8.3 Extrait `atlan-dark.css` (couleurs nommées JavaFX)
+### 8.3 Excerpt of `atlan-dark.css` (named JavaFX colors)
 
 ```css
 .root {
-    -atlan-bg:          #163B4A;   /* pétrole, couleur dominante */
+    -atlan-bg:          #163B4A;   /* petrol, dominant color */
     -atlan-nav:         #11303C;
     -atlan-card:        #1D4A5B;
     -atlan-raised:      #245567;
@@ -488,74 +488,74 @@ Les tiers utilisent un **point coloré + libellé**, jamais une pastille pleine 
 
 ---
 
-## 9. Configuration et secrets
+## 9. Configuration and secrets
 
-- Connexion base fournie par variables d'environnement : `ATLAN_DB_URL`, `ATLAN_DB_USER`, `ATLAN_DB_PASSWORD` (et `ATLAN_DB_SEED` pour le profil de seed). À défaut, un fichier local `config.properties` (présent seulement en local, **jamais versionné**).
-- Clés de comportement : `db.runMigrations` (true en dev, false en production une fois le schéma appliqué) et `db.seed` (`dev` | `prod` | `none`).
-- Un fichier `config.properties.example` versionné documente les clés attendues, sans valeurs.
-- `.gitignore` exclut `config.properties`, les cibles de build (`target/`), et tout fichier de secret.
-
----
-
-## 10. Roadmap de développement (jalons)
-
-Chaque phase correspond à un lot cohérent, à committer et pousser au fil de l'eau (voir §11).
-
-- **Phase 0 — Fondations** : projet Maven, `pom.xml`, connexion HikariCP, exécution de `schema.sql` + seed, écran de login fonctionnel + changement de mot de passe forcé au 1er login (§13.3).
-- **Phase 1 — Lecture** : modèles + DAO (fonds, deals, users), écran Pipeline summary avec KPI et tableau global filtrable, listes par section en lecture.
-- **Phase 2 — Scoring** : refonte du stockage des millésimes (`fund_vintage`, modèle + DAO, adaptation de la fiche/seed), `ScoringEngine` + `ScoringProfile` (3 grilles, agrégation multi-millésimes pondérée par récence §5.5), `MetricParser`, `GeographyMatcher` (normalisation §13.1), `TimelineScorer`, tests unitaires JUnit couvrant les 3 grilles et les cas limites (données éparses, plancher 80, plafond 95, un vs plusieurs millésimes, exemples §5.8 et §5.9), et bascule des listes sur le recalcul live (§13.4).
-- **Phase 3 — Saisie** : fiches d'édition fonds (3 catégories) et deal direct, avec scoring en direct, sélecteurs de géographie canoniques (§13.1), création / modification / enregistrement via DAO avec verrou optimiste (§13.2).
-- **Phase 4 — Modes et rôles** : mode présentation (plein écran), gating par rôle (analyste vs partner), bascule en barre supérieure.
-- **Phase 5 — Finitions** : thème complet `atlan-dark.css`, filtres et tri avancés.
-- **Phase 6 — Distribution** : packaging `jlink` + `jpackage` (installeurs macOS/Windows, §13.5), export/impression PDF du mode présentation avec thème clair — optionnel.
+- Database connection provided via environment variables: `ATLAN_DB_URL`, `ATLAN_DB_USER`, `ATLAN_DB_PASSWORD` (and `ATLAN_DB_SEED` for the seed profile). Failing that, a local `config.properties` file (present locally only, **never committed**).
+- Behavior keys: `db.runMigrations` (true in dev, false in production once the schema has been applied) and `db.seed` (`dev` | `prod` | `none`).
+- A committed `config.properties.example` file documents the expected keys, without values.
+- `.gitignore` excludes `config.properties`, build targets (`target/`), and any secret file.
 
 ---
 
-## 11. Conventions Git et de commit
+## 10. Development roadmap (milestones)
 
-- Commits **fréquents** et **descriptifs** : chaque commit décrit précisément ce qui a été fait, de façon lisible pour une personne extérieure qui analyse l'historique. Message en français accepté ; préfixe de type recommandé (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`).
-- Un commit = une unité logique de travail. Pousser régulièrement, ne pas accumuler de gros commits fourre-tout.
-- **Ne jamais** ajouter `Co-Authored-By: Claude` ni aucune référence à un auteur autre que le propriétaire du dépôt dans les messages de commit.
-- Ne jamais committer de secrets (identifiants base, mots de passe). Vérifier le `.gitignore` avant le premier push.
+Each phase corresponds to a coherent batch of work, to be committed and pushed incrementally (see §11).
 
----
-
-## 12. Récapitulatif des points — statut après revue
-
-Détails d'implémentation en §13.
-
-1. Scoring des fonds : **résolu** — **tous les millésimes** (table `fund_vintage`), combinés avec une **pondération par récence** (demi-vie `H`, défaut 4 ans, dans `ScoringProfile`). Poids des métriques inchangés (points des grilles). (§5.5, §5.9)
-2. Géographie/timeline vides = **exclues** (confirmé) ; géographie fiabilisée par vocabulaire canonique + normalisation. (§5.7, §13.1)
-3. Mode présentation : bascule dans la même fenêtre (confirmé) ; export PDF plein écran en finition optionnelle. (§6.3, §10)
-4. Palette **verrouillée** : pétrole `#163B4A` dominant, blanc, accent bronze `#816430`. (§8.1)
-5. Thème : sombre (pétrole) pour l'app ; **thème clair réservé à l'export/impression** du mode présentation, en Phase 6. (§8, §10)
-
-Points nouvellement traités : édition concurrente (verrou optimiste, §13.2), changement de mot de passe au 1er login (§13.3), score recalculé en direct dans les listes (§13.4), packaging/distribution (§13.5).
+- **Phase 0 — Foundations**: Maven project, `pom.xml`, HikariCP connection, running `schema.sql` + seed, working login screen + forced password change on first login (§13.3).
+- **Phase 1 — Read**: models + DAOs (funds, deals, users), Pipeline summary screen with KPIs and a filterable global table, read-only lists per section.
+- **Phase 2 — Scoring**: reworked vintage storage (`fund_vintage`, model + DAO, adapting the record/seed), `ScoringEngine` + `ScoringProfile` (3 grids, recency-weighted multi-vintage aggregation §5.5), `MetricParser`, `GeographyMatcher` (normalization §13.1), `TimelineScorer`, JUnit unit tests covering the 3 grids and edge cases (sparse data, floor of 80, cap of 95, one vs. several vintages, examples §5.8 and §5.9), and switching lists over to live recalculation (§13.4).
+- **Phase 3 — Data entry**: fund edit records (3 categories) and direct deal, with live scoring, canonical geography selectors (§13.1), create / edit / save via DAO with optimistic locking (§13.2).
+- **Phase 4 — Modes and roles**: presentation mode (full screen), role-based gating (analyst vs. partner), toggle in the top bar.
+- **Phase 5 — Polish**: complete `atlan-dark.css` theme, advanced filters and sorting.
+- **Phase 6 — Distribution**: `jlink` + `jpackage` packaging (macOS/Windows installers, §13.5), PDF export/print of presentation mode with a light theme — optional.
 
 ---
 
-## 13. Décisions sur les risques identifiés
+## 11. Git and commit conventions
 
-Cette section fige les réponses aux manques repérés lors de la revue de la spec. Chaque point est directement implémentable.
+- **Frequent** and **descriptive** commits: each commit precisely describes what was done, in a way that's readable by an outside person reviewing the history. French messages are accepted; a type prefix is recommended (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`).
+- One commit = one logical unit of work. Push regularly, don't accumulate large catch-all commits.
+- **Never** add `Co-Authored-By: Claude` or any reference to an author other than the repository owner in commit messages.
+- Never commit secrets (database credentials, passwords). Check `.gitignore` before the first push.
 
-### 13.1 Géographie — vocabulaire canonique et normalisation
+---
 
-Le champ `geography` reste `TEXT` en base mais n'accepte plus de saisie libre : il stocke un **token canonique**.
+## 12. Summary of open points — status after review
 
-- Ensemble canonique : `US`, `EUROPE`, `UK`, `DACH`, `GLOBAL`, `OTHER`.
-- Set « préféré » (plein score) : grilles A/B → `{US, EUROPE, UK, DACH}` ; grille C → `{US, EUROPE, UK}`. `GLOBAL` compte comme un match (il couvre les régions préférées).
-- **UI** : la géographie est choisie dans un `ComboBox` (pas de champ texte libre), ce qui garantit un token valide à la saisie.
-- **`GeographyMatcher.normalize(raw)`** : `trim` + passage en majuscules + table d'alias, puis renvoie le token canonique ou `null`. Alias couverts a minima : `USA / U.S. / UNITED STATES / ÉTATS-UNIS → US` ; `EU / EUROZONE / EUROPE → EUROPE` ; `GB / GREAT BRITAIN / UNITED KINGDOM → UK` ; `GERMANY / AUSTRIA / SWITZERLAND / D-A-CH → DACH` ; `WORLD / WORLDWIDE / GLOBAL → GLOBAL`. Toute valeur inconnue non vide → `OTHER`.
-- **Scoring** : `normalize` d'abord ; `null`/vide → **exclu** du dénominateur ; token ∈ set préféré (ou `GLOBAL`) → plein score ; sinon (`OTHER` ou région hors set) → score « autre » (8 pour A/B, 5 pour C).
+Implementation details in §13.
 
-Cela supprime le risque de non-match silencieux (« USA » vs « US ») et fiabilise l'import de données existantes.
+1. Fund scoring: **resolved** — **all vintages** (`fund_vintage` table), combined with **recency weighting** (half-life `H`, default 4 years, in `ScoringProfile`). Metric weights unchanged (grid points). (§5.5, §5.9)
+2. Empty geography/timeline = **excluded** (confirmed); geography made reliable via canonical vocabulary + normalization. (§5.7, §13.1)
+3. Presentation mode: toggle within the same window (confirmed); full-screen PDF export as an optional polish item. (§6.3, §10)
+4. **Locked** palette: dominant petrol `#163B4A`, white, bronze accent `#816430`. (§8.1)
+5. Theme: dark (petrol) for the app; **light theme reserved for exporting/printing** presentation mode, in Phase 6. (§8, §10)
 
-### 13.2 Édition concurrente — verrou optimiste
+Newly addressed points: concurrent editing (optimistic lock, §13.2), password change on first login (§13.3), score recalculated live in lists (§13.4), packaging/distribution (§13.5).
 
-Base partagée + plusieurs analystes : on évite l'écrasement silencieux (« last write wins »).
+---
 
-- Colonne **`version BIGINT NOT NULL DEFAULT 0`** ajoutée à `fund_investment` et `direct_deal` (voir §4.2).
-- Le modèle charge `version` avec la fiche ; l'`UPDATE` du DAO est conditionnel :
+## 13. Decisions on identified risks
+
+This section locks in the answers to the gaps identified during the spec review. Each point is directly implementable.
+
+### 13.1 Geography — canonical vocabulary and normalization
+
+The `geography` field remains `TEXT` in the database but no longer accepts free-form input: it stores a **canonical token**.
+
+- Canonical set: `US`, `EUROPE`, `UK`, `DACH`, `GLOBAL`, `OTHER`.
+- "Preferred" set (full score): grids A/B → `{US, EUROPE, UK, DACH}`; grid C → `{US, EUROPE, UK}`. `GLOBAL` counts as a match (it covers the preferred regions).
+- **UI**: geography is chosen from a `ComboBox` (no free-text field), which guarantees a valid token on entry.
+- **`GeographyMatcher.normalize(raw)`**: `trim` + uppercasing + an alias table, then returns the canonical token or `null`. Aliases covered at minimum: `USA / U.S. / UNITED STATES → US`; `EU / EUROZONE / EUROPE → EUROPE`; `GB / GREAT BRITAIN / UNITED KINGDOM → UK`; `GERMANY / AUSTRIA / SWITZERLAND / D-A-CH → DACH`; `WORLD / WORLDWIDE / GLOBAL → GLOBAL`. Any unknown non-blank value → `OTHER`.
+- **Scoring**: `normalize` first; `null`/blank → **excluded** from the denominator; token ∈ preferred set (or `GLOBAL`) → full score; otherwise (`OTHER` or a region outside the set) → "other" score (8 for A/B, 5 for C).
+
+This removes the risk of a silent non-match ("USA" vs. "US") and makes importing existing data more reliable.
+
+### 13.2 Concurrent editing — optimistic locking
+
+Shared database + several analysts: silent overwrites ("last write wins") are avoided.
+
+- A **`version BIGINT NOT NULL DEFAULT 0`** column added to `fund_investment` and `direct_deal` (see §4.2).
+- The model loads `version` along with the record; the DAO's `UPDATE` is conditional:
 
 ```sql
 UPDATE fund_investment
@@ -563,28 +563,28 @@ UPDATE fund_investment
  WHERE id = ? AND version = ?;
 ```
 
-- Si `rowsAffected = 0`, la fiche a changé entre-temps → le DAO lève **`StaleDataException`**.
-- L'UI intercepte : dialogue « Cette fiche a été modifiée par un autre utilisateur depuis son ouverture. Recharger les données à jour ? » → rechargement de la version courante ; l'analyste réapplique ses modifications. Aucun écrasement muet.
+- If `rowsAffected = 0`, the record changed in the meantime → the DAO throws **`StaleDataException`**.
+- The UI intercepts it: dialog "This record has been modified by another user since it was opened. Reload the latest data?" → the current version is reloaded; the analyst reapplies their changes. No silent overwrite.
 
-### 13.3 Changement de mot de passe au premier login
+### 13.3 Password change on first login
 
-- Colonne **`must_change_password BOOLEAN NOT NULL DEFAULT FALSE`** dans `app_user` ; l'admin créé par le seed est provisionné à `TRUE`.
-- Après une authentification réussie, si `must_change_password = TRUE`, l'utilisateur est routé vers **`change-password.fxml`** (`ChangePasswordController`) **avant** d'accéder à la coquille applicative.
-- Nouveau mot de passe : longueur minimale imposée + champ de confirmation, haché en BCrypt, puis `must_change_password` repassé à `FALSE`. Même mécanisme pour tout futur utilisateur provisionné avec un mot de passe temporaire.
+- **`must_change_password BOOLEAN NOT NULL DEFAULT FALSE`** column in `app_user`; the admin created by the seed is provisioned with `TRUE`.
+- After a successful authentication, if `must_change_password = TRUE`, the user is routed to **`change-password.fxml`** (`ChangePasswordController`) **before** accessing the application shell.
+- New password: a minimum length is enforced + a confirmation field, hashed with BCrypt, then `must_change_password` is set back to `FALSE`. Same mechanism for any future user provisioned with a temporary password.
 
-### 13.4 Score en liste = recalcul en direct
+### 13.4 Score in lists = live recalculation
 
-Le moteur étant pur et peu coûteux, on l'appelle aussi côté listes.
+Since the engine is pure and cheap to run, it is also called on the list side.
 
-- Le **Pipeline summary** et les listes par section recalculent le score et le tier **en mémoire à l'ouverture**, pour chaque ligne, avec le même `ScoringEngine` que la fiche. Le score affiché tient donc compte de l'écoulement du temps (sous-score timeline).
-- Les colonnes `score_snapshot` et `sub_*` restent persistées comme **trace d'audit** de la valeur au dernier enregistrement (et tri hors-ligne éventuel), mais ne sont **jamais** la source d'affichage.
-- Conséquence : plus de divergence liste ↔ fiche. Optionnel : un indicateur discret si le score live diffère du snapshot (la timeline a bougé sans réédition).
+- The **Pipeline summary** and per-section lists recalculate the score and tier **in memory on open**, for each row, using the same `ScoringEngine` as the record view. The displayed score therefore reflects the passage of time (timeline sub-score).
+- The `score_snapshot` and `sub_*` columns remain persisted as an **audit trail** of the value at the last save (and for possible offline sorting), but are **never** the display source.
+- Consequence: no more list ↔ record divergence. Optional: a discreet indicator if the live score differs from the snapshot (the timeline moved without a re-edit).
 
-### 13.5 Packaging et distribution
+### 13.5 Packaging and distribution
 
-L'app est une application de bureau à installer sur les postes (analystes et partners).
+The app is a desktop application to be installed on machines (analysts and partners).
 
-- **Image runtime** : `mvn javafx:jlink` produit un JRE réduit embarquant les modules JavaFX.
-- **Installeur natif** : `jpackage` génère `.dmg` / `.pkg` (macOS) et `.msi` / `.exe` (Windows) à partir de cette image, polices `resources/fonts/` incluses.
-- Les partners reçoivent le **même** installeur ; le mode lecture seule est assuré par le gating de rôle (§7), pas par un build séparé.
-- Procédure de build documentée dans le `README.md`.
+- **Runtime image**: `mvn javafx:jlink` produces a reduced JRE embedding the JavaFX modules.
+- **Native installer**: `jpackage` generates `.dmg` / `.pkg` (macOS) and `.msi` / `.exe` (Windows) from this image, with `resources/fonts/` fonts included.
+- Partners receive the **same** installer; read-only mode is enforced by role gating (§7), not by a separate build.
+- Build procedure documented in `README.md`.
