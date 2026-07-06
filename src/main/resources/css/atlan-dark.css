@@ -829,6 +829,20 @@
     -fx-font-size: 14px;
 }
 
+.link-name {
+    -fx-cursor: hand;
+}
+
+.link-name:hover {
+    -fx-text-fill: -atlan-accent-hover;
+    -fx-underline: true;
+}
+
+.pres-priority-metrics {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 11px;
+}
+
 .pres-priority-strategy {
     -fx-text-fill: -atlan-text-3;
     -fx-font-size: 12px;

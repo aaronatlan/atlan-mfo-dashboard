@@ -24,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Mode présentation : épuré, lecture seule, pensé pour la projection en comité
@@ -36,15 +38,22 @@ public final class PresentationView extends BorderPane {
                     + "une revue humaine est requise à tous les niveaux.";
 
     private final BiConsumer<PipelineItem, DealStatus> onStatusChange;
+    private final Consumer<PipelineItem> onOpen;
+    private final Function<PipelineItem, String> headline;
 
     /**
      * @param onStatusChange appelé quand un statut est changé (analyste) ; {@code null}
-     *                       pour un partner (statuts en lecture seule).
+     *                       pour un partner (statuts en lecture seule)
+     * @param onOpen         ouvre la fiche complète d'une opportunité (clic sur le nom)
+     * @param headline       texte résumé (millésime le plus récent / métriques) par ligne
      */
     public PresentationView(List<PipelineItem> items, BiConsumer<PipelineItem, DealStatus> onStatusChange,
+                            Consumer<PipelineItem> onOpen, Function<PipelineItem, String> headline,
                             Runnable onExitToAnalyst, Runnable onToggleFullScreen, Runnable onLogout) {
         getStyleClass().add("presentation-root");
         this.onStatusChange = onStatusChange;
+        this.onOpen = onOpen;
+        this.headline = headline;
 
         List<PipelineItem> active = items.stream().filter(PipelineItem::isActive).toList();
 
@@ -197,10 +206,17 @@ public final class PresentationView extends BorderPane {
     private HBox decisionRow(PipelineItem i) {
         Label name = new Label(i.name());
         name.getStyleClass().add("pres-priority-name");
-        name.setMinWidth(240);
+        // Nom cliquable : ouvre la fiche complète (toutes les données)
+        name.getStyleClass().add("link-name");
+        name.setOnMouseClicked(e -> onOpen.accept(i));
+        Label metrics = new Label(headline.apply(i));
+        metrics.getStyleClass().add("pres-priority-metrics");
+        VBox nameBox = new VBox(3, name, metrics);
+        nameBox.setMinWidth(320);
+
         Label strat = new Label(i.strategy());
         strat.getStyleClass().add("pres-priority-strategy");
-        strat.setMinWidth(200);
+        strat.setMinWidth(180);
 
         Node statusNode;
         if (onStatusChange != null) {
@@ -224,7 +240,7 @@ public final class PresentationView extends BorderPane {
         Label score = new Label(Formatters.score(i.score()));
         score.getStyleClass().add("pres-priority-score");
 
-        HBox row = new HBox(16, name, strat, spacer, statusNode, score, OpportunityTable.tierNode(i.tier()));
+        HBox row = new HBox(16, nameBox, strat, spacer, statusNode, score, OpportunityTable.tierNode(i.tier()));
         row.setAlignment(Pos.CENTER_LEFT);
         row.getStyleClass().add("pres-priority-row");
         return row;

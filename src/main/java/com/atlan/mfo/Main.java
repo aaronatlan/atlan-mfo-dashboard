@@ -5,16 +5,21 @@ import com.atlan.mfo.auth.Session;
 import com.atlan.mfo.config.AppConfig;
 import com.atlan.mfo.dao.DirectDealDao;
 import com.atlan.mfo.dao.FundInvestmentDao;
+import com.atlan.mfo.dao.ScoringConfig;
 import com.atlan.mfo.dao.UserDao;
 import com.atlan.mfo.db.Database;
 import com.atlan.mfo.db.Migrations;
 import com.atlan.mfo.model.AppUser;
+import com.atlan.mfo.model.DirectDeal;
+import com.atlan.mfo.model.FundInvestment;
 import com.atlan.mfo.model.PipelineItem;
 import com.atlan.mfo.model.enums.DealStatus;
+import com.atlan.mfo.scoring.ScoringEngine;
 import com.atlan.mfo.ui.controllers.ChangePasswordController;
 import com.atlan.mfo.ui.controllers.LoginController;
 import com.atlan.mfo.ui.controllers.MainShellController;
-import com.atlan.mfo.ui.util.PipelineLoader;
+import com.atlan.mfo.ui.util.Formatters;
+import com.atlan.mfo.ui.view.DetailView;
 import com.atlan.mfo.ui.view.PresentationView;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -102,6 +107,20 @@ public class Main extends Application {
      * verrouillé ici (pas de retour), les deux peuvent passer en plein écran.
      */
     public void showPresentation(AppUser user) {
+        ScoringEngine engine = new ScoringConfig().currentEngine();
+        java.time.LocalDate today = java.time.LocalDate.now();
+        var fundById = new java.util.HashMap<Long, FundInvestment>();
+        var dealById = new java.util.HashMap<Long, DirectDeal>();
+        var items = new java.util.ArrayList<PipelineItem>();
+        for (FundInvestment f : new FundInvestmentDao().findAll()) {
+            items.add(PipelineItem.ofFund(f, engine.score(f, today).score()));
+            fundById.put(f.id(), f);
+        }
+        for (DirectDeal d : new DirectDealDao().findAll()) {
+            items.add(PipelineItem.ofDeal(d, engine.score(d, today).score()));
+            dealById.put(d.id(), d);
+        }
+
         Runnable onExitToAnalyst = user.isAnalyst() ? () -> showAnalystShell(user) : null;
         Runnable onFullScreen = () -> stage.setFullScreen(!stage.isFullScreen());
         Runnable onLogout = () -> {
@@ -119,9 +138,55 @@ public class Main extends Application {
             showPresentation(user);   // recharge et reflète le nouveau statut
         }
                 : null;
-        PresentationView view = new PresentationView(
-                PipelineLoader.loadItems(), onStatusChange, onExitToAnalyst, onFullScreen, onLogout);
+        java.util.function.Consumer<PipelineItem> onOpen =
+                item -> openPresentationDetail(item, fundById, dealById, engine);
+        java.util.function.Function<PipelineItem, String> headline =
+                item -> presentationHeadline(item, fundById, dealById);
+
+        PresentationView view = new PresentationView(items, onStatusChange, onOpen, headline,
+                onExitToAnalyst, onFullScreen, onLogout);
         setScene(view, 1280, 800);
+    }
+
+    /** Résumé d'une ligne : millésime le plus récent (fonds) ou métriques clés (deal). */
+    private String presentationHeadline(PipelineItem item,
+                                        java.util.Map<Long, FundInvestment> fundById,
+                                        java.util.Map<Long, DirectDeal> dealById) {
+        if (item.type() == PipelineItem.Type.FUND) {
+            FundInvestment f = fundById.get(item.id());
+            var newest = f.vintages().stream()
+                    .max(java.util.Comparator.comparingInt(com.atlan.mfo.model.FundVintage::vintageYear))
+                    .orElse(null);
+            if (newest == null) {
+                return "Aucun millésime communiqué";
+            }
+            return "Millésime " + newest.vintageYear()
+                    + "  ·  DPI " + Formatters.multiple(newest.dpi())
+                    + "  ·  IRR " + Formatters.percent(newest.irr())
+                    + "  ·  MOIC " + Formatters.multiple(newest.moic());
+        }
+        DirectDeal d = dealById.get(item.id());
+        return "CAGR " + Formatters.percent(d.cagrPct())
+                + "  ·  IRR att. " + Formatters.percent(d.expIrrPct())
+                + "  ·  MOIC att. " + Formatters.multiple(d.expMoic());
+    }
+
+    /** Ouvre la fiche complète (lecture seule) d'une opportunité dans une fenêtre modale. */
+    private void openPresentationDetail(PipelineItem item,
+                                        java.util.Map<Long, FundInvestment> fundById,
+                                        java.util.Map<Long, DirectDeal> dealById, ScoringEngine engine) {
+        Stage dialog = new Stage();
+        dialog.initOwner(stage);
+        dialog.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+        dialog.setTitle(item.name());
+        Runnable close = dialog::close;
+        Parent content = item.type() == PipelineItem.Type.FUND
+                ? DetailView.ofFundReadOnly(fundById.get(item.id()), engine.score(fundById.get(item.id())), close)
+                : DetailView.ofDealReadOnly(dealById.get(item.id()), engine.score(dealById.get(item.id())), close);
+        Scene scene = new Scene(content, 1040, 780);
+        applyStylesheet(scene);
+        dialog.setScene(scene);
+        dialog.showAndWait();
     }
 
     /* ---- Helpers ---- */

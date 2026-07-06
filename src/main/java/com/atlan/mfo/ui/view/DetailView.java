@@ -34,6 +34,16 @@ public final class DetailView extends BorderPane {
         getStyleClass().add("detail-view");
     }
 
+    /** Fiche fonds en lecture seule (sans éditer/supprimer), pour le mode présentation. */
+    public static DetailView ofFundReadOnly(FundInvestment f, ScoreBreakdown breakdown, Runnable onBack) {
+        return ofFund(f, breakdown, onBack, null, null);
+    }
+
+    /** Fiche deal en lecture seule (sans éditer/supprimer), pour le mode présentation. */
+    public static DetailView ofDealReadOnly(DirectDeal d, ScoreBreakdown breakdown, Runnable onBack) {
+        return ofDeal(d, breakdown, onBack, null, null);
+    }
+
     public static DetailView ofFund(FundInvestment f, ScoreBreakdown breakdown,
                                     Runnable onBack, Runnable onEdit, Runnable onDelete) {
         DetailView v = new DetailView();
@@ -130,14 +140,6 @@ public final class DetailView extends BorderPane {
         sub.getStyleClass().add("detail-subtitle");
         VBox titles = new VBox(2, title, sub);
 
-        Button delete = new Button("Supprimer");
-        delete.getStyleClass().add("danger-button");
-        delete.setOnAction(e -> onDelete.run());
-
-        Button edit = new Button("Éditer");
-        edit.getStyleClass().add("primary-button");
-        edit.setOnAction(e -> onEdit.run());
-
         VBox scoreBox = new VBox(2);
         scoreBox.setAlignment(Pos.CENTER_RIGHT);
         Label scoreVal = new Label(Formatters.score(breakdown.score()));
@@ -147,7 +149,21 @@ public final class DetailView extends BorderPane {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        HBox bar = new HBox(16, back, titles, spacer, delete, edit, scoreBox);
+        HBox bar = new HBox(16, back, titles, spacer);
+        // Boutons d'action optionnels : absents en lecture seule (mode présentation).
+        if (onDelete != null) {
+            Button delete = new Button("Supprimer");
+            delete.getStyleClass().add("danger-button");
+            delete.setOnAction(e -> onDelete.run());
+            bar.getChildren().add(delete);
+        }
+        if (onEdit != null) {
+            Button edit = new Button("Éditer");
+            edit.getStyleClass().add("primary-button");
+            edit.setOnAction(e -> onEdit.run());
+            bar.getChildren().add(edit);
+        }
+        bar.getChildren().add(scoreBox);
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.getStyleClass().add("detail-header");
         return bar;
