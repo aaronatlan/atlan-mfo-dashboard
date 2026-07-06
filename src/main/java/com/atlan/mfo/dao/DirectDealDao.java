@@ -124,7 +124,7 @@ public final class DirectDealDao {
             ps.setLong(35, d.version());
             if (ps.executeUpdate() == 0) {
                 throw new StaleDataException(
-                        "Le deal a été modifié par un autre utilisateur depuis son ouverture.");
+                        "The deal has been modified by another user since it was opened.");
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Mise à jour du deal impossible", e);
@@ -163,7 +163,7 @@ public final class DirectDealDao {
         JdbcSupport.setDouble(ps, 28, s.subScoreOf("EBITDA Margin"));
         JdbcSupport.setDouble(ps, 29, s.subScoreOf("FCF Conversion"));
         JdbcSupport.setDouble(ps, 30, s.subScoreOf("Expected IRR"));
-        JdbcSupport.setDouble(ps, 31, s.subScoreOf("Géographie"));
+        JdbcSupport.setDouble(ps, 31, s.subScoreOf("Geography"));
         JdbcSupport.setDouble(ps, 32, s.subScoreOf("Timeline"));
     }
 

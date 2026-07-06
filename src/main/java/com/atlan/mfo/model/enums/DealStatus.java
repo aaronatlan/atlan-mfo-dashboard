@@ -2,12 +2,12 @@ package com.atlan.mfo.model.enums;
 
 /** Étape d'une opportunité dans le pipeline. */
 public enum DealStatus {
-    INITIAL_REVIEW("Revue initiale"),
+    INITIAL_REVIEW("Initial review"),
     SCREENING("Screening"),
     DUE_DILIGENCE("Due diligence"),
-    IC_VOTE("Vote IC"),
-    APPROVED("Approuvé"),
-    DECLINED_LOST("Décliné / perdu");
+    IC_VOTE("IC vote"),
+    APPROVED("Approved"),
+    DECLINED_LOST("Declined / lost");
 
     private final String label;
 

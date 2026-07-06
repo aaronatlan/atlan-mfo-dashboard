@@ -155,7 +155,7 @@ public final class FundInvestmentDao {
                 if (rows == 0) {
                     conn.rollback();
                     throw new StaleDataException(
-                            "Le fonds a été modifié par un autre utilisateur depuis son ouverture.");
+                            "The fund has been modified by another user since it was opened.");
                 }
                 vintageDao.deleteByFund(conn, f.id());
                 for (FundVintage v : f.vintages()) {
@@ -188,7 +188,7 @@ public final class FundInvestmentDao {
         JdbcSupport.setDouble(ps, 13, s.subScoreOf("DPI"));
         JdbcSupport.setDouble(ps, 14, s.subScoreOf("IRR"));
         JdbcSupport.setDouble(ps, 15, s.subScoreOf("MOIC"));
-        JdbcSupport.setDouble(ps, 16, s.subScoreOf("Géographie"));
+        JdbcSupport.setDouble(ps, 16, s.subScoreOf("Geography"));
         JdbcSupport.setDouble(ps, 17, s.subScoreOf("Timeline"));
     }
 

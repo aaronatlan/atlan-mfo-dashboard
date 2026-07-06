@@ -42,7 +42,7 @@ public final class ScoringEngine {
         comps.add(ratio("DPI", g.dpi(), blended(fund.vintages(), FundVintage::dpi)));
         comps.add(ratio("IRR", g.irr(), blended(fund.vintages(), FundVintage::irr)));
         comps.add(ratio("MOIC", g.moic(), blended(fund.vintages(), FundVintage::moic)));
-        comps.add(geo("Géographie", g.geo(), fund.geography()));
+        comps.add(geo("Geography", g.geo(), fund.geography()));
         comps.add(timeline("Timeline", g.timelinePoints(), fund.finalClose(), reference));
 
         return assemble(comps);
@@ -62,7 +62,7 @@ public final class ScoringEngine {
         comps.add(ratio("EBITDA Margin", g.margin(), deal.ebitdaMgnPct()));
         comps.add(ratio("FCF Conversion", g.fcf(), deal.fcfConvPct()));
         comps.add(ratio("Expected IRR", g.irr(), deal.expIrrPct()));
-        comps.add(geo("Géographie", g.geo(), deal.geography()));
+        comps.add(geo("Geography", g.geo(), deal.geography()));
         comps.add(timeline("Timeline", g.timelinePoints(), deal.dealDeadline(), reference));
 
         return assemble(comps);

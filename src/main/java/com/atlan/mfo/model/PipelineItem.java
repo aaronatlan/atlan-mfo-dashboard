@@ -23,7 +23,7 @@ public record PipelineItem(
     }
 
     /** Libellé de stratégie unique pour la colonne et les filtres. */
-    public static final String DEALS_STRATEGY = "Co-investissement & direct";
+    public static final String DEALS_STRATEGY = "Co-investment & direct";
 
     public Tier tier() {
         return score == null ? null : Tier.fromScore(score);

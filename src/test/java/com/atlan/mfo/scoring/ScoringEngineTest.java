@@ -70,7 +70,7 @@ class ScoringEngineTest {
         assertEquals(Tier.CAUTION, b.tier());
         assertFalse(communicated(b, "IRR"));
         assertFalse(communicated(b, "MOIC"));
-        assertFalse(communicated(b, "Géographie"));
+        assertFalse(communicated(b, "Geography"));
         assertFalse(communicated(b, "Timeline"));
     }
 
@@ -110,7 +110,7 @@ class ScoringEngineTest {
         assertEquals(15.0, geoSub(fund(Category.BUYOUT_GROWTH_VC, "USA", null, one())), 1e-9); // alias
         assertEquals(8.0, geoSub(fund(Category.BUYOUT_GROWTH_VC, "Brazil", null, one())), 1e-9); // autre
         assertFalse(communicated(engine.score(
-                fund(Category.BUYOUT_GROWTH_VC, "  ", null, one()), REF), "Géographie")); // vide → exclu
+                fund(Category.BUYOUT_GROWTH_VC, "  ", null, one()), REF), "Geography")); // vide → exclu
     }
 
     @Test
@@ -126,7 +126,7 @@ class ScoringEngineTest {
     /* ---------- Helpers ---------- */
 
     private double geoSub(FundInvestment f) {
-        return sub(engine.score(f, REF), "Géographie");
+        return sub(engine.score(f, REF), "Geography");
     }
 
     private static double sub(ScoreBreakdown b, String label) {
