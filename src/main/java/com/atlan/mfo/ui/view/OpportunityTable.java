@@ -42,6 +42,7 @@ public final class OpportunityTable extends VBox {
     private final CheckBox activeOnly = new CheckBox("Actifs uniquement");
     private final TextField search = new TextField();
     private final Label countLabel = new Label();
+    private final Label reset = new Label("Réinitialiser");
 
     public OpportunityTable(List<PipelineItem> items, Consumer<PipelineItem> onOpen, boolean showStrategyFilter) {
         getStyleClass().add("table-block");
@@ -71,9 +72,10 @@ public final class OpportunityTable extends VBox {
 
         countLabel.getStyleClass().add("filter-count");
 
-        Label reset = new Label("Réinitialiser");
         reset.getStyleClass().add("link-label");
         reset.setOnMouseClicked(e -> resetFilters());
+        reset.setVisible(false);   // n'apparaît que lorsqu'un filtre est actif
+        reset.setManaged(false);
 
         if (showStrategyFilter) {
             row.getChildren().add(strategyFilter);
@@ -134,6 +136,12 @@ public final class OpportunityTable extends VBox {
             return q.isEmpty() || item.name().toLowerCase().contains(q);
         });
         updateCount();
+
+        // Le lien « Réinitialiser » n'apparaît que si au moins un filtre est actif
+        boolean anyActive = !ALL_STRATEGIES.equals(strat) || !ALL_STATUSES.equals(status)
+                || !ALL_TIERS.equals(tier) || active || !q.isEmpty();
+        reset.setVisible(anyActive);
+        reset.setManaged(anyActive);
     }
 
     private void updateCount() {
