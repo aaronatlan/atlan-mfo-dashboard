@@ -16,6 +16,7 @@ import com.atlan.mfo.model.enums.Role;
 import com.atlan.mfo.scoring.ScoringEngine;
 import com.atlan.mfo.ui.util.Async;
 import com.atlan.mfo.ui.util.ErrorDialog;
+import com.atlan.mfo.ui.view.ComparisonView;
 import com.atlan.mfo.ui.view.DealFormView;
 import com.atlan.mfo.ui.view.DetailView;
 import com.atlan.mfo.ui.view.FundFormView;
@@ -82,8 +83,8 @@ public class MainShellController {
         List<DirectDeal> d = dealDao.findAll();
         java.time.LocalDate today = java.time.LocalDate.now();
         List<PipelineItem> items = new ArrayList<>();
-        f.forEach(x -> items.add(PipelineItem.ofFund(x, engine.score(x, today).score())));
-        d.forEach(x -> items.add(PipelineItem.ofDeal(x, engine.score(x, today).score())));
+        f.forEach(x -> items.add(PipelineItem.ofFund(x, engine.score(x, today))));
+        d.forEach(x -> items.add(PipelineItem.ofDeal(x, engine.score(x, today))));
         return new Snapshot(f, d, items);
     }
 
@@ -130,6 +131,8 @@ public class MainShellController {
                 () -> section(Category.PRIVATE_CREDIT), false);
         addNav(PipelineItem.DEALS_STRATEGY,
                 this::dealsSection, false);
+        addNav("Decisions", this::decisionsSection, false);
+        addNav("Compare", () -> new ComparisonView(allItems, this::scoreOf), false);
 
         addSectionLabel("REFERENCE");
         addNav("Methodology",
@@ -201,6 +204,24 @@ public class MainShellController {
                 .filter(i -> i.type() == PipelineItem.Type.DEAL)
                 .toList();
         return new SectionView(PipelineItem.DEALS_STRATEGY, items, this::openDetail, this::newDeal);
+    }
+
+    /** Journal des décisions : opportunités approuvées ou déclinées, conservées (§6.1). */
+    private Node decisionsSection() {
+        List<PipelineItem> items = allItems.stream()
+                .filter(PipelineItem::isDecided)
+                .toList();
+        return new SectionView("Decisions", items, this::openDetail);
+    }
+
+    /** Recalcule en direct le score d'une opportunité (pour la vue comparaison). */
+    private ScoreBreakdown scoreOf(PipelineItem item) {
+        if (item.type() == PipelineItem.Type.FUND) {
+            return funds.stream().filter(f -> f.id() == item.id()).findFirst()
+                    .map(f -> engine.score(f)).orElse(null);
+        }
+        return deals.stream().filter(d -> d.id() == item.id()).findFirst()
+                .map(d -> engine.score(d)).orElse(null);
     }
 
     private void show(Supplier<Node> view) {

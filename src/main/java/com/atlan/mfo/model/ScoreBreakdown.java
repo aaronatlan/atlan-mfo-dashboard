@@ -23,5 +23,15 @@ public record ScoreBreakdown(
                 .findFirst()
                 .orElse(null);
     }
+
+    /** Nombre de critères effectivement renseignés (communiqués). */
+    public int reportedCount() {
+        return (int) components.stream().filter(ScoreComponent::communicated).count();
+    }
+
+    /** Nombre total de critères de la grille (renseignés + exclus). */
+    public int criteriaCount() {
+        return components.size();
+    }
 }
 

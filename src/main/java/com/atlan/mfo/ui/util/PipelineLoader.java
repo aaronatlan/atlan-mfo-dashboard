@@ -21,9 +21,9 @@ public final class PipelineLoader {
         LocalDate today = LocalDate.now();
         List<PipelineItem> items = new ArrayList<>();
         new FundInvestmentDao().findAll()
-                .forEach(f -> items.add(PipelineItem.ofFund(f, engine.score(f, today).score())));
+                .forEach(f -> items.add(PipelineItem.ofFund(f, engine.score(f, today))));
         new DirectDealDao().findAll()
-                .forEach(d -> items.add(PipelineItem.ofDeal(d, engine.score(d, today).score())));
+                .forEach(d -> items.add(PipelineItem.ofDeal(d, engine.score(d, today))));
         return items;
     }
 }

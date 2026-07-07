@@ -479,6 +479,49 @@
     -fx-font-size: 13px;
 }
 
+/* ---- Complétude des données ---- */
+.opportunity-table .col-data {
+    -fx-alignment: CENTER-LEFT;
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 12px;
+}
+
+/* Score fondé sur des données incomplètes : teinte d'alerte sobre */
+.completeness-low {
+    -fx-text-fill: -atlan-caution;
+}
+
+/* ---- Statut + puce « Decided » ---- */
+.cell-status {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 13px;
+}
+
+.decided-chip {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 1 7 1 7;
+    -fx-border-color: -atlan-line-strong;
+    -fx-border-radius: 9;
+    -fx-background-radius: 9;
+}
+
+/* Ligne d'une opportunité décidée : conservée mais atténuée */
+.opportunity-table .table-row-cell.row-decided {
+    -fx-opacity: 0.62;
+}
+
+/* ---- Vue comparaison : scorecards côte à côte ---- */
+.compare-columns {
+    -fx-padding: 8 2 8 2;
+    -fx-alignment: TOP-LEFT;
+}
+
+.compare-card {
+    -fx-min-width: 300;
+}
+
 /* ---- Fiche détail : cartes deux colonnes ---- */
 .detail-layout {
     -fx-padding: 18 8 24 2;

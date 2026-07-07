@@ -15,6 +15,20 @@ import java.util.function.Consumer;
 /** Liste d'une section (fonds d'une catégorie ou deals directs) en lecture (§6.1). */
 public final class SectionView extends VBox {
 
+    /** Variante lecture seule (sans bouton « + New ») : journal des décisions (§6.1). */
+    public SectionView(String title, List<PipelineItem> items, Consumer<PipelineItem> onOpen) {
+        getStyleClass().add("view-root");
+        setSpacing(22);
+
+        Label header = new Label(title);
+        header.getStyleClass().add("view-title");
+
+        OpportunityTable table = new OpportunityTable(items, onOpen, true);
+        VBox.setVgrow(table, Priority.ALWAYS);
+
+        getChildren().addAll(header, table);
+    }
+
     public SectionView(String title, List<PipelineItem> items, Consumer<PipelineItem> onOpen, Runnable onNew) {
         getStyleClass().add("view-root");
         setSpacing(22);

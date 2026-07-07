@@ -172,9 +172,18 @@ public final class OpportunityTable extends VBox {
         stratCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().strategy()));
         stratCol.getStyleClass().add("col-secondary");  // texte en retrait
 
-        TableColumn<PipelineItem, String> statusCol = new TableColumn<>("Status");
-        statusCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().status().label()));
+        // Statut + puce « Decided » pour les opportunités décidées (conservées au tableau).
+        TableColumn<PipelineItem, PipelineItem> statusCol = new TableColumn<>("Status");
+        statusCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
+        statusCol.setComparator(Comparator.comparing(i -> i.status().label()));
         statusCol.getStyleClass().add("col-secondary");
+        statusCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(PipelineItem item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty || item == null ? null : statusNode(item));
+            }
+        });
 
         // Cellule par défaut : une cellule custom + classe CSS de colonne décale le
         // texte verticalement (travers du skin JavaFX vérifié par mesure). Le score
@@ -183,6 +192,31 @@ public final class OpportunityTable extends VBox {
         scoreCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().score()));
         scoreCol.setComparator(Comparator.nullsFirst(Comparator.naturalOrder()));
         scoreCol.getStyleClass().add("col-score");   // centré + gras (CSS)
+
+        // Complétude des données de scoring (ex. « 4/6 ») : signale un score fondé
+        // sur peu de critères renseignés (§5.1 : les manquants sont exclus, pas pénalisés).
+        TableColumn<PipelineItem, PipelineItem> dataCol = new TableColumn<>("Data");
+        dataCol.getStyleClass().add("col-data");
+        dataCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
+        dataCol.setComparator(Comparator.comparingDouble(
+                (PipelineItem i) -> i.criteria() == 0 ? 0 : (double) i.reported() / i.criteria()));
+        dataCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(PipelineItem item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    getStyleClass().remove("completeness-low");
+                } else {
+                    setText(item.completeness());
+                    boolean low = item.reported() < item.criteria();
+                    getStyleClass().remove("completeness-low");
+                    if (low) {
+                        getStyleClass().add("completeness-low");
+                    }
+                }
+            }
+        });
 
         TableColumn<PipelineItem, PipelineItem> tierCol = new TableColumn<>("Tier");
         tierCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
@@ -200,6 +234,7 @@ public final class OpportunityTable extends VBox {
         table.getColumns().add(stratCol);
         table.getColumns().add(statusCol);
         table.getColumns().add(scoreCol);
+        table.getColumns().add(dataCol);
         table.getColumns().add(tierCol);
 
         SortedList<PipelineItem> sorted = new SortedList<>(filtered);
@@ -212,6 +247,13 @@ public final class OpportunityTable extends VBox {
 
         table.setRowFactory(tv -> {
             var r = new javafx.scene.control.TableRow<PipelineItem>();
+            // Ligne atténuée si l'opportunité est décidée (conservée mais en retrait).
+            r.itemProperty().addListener((o, a, b) -> {
+                r.getStyleClass().remove("row-decided");
+                if (b != null && b.isDecided()) {
+                    r.getStyleClass().add("row-decided");
+                }
+            });
             r.setOnMouseClicked(e -> {
                 if (e.getClickCount() == 2 && !r.isEmpty()) {
                     onOpen.accept(r.getItem());
@@ -221,6 +263,21 @@ public final class OpportunityTable extends VBox {
         });
 
         return table;
+    }
+
+    /** Libellé de statut + puce « Decided » pour les opportunités décidées (§6.1). */
+    static HBox statusNode(PipelineItem item) {
+        HBox box = new HBox(8);
+        box.setAlignment(Pos.CENTER_LEFT);
+        Label status = new Label(item.status().label());
+        status.getStyleClass().add("cell-status");
+        box.getChildren().add(status);
+        if (item.isDecided()) {
+            Label chip = new Label("Decided");
+            chip.getStyleClass().add("decided-chip");
+            box.getChildren().add(chip);
+        }
+        return box;
     }
 
     /** Indicateur de tier : point coloré + libellé (registre sobre, voir §8.1). */

@@ -16,7 +16,9 @@ public record PipelineItem(
         String strategy,     // libellé de stratégie affiché
         DealStatus status,
         Integer score,       // peut être null (non scoré)
-        Double commitment) {
+        Double commitment,
+        int reported,        // critères de scoring renseignés
+        int criteria) {      // total de critères de la grille
 
     public enum Type {
         FUND, DEAL
@@ -33,16 +35,28 @@ public record PipelineItem(
         return status.isActive();
     }
 
-    /** Le score est recalculé en direct par le moteur (§13.4), pas lu depuis score_snapshot. */
-    public static PipelineItem ofFund(FundInvestment f, Integer liveScore) {
-        return new PipelineItem(
-                f.id(), Type.FUND, f.name(), f.category(),
-                f.category().label(), f.status(), liveScore, f.commitment());
+    /** Une décision a été prise (approuvé ou décliné) : reste au tableau, marqué « Decided ». */
+    public boolean isDecided() {
+        return !status.isActive();
     }
 
-    public static PipelineItem ofDeal(DirectDeal d, Integer liveScore) {
+    /** Complétude des données de scoring, ex. « 4/6 ». */
+    public String completeness() {
+        return reported + "/" + criteria;
+    }
+
+    /** Le score est recalculé en direct par le moteur (§13.4), pas lu depuis score_snapshot. */
+    public static PipelineItem ofFund(FundInvestment f, ScoreBreakdown b) {
+        return new PipelineItem(
+                f.id(), Type.FUND, f.name(), f.category(),
+                f.category().label(), f.status(), b.score(), f.commitment(),
+                b.reportedCount(), b.criteriaCount());
+    }
+
+    public static PipelineItem ofDeal(DirectDeal d, ScoreBreakdown b) {
         return new PipelineItem(
                 d.id(), Type.DEAL, d.name(), null,
-                DEALS_STRATEGY, d.status(), liveScore, d.commitment());
+                DEALS_STRATEGY, d.status(), b.score(), d.commitment(),
+                b.reportedCount(), b.criteriaCount());
     }
 }

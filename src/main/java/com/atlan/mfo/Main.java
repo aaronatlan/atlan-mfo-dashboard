@@ -128,11 +128,11 @@ public class Main extends Application {
         var dealById = new java.util.HashMap<Long, DirectDeal>();
         var items = new java.util.ArrayList<PipelineItem>();
         for (FundInvestment f : new FundInvestmentDao().findAll()) {
-            items.add(PipelineItem.ofFund(f, engine.score(f, today).score()));
+            items.add(PipelineItem.ofFund(f, engine.score(f, today)));
             fundById.put(f.id(), f);
         }
         for (DirectDeal d : new DirectDealDao().findAll()) {
-            items.add(PipelineItem.ofDeal(d, engine.score(d, today).score()));
+            items.add(PipelineItem.ofDeal(d, engine.score(d, today)));
             dealById.put(d.id(), d);
         }
         return new PresentationData(engine, items, fundById, dealById);

@@ -171,7 +171,8 @@ public final class DetailView extends BorderPane {
 
     /* ---- Score en barres de progression ---- */
 
-    private static Node scoreBars(ScoreBreakdown b) {
+    /** Bloc de score en barres (réutilisé par la vue comparaison). */
+    static Node scoreBars(ScoreBreakdown b) {
         VBox rows = new VBox(12);
         for (ScoreComponent c : b.components()) {
             Label name = new Label(c.label());
@@ -207,8 +208,21 @@ public final class DetailView extends BorderPane {
         totalValue.getStyleClass().add("score-bar-total");
         HBox total = new HBox(totalLabel, spacer, totalValue);
         total.getStyleClass().add("score-bar-total-row");
-
         rows.getChildren().add(total);
+
+        // Complétude : nombre de critères renseignés (les manquants sont exclus, §5.1).
+        Label dataLabel = new Label("Data reported");
+        dataLabel.getStyleClass().add("score-bar-label");
+        Region dataSpacer = new Region();
+        HBox.setHgrow(dataSpacer, Priority.ALWAYS);
+        Label dataValue = new Label(b.reportedCount() + " / " + b.criteriaCount() + " criteria");
+        dataValue.getStyleClass().add("score-bar-value");
+        if (b.reportedCount() < b.criteriaCount()) {
+            dataValue.getStyleClass().add("completeness-low");
+        }
+        HBox dataRow = new HBox(dataLabel, dataSpacer, dataValue);
+        dataRow.setAlignment(Pos.CENTER_LEFT);
+        rows.getChildren().add(dataRow);
         return rows;
     }
 
