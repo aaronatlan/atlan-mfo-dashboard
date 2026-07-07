@@ -480,8 +480,10 @@
 }
 
 /* ---- Complétude des données ---- */
-.opportunity-table .col-data {
-    -fx-alignment: CENTER-LEFT;
+/* Pas de -fx-alignment sur la colonne : un centrage vertical explicite décale le
+   contenu de padding/2 vers le haut (cf. col-score). Sans règle, le contenu (HBox)
+   est centré comme les colonnes Statut/Tier. */
+.completeness {
     -fx-text-fill: -atlan-text-3;
     -fx-font-size: 12px;
 }
@@ -947,6 +949,14 @@
 
 .corner {
     -fx-background-color: transparent;
+}
+
+/* Coin haut-droit du tableau (filler + bouton show/hide colonnes) au-dessus de la
+   barre de défilement : masqué (sinon un petit rectangle clair y apparaît). */
+.opportunity-table .filler,
+.opportunity-table .show-hide-columns-button {
+    -fx-background-color: transparent;
+    -fx-opacity: 0;
 }
 
 /* Flèche de tri des colonnes */

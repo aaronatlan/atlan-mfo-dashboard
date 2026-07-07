@@ -196,25 +196,28 @@ public final class OpportunityTable extends VBox {
         // Complétude des données de scoring (ex. « 4/6 ») : signale un score fondé
         // sur peu de critères renseignés (§5.1 : les manquants sont exclus, pas pénalisés).
         TableColumn<PipelineItem, PipelineItem> dataCol = new TableColumn<>("Data");
-        dataCol.getStyleClass().add("col-data");
         dataCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
         dataCol.setComparator(Comparator.comparingDouble(
                 (PipelineItem i) -> i.criteria() == 0 ? 0 : (double) i.reported() / i.criteria()));
+        // Contenu via setGraphic (comme Status/Tier) plutôt que setText : évite le
+        // décalage vertical du skin sur le texte de cellule (cf. col-score).
         dataCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(PipelineItem item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
-                    setText(null);
-                    getStyleClass().remove("completeness-low");
-                } else {
-                    setText(item.completeness());
-                    boolean low = item.reported() < item.criteria();
-                    getStyleClass().remove("completeness-low");
-                    if (low) {
-                        getStyleClass().add("completeness-low");
-                    }
+                    setGraphic(null);
+                    return;
                 }
+                Label l = new Label(item.completeness());
+                l.getStyleClass().add("completeness");
+                if (item.reported() < item.criteria()) {
+                    l.getStyleClass().add("completeness-low");   // score fondé sur données incomplètes
+                }
+                // Enveloppé dans un HBox (comme Status/Tier) pour un centrage vertical correct.
+                HBox box = new HBox(l);
+                box.setAlignment(Pos.CENTER_LEFT);
+                setGraphic(box);
             }
         });
 
