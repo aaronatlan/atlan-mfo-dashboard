@@ -43,6 +43,11 @@ public class Main extends Application {
     private Stage stage;
     private AuthService authService;
 
+    // Dernière taille appliquée à la fenêtre : évite de redimensionner/re-centrer à
+    // chaque rafraîchissement d'un même écran (voir setScene).
+    private double appliedWidth = -1;
+    private double appliedHeight = -1;
+
     @Override
     public void init() {
         AppConfig config = AppConfig.load();
@@ -146,6 +151,9 @@ public class Main extends Application {
             showLogin();
         };
         // L'analyste peut acter les décisions de statut en séance ; le partner reste en lecture seule (§7).
+        // Persistance optimiste : le combo affiche déjà le nouveau statut, on écrit en
+        // tâche de fond SANS reconstruire la vue (fluide, reste en plein écran). En cas
+        // d'échec seulement, on resynchronise la vue et on prévient.
         java.util.function.BiConsumer<PipelineItem, DealStatus> onStatusChange = user.isAnalyst()
                 ? (item, status) -> com.atlan.mfo.ui.util.Async.run(
                 () -> {
@@ -155,8 +163,11 @@ public class Main extends Application {
                         new DirectDealDao().updateStatus(item.id(), status, user.id());
                     }
                 },
-                () -> showPresentation(user),   // recharge et reflète le nouveau statut
-                com.atlan.mfo.ui.util.ErrorDialog::show)
+                () -> { },   // succès : rien à faire, l'UI reflète déjà le choix
+                ex -> {
+                    com.atlan.mfo.ui.util.ErrorDialog.show(ex);
+                    showPresentation(user);
+                })
                 : null;
         java.util.function.Consumer<PipelineItem> onOpen =
                 item -> openPresentationDetail(item, data.fundById(), data.dealById(), data.engine());
@@ -220,9 +231,18 @@ public class Main extends Application {
         } else {
             scene.setRoot(root);
         }
+        // On ne redimensionne / re-centre la fenêtre que si la taille cible change
+        // vraiment. En plein écran, ou pour un simple rafraîchissement du même écran
+        // (ex. changement de statut en présentation), on laisse la géométrie intacte —
+        // sinon la fenêtre sort du plein écran et rétrécit à chaque rechargement.
+        if (stage.isFullScreen() || (w == appliedWidth && h == appliedHeight)) {
+            return;
+        }
         stage.setWidth(w);
         stage.setHeight(h);
         stage.centerOnScreen();
+        appliedWidth = w;
+        appliedHeight = h;
     }
 
     private Parent load(String fxml, Object controller) {

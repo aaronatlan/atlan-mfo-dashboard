@@ -223,8 +223,10 @@ public final class PresentationView extends BorderPane {
             ComboBox<DealStatus> combo = FormControls.enumCombo(DealStatus.values(), DealStatus::label, false);
             combo.setValue(i.status());
             combo.getStyleClass().add("pres-status-combo");
+            // Comparer à l'ancienne valeur du combo (a), pas au modèle qui n'est plus
+            // rechargé : sinon revenir au statut initial ne serait pas persisté.
             combo.valueProperty().addListener((o, a, b) -> {
-                if (b != null && b != i.status()) {
+                if (b != null && b != a) {
                     onStatusChange.accept(i, b);
                 }
             });
