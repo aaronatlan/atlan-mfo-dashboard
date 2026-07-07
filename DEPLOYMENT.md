@@ -205,9 +205,12 @@ pipeline tables (`fund_investment`, `fund_vintage`, `direct_deal`). User
 accounts (`app_user`) and the schema are kept — no need to recreate access
 each cycle.
 
-⚠️ **Irreversible action.** No automatic backup is made by this script: run a
-`pg_dump` beforehand if the cycle's history needs to be kept (see §6 above),
-for example for archiving or later review.
+**Automatic backup.** Before purging, the script writes a restorable
+`pipeline-backup-<timestamp>.sql` file (INSERT statements for the three
+tables) to the working directory. Keep it if the cycle's history matters; to
+restore, run `psql <connection> -f pipeline-backup-<timestamp>.sql`. This is
+self-contained (no `pg_dump` required). For a full database backup (including
+accounts), a `pg_dump` (see §6) remains the reference.
 
 ---
 

@@ -3,8 +3,8 @@
 # Vide le pipeline (fonds, millésimes, deals) après un comité d'investissement.
 # Les comptes utilisateurs (app_user) et le schéma sont conservés.
 #
-# ⚠️  ACTION DESTRUCTIVE ET IRRÉVERSIBLE. Aucune sauvegarde automatique n'est
-# faite par ce script — faire un pg_dump avant si l'historique doit être gardé.
+# ⚠️  ACTION DESTRUCTIVE. Un fichier de sauvegarde restaurable (pipeline-backup-*.sql)
+# est écrit automatiquement AVANT la purge ; conservez-le si l'historique doit être gardé.
 #
 # Usage : scripts/reset-pipeline.sh
 set -euo pipefail
