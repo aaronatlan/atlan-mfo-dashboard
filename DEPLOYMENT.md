@@ -212,6 +212,9 @@ restore, run `psql <connection> -f pipeline-backup-<timestamp>.sql`. This is
 self-contained (no `pg_dump` required). For a full database backup (including
 accounts), a `pg_dump` (see §6) remains the reference.
 
+> The reset **does not** touch the `opportunity_outcome` table (predicted vs.
+> realized calibration): that dataset is meant to accumulate across cycles.
+
 ---
 
 ## 8. Updating the application
@@ -220,7 +223,14 @@ accounts), a `pg_dump` (see §6) remains the reference.
 2. Rebuild and re-sign the installers, redistribute them.
 3. If the **schema** changes: apply the new migrations on the central
    database **once**, by the owner, before deploying the new version to the
-   machines.
+   machines. `schema.sql` is idempotent (`CREATE TABLE IF NOT EXISTS`), so
+   re-running it only adds what is missing:
+   ```bash
+   psql <connection as owner> -f src/main/resources/db/schema.sql
+   ```
+   Recent additions requiring this: `scoring_param` (editable methodology) and
+   `opportunity_outcome` (predicted vs. realized calibration). Until applied,
+   those features degrade gracefully (defaults / empty view) instead of failing.
 
 ---
 
