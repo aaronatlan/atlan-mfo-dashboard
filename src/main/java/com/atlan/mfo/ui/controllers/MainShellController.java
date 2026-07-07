@@ -14,6 +14,8 @@ import com.atlan.mfo.dao.ScoringConfig;
 import com.atlan.mfo.model.enums.Category;
 import com.atlan.mfo.model.enums.Role;
 import com.atlan.mfo.scoring.ScoringEngine;
+import com.atlan.mfo.ui.util.Async;
+import com.atlan.mfo.ui.util.ErrorDialog;
 import com.atlan.mfo.ui.view.DealFormView;
 import com.atlan.mfo.ui.view.DetailView;
 import com.atlan.mfo.ui.view.FundFormView;
@@ -21,7 +23,9 @@ import com.atlan.mfo.ui.view.MethodologyView;
 import com.atlan.mfo.ui.view.PipelineView;
 import com.atlan.mfo.ui.view.SectionView;
 import javafx.fxml.FXML;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
@@ -30,6 +34,7 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -63,18 +68,54 @@ public class MainShellController {
     @FXML
     private void initialize() {
         userLabel.setText(user.fullName() + "  ·  " + roleLabel(user.role()));
-        loadData();
-        buildNav();
+        // Chargement initial en tâche de fond, puis construction du menu (§13.4).
+        reload(this::buildNav);
     }
 
-    private void loadData() {
-        funds = fundDao.findAll();
-        deals = dealDao.findAll();
-        // Score recalculé en direct par le moteur à l'ouverture (§13.4)
+    /** Instantané des données chargées (calculé hors thread UI, appliqué sur le thread UI). */
+    private record Snapshot(List<FundInvestment> funds, List<DirectDeal> deals, List<PipelineItem> items) {
+    }
+
+    /** Lit fonds + deals et recalcule les scores en direct par le moteur (§13.4). */
+    private Snapshot fetch() {
+        List<FundInvestment> f = fundDao.findAll();
+        List<DirectDeal> d = dealDao.findAll();
         java.time.LocalDate today = java.time.LocalDate.now();
-        allItems = new java.util.ArrayList<>();
-        funds.forEach(f -> allItems.add(PipelineItem.ofFund(f, engine.score(f, today).score())));
-        deals.forEach(d -> allItems.add(PipelineItem.ofDeal(d, engine.score(d, today).score())));
+        List<PipelineItem> items = new ArrayList<>();
+        f.forEach(x -> items.add(PipelineItem.ofFund(x, engine.score(x, today).score())));
+        d.forEach(x -> items.add(PipelineItem.ofDeal(x, engine.score(x, today).score())));
+        return new Snapshot(f, d, items);
+    }
+
+    private void apply(Snapshot s) {
+        funds = s.funds();
+        deals = s.deals();
+        allItems = s.items();
+    }
+
+    /** Recharge les données en tâche de fond, puis exécute {@code after} sur le thread UI. */
+    private void reload(Runnable after) {
+        setBusy(true);
+        Async.run(this::fetch,
+                s -> {
+                    apply(s);
+                    setBusy(false);
+                    if (after != null) {
+                        after.run();
+                    }
+                },
+                ex -> {
+                    setBusy(false);
+                    ErrorDialog.show(ex);
+                });
+    }
+
+    /** Curseur d'attente pendant un accès base (indicateur léger, universel). */
+    private void setBusy(boolean busy) {
+        Scene sc = contentPane.getScene();
+        if (sc != null) {
+            sc.setCursor(busy ? Cursor.WAIT : Cursor.DEFAULT);
+        }
     }
 
     private void buildNav() {
@@ -97,20 +138,33 @@ public class MainShellController {
 
     /** Saves the edited methodology then recalculates all scores. */
     private void saveMethodology(java.util.Map<String, Double> params) {
-        scoringConfig.save(params);
-        engine = scoringConfig.currentEngine();   // moteur reconstruit avec les nouveaux poids
-        loadData();                                // scores recalculés
-        Alert done = new Alert(Alert.AlertType.INFORMATION);
-        done.setTitle("Methodology");
-        done.setHeaderText("Methodology saved");
-        done.setContentText("All opportunity scores have been recalculated.");
-        done.setGraphic(null);
-        done.getDialogPane().setGraphic(null);
-        var css = getClass().getResource("/css/atlan-dark.css");
-        if (css != null) {
-            done.getDialogPane().getStylesheets().add(css.toExternalForm());
-        }
-        done.showAndWait();
+        setBusy(true);
+        Async.run(
+                () -> {
+                    scoringConfig.save(params);
+                    engine = scoringConfig.currentEngine();   // moteur reconstruit avec les nouveaux poids
+                    return fetch();                           // scores recalculés avec le nouveau moteur
+                },
+                s -> {
+                    apply(s);
+                    setBusy(false);
+                    setContent(currentView.get());
+                    Alert done = new Alert(Alert.AlertType.INFORMATION);
+                    done.setTitle("Methodology");
+                    done.setHeaderText("Methodology saved");
+                    done.setContentText("All opportunity scores have been recalculated.");
+                    done.setGraphic(null);
+                    done.getDialogPane().setGraphic(null);
+                    var css = getClass().getResource("/css/atlan-dark.css");
+                    if (css != null) {
+                        done.getDialogPane().getStylesheets().add(css.toExternalForm());
+                    }
+                    done.showAndWait();
+                },
+                ex -> {
+                    setBusy(false);
+                    ErrorDialog.show(ex);
+                });
     }
 
     private void addSectionLabel(String text) {
@@ -191,52 +245,68 @@ public class MainShellController {
 
     private void deleteFund(FundInvestment fund) {
         if (confirmDelete("fund \"" + fund.name() + "\"")) {
-            fundDao.delete(fund.id());
-            reloadAndReturn();
+            writeThenReturn(() -> fundDao.delete(fund.id()));
         }
     }
 
     private void deleteDeal(DirectDeal deal) {
         if (confirmDelete("deal \"" + deal.name() + "\"")) {
-            dealDao.delete(deal.id());
-            reloadAndReturn();
+            writeThenReturn(() -> dealDao.delete(deal.id()));
         }
     }
 
     private void saveFund(FundInvestment fund, ScoreBreakdown breakdown) {
         long uid = Session.currentUser().id();
-        try {
+        writeThenReturn(() -> {
             if (fund.id() == 0) {
                 fundDao.insert(fund, breakdown, uid);
             } else {
                 fundDao.update(fund, breakdown, uid);
             }
-        } catch (StaleDataException e) {
-            conflict(e.getMessage());
-            return;
-        }
-        reloadAndReturn();
+        });
     }
 
     private void saveDeal(DirectDeal deal, ScoreBreakdown breakdown) {
         long uid = Session.currentUser().id();
-        try {
+        writeThenReturn(() -> {
             if (deal.id() == 0) {
                 dealDao.insert(deal, breakdown, uid);
             } else {
                 dealDao.update(deal, breakdown, uid);
             }
-        } catch (StaleDataException e) {
-            conflict(e.getMessage());
-            return;
-        }
-        reloadAndReturn();
+        });
+    }
+
+    /**
+     * Exécute une écriture base (hors thread UI), puis recharge et réaffiche l'écran
+     * courant. Un conflit de verrou optimiste (§13.2) déclenche le dialogue dédié ;
+     * toute autre erreur (base injoignable…) le dialogue d'erreur standard.
+     */
+    private void writeThenReturn(Runnable write) {
+        setBusy(true);
+        Async.run(
+                () -> {
+                    write.run();
+                    return fetch();
+                },
+                s -> {
+                    apply(s);
+                    setBusy(false);
+                    setContent(currentView.get());
+                },
+                ex -> {
+                    setBusy(false);
+                    if (ex instanceof StaleDataException) {
+                        conflict(ex.getMessage());
+                    } else {
+                        ErrorDialog.show(ex);
+                    }
+                });
     }
 
     /** Recharge les données puis réaffiche l'écran courant (avec les scores à jour). */
     private void reloadAndReturn() {
-        loadData();
-        setContent(currentView.get());
+        reload(() -> setContent(currentView.get()));
     }
 
     private void backToList() {

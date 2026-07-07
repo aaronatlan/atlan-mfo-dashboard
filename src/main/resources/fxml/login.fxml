@@ -30,7 +30,7 @@
 
         <Region prefHeight="10" />
 
-        <Button text="Log in" onAction="#onLogin" defaultButton="true"
+        <Button fx:id="loginButton" text="Log in" onAction="#onLogin" defaultButton="true"
                 styleClass="primary-button" maxWidth="Infinity" />
     </VBox>
 </StackPane>

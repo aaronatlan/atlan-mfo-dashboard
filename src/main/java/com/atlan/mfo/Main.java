@@ -64,6 +64,7 @@ public class Main extends Application {
 
     @Override
     public void stop() {
+        com.atlan.mfo.ui.util.Async.shutdown();
         Database.close();
     }
 
@@ -107,6 +108,20 @@ public class Main extends Application {
      * verrouillé ici (pas de retour), les deux peuvent passer en plein écran.
      */
     public void showPresentation(AppUser user) {
+        // Lecture base (moteur + opportunités) hors thread UI : l'écran ne fige pas.
+        com.atlan.mfo.ui.util.Async.run(
+                Main::buildPresentationData,
+                data -> showPresentationView(user, data),
+                com.atlan.mfo.ui.util.ErrorDialog::show);
+    }
+
+    /** Données de la vue présentation, calculées hors thread UI. */
+    private record PresentationData(ScoringEngine engine, java.util.List<PipelineItem> items,
+                                    java.util.Map<Long, FundInvestment> fundById,
+                                    java.util.Map<Long, DirectDeal> dealById) {
+    }
+
+    private static PresentationData buildPresentationData() {
         ScoringEngine engine = new ScoringConfig().currentEngine();
         java.time.LocalDate today = java.time.LocalDate.now();
         var fundById = new java.util.HashMap<Long, FundInvestment>();
@@ -120,7 +135,10 @@ public class Main extends Application {
             items.add(PipelineItem.ofDeal(d, engine.score(d, today).score()));
             dealById.put(d.id(), d);
         }
+        return new PresentationData(engine, items, fundById, dealById);
+    }
 
+    private void showPresentationView(AppUser user, PresentationData data) {
         Runnable onExitToAnalyst = user.isAnalyst() ? () -> showAnalystShell(user) : null;
         Runnable onFullScreen = () -> stage.setFullScreen(!stage.isFullScreen());
         Runnable onLogout = () -> {
@@ -129,21 +147,23 @@ public class Main extends Application {
         };
         // L'analyste peut acter les décisions de statut en séance ; le partner reste en lecture seule (§7).
         java.util.function.BiConsumer<PipelineItem, DealStatus> onStatusChange = user.isAnalyst()
-                ? (item, status) -> {
-            if (item.type() == PipelineItem.Type.FUND) {
-                new FundInvestmentDao().updateStatus(item.id(), status, user.id());
-            } else {
-                new DirectDealDao().updateStatus(item.id(), status, user.id());
-            }
-            showPresentation(user);   // recharge et reflète le nouveau statut
-        }
+                ? (item, status) -> com.atlan.mfo.ui.util.Async.run(
+                () -> {
+                    if (item.type() == PipelineItem.Type.FUND) {
+                        new FundInvestmentDao().updateStatus(item.id(), status, user.id());
+                    } else {
+                        new DirectDealDao().updateStatus(item.id(), status, user.id());
+                    }
+                },
+                () -> showPresentation(user),   // recharge et reflète le nouveau statut
+                com.atlan.mfo.ui.util.ErrorDialog::show)
                 : null;
         java.util.function.Consumer<PipelineItem> onOpen =
-                item -> openPresentationDetail(item, fundById, dealById, engine);
+                item -> openPresentationDetail(item, data.fundById(), data.dealById(), data.engine());
         java.util.function.Function<PipelineItem, String> headline =
-                item -> presentationHeadline(item, fundById, dealById);
+                item -> presentationHeadline(item, data.fundById(), data.dealById());
 
-        PresentationView view = new PresentationView(items, onStatusChange, onOpen, headline,
+        PresentationView view = new PresentationView(data.items(), onStatusChange, onOpen, headline,
                 onExitToAnalyst, onFullScreen, onLogout);
         setScene(view, 1280, 800);
     }

@@ -3,7 +3,10 @@ package com.atlan.mfo.ui.controllers;
 import com.atlan.mfo.Main;
 import com.atlan.mfo.auth.AuthService;
 import com.atlan.mfo.model.AppUser;
+import com.atlan.mfo.ui.util.Async;
+import com.atlan.mfo.ui.util.ErrorDialog;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 
@@ -22,6 +25,7 @@ public class ChangePasswordController {
 
     @FXML private PasswordField newPasswordField;
     @FXML private PasswordField confirmPasswordField;
+    @FXML private Button submitButton;
     @FXML private Label errorLabel;
 
     public ChangePasswordController(AuthService authService, Main app, AppUser user) {
@@ -51,16 +55,30 @@ public class ChangePasswordController {
         }
 
         char[] chars = pwd.toCharArray();
-        try {
-            authService.changePassword(user.id(), chars);
-        } finally {
-            Arrays.fill(chars, '\0');
-        }
+        // Changement (hachage BCrypt + accès base) hors thread UI.
+        setBusy(true);
+        Async.run(
+                () -> authService.changePassword(user.id(), chars),
+                () -> {
+                    Arrays.fill(chars, '\0');
+                    setBusy(false);
+                    AppUser updated = new AppUser(
+                            user.id(), user.username(), user.fullName(),
+                            user.role(), user.active(), false);
+                    app.showHome(updated);
+                },
+                ex -> {
+                    Arrays.fill(chars, '\0');
+                    setBusy(false);
+                    ErrorDialog.show(ex);
+                });
+    }
 
-        AppUser updated = new AppUser(
-                user.id(), user.username(), user.fullName(),
-                user.role(), user.active(), false);
-        app.showHome(updated);
+    private void setBusy(boolean busy) {
+        submitButton.setDisable(busy);
+        newPasswordField.setDisable(busy);
+        confirmPasswordField.setDisable(busy);
+        submitButton.setText(busy ? "Saving…" : "Confirm");
     }
 
     private void showError(String message) {
