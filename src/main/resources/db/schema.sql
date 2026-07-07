@@ -134,3 +134,26 @@ CREATE TABLE IF NOT EXISTS scoring_param (
     name  TEXT PRIMARY KEY,
     value NUMERIC NOT NULL
 );
+
+-- Boucle prédit → réalisé (calibration). Auto-suffisant (snapshot du prédit +
+-- réalisé) et NON purgé à la réinitialisation du pipeline : le jeu de données
+-- s'accumule à travers les cycles de comité, base d'un futur calibrage.
+CREATE TABLE IF NOT EXISTS opportunity_outcome (
+    id              BIGSERIAL PRIMARY KEY,
+    kind            TEXT NOT NULL,           -- 'FUND' | 'DEAL'
+    opportunity_id  BIGINT,                  -- référence (peut devenir orpheline après reset)
+    name            TEXT NOT NULL,           -- instantané au moment de la saisie
+    strategy        TEXT,
+    predicted_score INT,                     -- score prédit au moment de la décision
+    expected_irr    NUMERIC,                 -- attendu (deals) au moment de la décision (fraction)
+    expected_moic   NUMERIC,
+    outcome         TEXT,                    -- IN_PROGRESS | EXITED | WRITTEN_OFF | DID_NOT_INVEST
+    realized_irr    NUMERIC,                 -- réalisé (fraction)
+    realized_moic   NUMERIC,
+    realized_dpi    NUMERIC,
+    note            TEXT,
+    recorded_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_by      BIGINT REFERENCES app_user(id),
+    UNIQUE (kind, opportunity_id)
+);
