@@ -2,12 +2,16 @@ name: Package installers
 
 # Construit les installeurs natifs sur chaque OS cible (jpackage ne produit un
 # paquet que pour l'OS où il tourne). Déclenché sur un tag de version (vX.Y.Z)
-# ou manuellement. Les installeurs sont publiés en artefacts téléchargeables.
+# ou manuellement. Sur un tag, les installeurs sont attachés à une Release GitHub
+# (page de téléchargement permanente) en plus des artefacts du run.
 
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
+
+permissions:
+  contents: write        # nécessaire pour créer/mettre à jour la Release
 
 jobs:
   package:
@@ -44,3 +48,18 @@ jobs:
           name: atlan-mfo-${{ matrix.os }}
           path: target/installer/*
           if-no-files-found: error
+
+      # Sur un tag : attacher l'installeur à la Release GitHub (via gh CLI, pré-installé).
+      # Idempotent : chaque job (Windows/macOS) crée la release si absente puis y ajoute
+      # son installeur. Page de téléchargement permanente, sans expiration.
+      - name: Publier dans la Release GitHub
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          gh release create "$tag" --title "Patrimium MFO Dashboard $tag" \
+            --notes "Installeurs natifs (.msi Windows, .dmg macOS). Voir DEPLOYMENT.md." \
+            2>/dev/null || true
+          gh release upload "$tag" target/installer/* --clobber
