@@ -4,6 +4,8 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
@@ -15,7 +17,9 @@
     <VBox alignment="CENTER" spacing="10" styleClass="auth-card"
           maxWidth="380" maxHeight="-Infinity">
 
-        <Label styleClass="brand-mark" text="ATLAN" />
+        <ImageView fitWidth="220" preserveRatio="true">
+            <image><Image url="@../img/patrimium-logo-white.png" /></image>
+        </ImageView>
         <Label styleClass="brand-sub" text="MFO DASHBOARD" />
 
         <Region prefHeight="22" />

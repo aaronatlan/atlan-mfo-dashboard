@@ -72,7 +72,7 @@ public final class PresentationView extends BorderPane {
     /* ---- Barre de contrôle ---- */
 
     private HBox topBar(Runnable onExitToAnalyst, Runnable onToggleFullScreen, Runnable onLogout) {
-        Label brand = new Label("ATLAN");
+        Label brand = new Label("PATRIMIUM");
         brand.getStyleClass().add("pres-brand");
         Label sub = new Label("INVESTMENT COMMITTEE");
         sub.getStyleClass().add("pres-brand-sub");

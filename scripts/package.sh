@@ -11,7 +11,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-APP_NAME="Atlan MFO Dashboard"
+APP_NAME="Patrimium MFO Dashboard"
 JAR_VERSION="0.1.0"                 # version du projet Maven (nom du jar)
 PKG_VERSION="1.3.0"                 # version du paquet natif (macOS exige un 1er nombre ≥ 1)
 MAIN_JAR="atlan-mfo-dashboard-${JAR_VERSION}.jar"
@@ -44,7 +44,7 @@ jpackage \
   --type "${TYPE}" \
   --name "${APP_NAME}" \
   --app-version "${PKG_VERSION}" \
-  --vendor "Atlan MFO" \
+  --vendor "Patrimium" \
   --input target/dist-input \
   --main-jar "${MAIN_JAR}" \
   --main-class "${MAIN_CLASS}" \

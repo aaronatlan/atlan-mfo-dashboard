@@ -62,7 +62,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) {
         this.stage = primaryStage;
         loadFonts();
-        stage.setTitle("Atlan MFO Dashboard");
+        stage.setTitle("Patrimium MFO Dashboard");
         showLogin();
         stage.show();
     }

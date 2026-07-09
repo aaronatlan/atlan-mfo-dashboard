@@ -90,7 +90,7 @@ public final class PipelineResetTool {
         String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
         Path file = Path.of("pipeline-backup-" + ts + ".sql");
         try (BufferedWriter w = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-            w.write("-- Atlan MFO — sauvegarde du pipeline avant réinitialisation (" + ts + ")\n");
+            w.write("-- Patrimium MFO — sauvegarde du pipeline avant réinitialisation (" + ts + ")\n");
             w.write("-- Restauration : psql <connexion> -f " + file.getFileName() + "\n");
             w.write("BEGIN;\n");
             dumpTable(conn, "fund_investment", w);   // avant fund_vintage (clé étrangère)
