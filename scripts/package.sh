@@ -35,6 +35,17 @@ rm -rf target/installer
 # Signature macOS optionnelle : exporter MAC_SIGN_IDENTITY="Developer ID Application: … (TEAMID)"
 # pour signer avec un certificat Apple (préalable à la notarisation). Sinon signature ad-hoc.
 EXTRA_ARGS=()
+
+# Icône de marque Patrimium selon l'OS (jpackage : .icns macOS, .ico Windows)
+case "$(uname)" in
+  Darwin)               ICON_FILE="packaging/patrimium.icns" ;;
+  MINGW*|MSYS*|CYGWIN*) ICON_FILE="packaging/patrimium.ico" ;;
+  *)                    ICON_FILE="" ;;
+esac
+if [ -n "$ICON_FILE" ] && [ -f "$ICON_FILE" ]; then
+  EXTRA_ARGS+=(--icon "$ICON_FILE")
+fi
+
 if [ "$(uname)" = "Darwin" ] && [ -n "${MAC_SIGN_IDENTITY:-}" ]; then
   EXTRA_ARGS+=(--mac-sign --mac-signing-key-user-name "${MAC_SIGN_IDENTITY}")
   echo "  (signing with identity: ${MAC_SIGN_IDENTITY})"

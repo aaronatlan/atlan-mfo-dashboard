@@ -25,6 +25,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
@@ -62,6 +63,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) {
         this.stage = primaryStage;
         loadFonts();
+        loadWindowIcon();
         stage.setTitle("Patrimium MFO Dashboard");
         showLogin();
         stage.show();
@@ -260,6 +262,14 @@ public class Main extends Application {
         var url = getClass().getResource(CSS);
         if (url != null) {
             scene.getStylesheets().add(url.toExternalForm());
+        }
+    }
+
+    /** Icône de la fenêtre (barre des tâches / Dock au lancement). */
+    private void loadWindowIcon() {
+        var url = getClass().getResource("/img/patrimium-icon.png");
+        if (url != null) {
+            stage.getIcons().add(new Image(url.toExternalForm()));
         }
     }
 
