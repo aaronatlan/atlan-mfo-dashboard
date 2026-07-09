@@ -220,6 +220,20 @@
     -fx-padding: 14 0 4 8;
 }
 
+/* Signature ton sur ton : texte = couleur du fond de la sidebar → invisible à l'œil,
+   mais sélectionnable/copiable à la souris (se révèle au surlignage). */
+.signature, .signature:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-text-fill: -atlan-nav;
+    -fx-highlight-fill: -atlan-accent-wash;
+    -fx-highlight-text-fill: -atlan-text-2;
+    -fx-font-size: 10px;
+    -fx-padding: 2 0 0 8;
+    -fx-max-width: 130;
+}
+
 .nav-button {
     -fx-background-color: transparent;
     -fx-background-radius: 6;

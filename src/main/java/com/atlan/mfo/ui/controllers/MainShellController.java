@@ -34,8 +34,11 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
@@ -143,6 +146,15 @@ public class MainShellController {
         addNav("Calibration", () -> new CalibrationView(outcomeDao.findAll()), false);
         addNav("Methodology",
                 () -> new MethodologyView(scoringConfig.currentProfile(), this::saveMethodology), false);
+
+        // Signature discrète, ton sur ton : invisible à l'œil, sélectionnable à la souris.
+        Region spacer = new Region();
+        VBox.setVgrow(spacer, Priority.ALWAYS);
+        TextField signature = new TextField("Aaron Atlan");
+        signature.setEditable(false);
+        signature.setFocusTraversable(false);
+        signature.getStyleClass().add("signature");
+        sidebar.getChildren().addAll(spacer, signature);
     }
 
     /** Saves the edited methodology then recalculates all scores. */
