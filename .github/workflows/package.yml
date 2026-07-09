@@ -1,9 +1,11 @@
 name: Package installers
 
-# Construit les installeurs natifs sur chaque OS cible (jpackage ne produit un
-# paquet que pour l'OS où il tourne). Déclenché sur un tag de version (vX.Y.Z)
-# ou manuellement. Sur un tag, les installeurs sont attachés à une Release GitHub
-# (page de téléchargement permanente) en plus des artefacts du run.
+# Construit l'installeur natif Windows (.msi) via jpackage. Déclenché sur un tag de
+# version (vX.Y.Z) ou manuellement. Sur un tag, l'installeur est attaché à une Release
+# GitHub (page de téléchargement permanente) en plus des artefacts du run.
+#
+# NB : seul Windows est construit (postes cibles = Windows ; le Mac de dev tourne via
+# `mvn javafx:run`). Le runner macOS coûte 10× les minutes CI du plan gratuit, inutile ici.
 
 on:
   push:
@@ -21,8 +23,6 @@ jobs:
         include:
           - os: windows-latest
             type: msi
-          - os: macos-latest
-            type: dmg
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
