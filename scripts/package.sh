@@ -46,6 +46,14 @@ if [ -n "$ICON_FILE" ] && [ -f "$ICON_FILE" ]; then
   EXTRA_ARGS+=(--icon "$ICON_FILE")
 fi
 
+# Windows : raccourcis menu Démarrer (groupe « Patrimium ») + bureau. Sans ça, l'app
+# installée n'a aucune icône de lancement (l'exe reste enfoui dans Program Files).
+case "$(uname)" in
+  MINGW*|MSYS*|CYGWIN*)
+    EXTRA_ARGS+=(--win-menu --win-menu-group "Patrimium" --win-shortcut)
+    ;;
+esac
+
 if [ "$(uname)" = "Darwin" ] && [ -n "${MAC_SIGN_IDENTITY:-}" ]; then
   EXTRA_ARGS+=(--mac-sign --mac-signing-key-user-name "${MAC_SIGN_IDENTITY}")
   echo "  (signing with identity: ${MAC_SIGN_IDENTITY})"
