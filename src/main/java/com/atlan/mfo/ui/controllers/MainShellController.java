@@ -79,8 +79,23 @@ public class MainShellController {
     @FXML
     private void initialize() {
         userLabel.setText(user.fullName() + "  ·  " + roleLabel(user.role()));
-        // Chargement initial en tâche de fond, puis construction du menu (§13.4).
-        reload(this::buildNav);
+        // Sidebar + onglet sélectionné affichés immédiatement (listes vides) avec un
+        // placeholder « Loading… », puis les données arrivent en tâche de fond. Évite
+        // la coquille vide pendant le 1er chargement (latence de la base distante).
+        funds = new ArrayList<>();
+        deals = new ArrayList<>();
+        allItems = new ArrayList<>();
+        buildNav();
+        setContent(loadingView());
+        reload(() -> setContent(currentView.get()));
+    }
+
+    private Node loadingView() {
+        Label l = new Label("Loading…");
+        l.getStyleClass().add("view-title");
+        StackPane p = new StackPane(l);
+        p.getStyleClass().add("view-root");
+        return p;
     }
 
     /** Instantané des données chargées (calculé hors thread UI, appliqué sur le thread UI). */

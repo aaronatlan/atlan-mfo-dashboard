@@ -116,10 +116,20 @@ public class Main extends Application {
      */
     public void showPresentation(AppUser user) {
         // Lecture base (moteur + opportunités) hors thread UI : l'écran ne fige pas.
+        // Curseur d'attente pendant le chargement (l'écran courant reste affiché).
+        Scene current = stage.getScene();
+        if (current != null) {
+            current.setCursor(javafx.scene.Cursor.WAIT);
+        }
         com.atlan.mfo.ui.util.Async.run(
                 Main::buildPresentationData,
-                data -> showPresentationView(user, data),
-                com.atlan.mfo.ui.util.ErrorDialog::show);
+                data -> showPresentationView(user, data),   // setScene → nouvelle scène, curseur par défaut
+                ex -> {
+                    if (current != null) {
+                        current.setCursor(javafx.scene.Cursor.DEFAULT);
+                    }
+                    com.atlan.mfo.ui.util.ErrorDialog.show(ex);
+                });
     }
 
     /** Données de la vue présentation, calculées hors thread UI. */

@@ -31,7 +31,11 @@ public final class Database {
         hc.setPoolName("atlan-mfo-pool");
         hc.setMaximumPoolSize(8);
         hc.setMinimumIdle(1);
-        hc.setConnectionTimeout(10_000);
+        hc.setConnectionTimeout(15_000);
+        // Ne pas valider une connexion au démarrage : sinon l'app bloque le temps que
+        // Neon (free tier, « scale to zero ») réveille son compute avant d'afficher le
+        // login. La connexion se fait à la 1re requête ; le pool se réchauffe en fond.
+        hc.setInitializationFailTimeout(-1);
         dataSource = new HikariDataSource(hc);
     }
 
