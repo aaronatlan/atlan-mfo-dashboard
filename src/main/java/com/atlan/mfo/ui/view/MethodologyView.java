@@ -23,11 +23,6 @@ import java.util.function.Consumer;
  */
 public final class MethodologyView extends ScrollPane {
 
-    private static final String GOVERNANCE =
-            "The score is a decision-support tool. The investment committee retains full "
-                    + "authority; a human review is required at every stage. Editing the "
-                    + "methodology recalculates the scores of all opportunities.";
-
     private final Map<String, Double> current;
     private final Map<String, TextField> fields = new LinkedHashMap<>();
     private final Consumer<Map<String, Double>> onSave;
@@ -47,7 +42,6 @@ public final class MethodologyView extends ScrollPane {
 
         body.getChildren().addAll(
                 title("Scoring methodology"),
-                paragraph(GOVERNANCE),
                 fundGridCard("Grid A — Buyout, growth, VC (and Secondaries)", "gridA"),
                 fundGridCard("Grid B — Private credit", "gridB"),
                 dealGridCard(),
@@ -212,13 +206,6 @@ public final class MethodologyView extends ScrollPane {
     private static Label title(String t) {
         Label l = new Label(t);
         l.getStyleClass().add("detail-title");
-        return l;
-    }
-
-    private static Label paragraph(String t) {
-        Label l = new Label(t);
-        l.getStyleClass().add("detail-paragraph");
-        l.setWrapText(true);
         return l;
     }
 

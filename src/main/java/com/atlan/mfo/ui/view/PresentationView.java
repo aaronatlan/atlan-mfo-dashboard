@@ -33,10 +33,6 @@ import java.util.function.Function;
  */
 public final class PresentationView extends BorderPane {
 
-    private static final String GOVERNANCE =
-            "The score is a decision-support tool. The investment committee retains full authority; "
-                    + "a human review is required at every stage.";
-
     private final BiConsumer<PipelineItem, DealStatus> onStatusChange;
     private final Consumer<PipelineItem> onOpen;
     private final Function<PipelineItem, String> headline;
@@ -59,7 +55,6 @@ public final class PresentationView extends BorderPane {
 
         setTop(topBar(onExitToAnalyst, onToggleFullScreen, onLogout));
         setCenter(scroll(body(active, items)));
-        setBottom(governance());
     }
 
     private static ScrollPane scroll(Node content) {
@@ -248,12 +243,4 @@ public final class PresentationView extends BorderPane {
         return row;
     }
 
-    /* ---- Gouvernance ---- */
-
-    private Label governance() {
-        Label g = new Label(GOVERNANCE);
-        g.getStyleClass().add("pres-governance");
-        g.setWrapText(true);
-        return g;
-    }
 }

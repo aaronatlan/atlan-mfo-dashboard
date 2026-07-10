@@ -104,8 +104,19 @@ public class MainShellController {
 
     /** Lit fonds + deals et recalcule les scores en direct par le moteur (§13.4). */
     private Snapshot fetch() {
-        List<FundInvestment> f = fundDao.findAll();
-        List<DirectDeal> d = dealDao.findAll();
+        // Lectures indépendantes en parallèle (2 connexions du pool) : à chaud, la
+        // latence cumulée passe de ~3 à ~2 allers-retours vers la base distante.
+        var fundsF = java.util.concurrent.CompletableFuture.supplyAsync(fundDao::findAll);
+        var dealsF = java.util.concurrent.CompletableFuture.supplyAsync(dealDao::findAll);
+        List<FundInvestment> f;
+        List<DirectDeal> d;
+        try {
+            f = fundsF.join();
+            d = dealsF.join();
+        } catch (java.util.concurrent.CompletionException ce) {
+            Throwable cause = ce.getCause();
+            throw (cause instanceof RuntimeException re) ? re : new IllegalStateException(cause);
+        }
         java.time.LocalDate today = java.time.LocalDate.now();
         List<PipelineItem> items = new ArrayList<>();
         f.forEach(x -> items.add(PipelineItem.ofFund(x, engine.score(x, today))));

@@ -30,7 +30,9 @@ public final class Database {
         hc.setPassword(config.dbPassword());
         hc.setPoolName("atlan-mfo-pool");
         hc.setMaximumPoolSize(8);
-        hc.setMinimumIdle(1);
+        // Garder quelques connexions chaudes : les lectures parallèles (fonds/deals)
+        // réutilisent des connexions prêtes au lieu de payer un handshake TLS à chaque fois.
+        hc.setMinimumIdle(3);
         hc.setConnectionTimeout(15_000);
         // Ne pas valider une connexion au démarrage : sinon l'app bloque le temps que
         // Neon (free tier, « scale to zero ») réveille son compute avant d'afficher le
