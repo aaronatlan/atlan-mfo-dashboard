@@ -16,6 +16,7 @@ import com.atlan.mfo.dao.ScoringConfig;
 import com.atlan.mfo.model.enums.Category;
 import com.atlan.mfo.model.enums.Role;
 import com.atlan.mfo.scoring.ScoringEngine;
+import com.atlan.mfo.scoring.ScoringProfile;
 import com.atlan.mfo.ui.util.Async;
 import com.atlan.mfo.ui.util.ErrorDialog;
 import com.atlan.mfo.ui.view.CalibrationView;
@@ -44,6 +45,7 @@ import javafx.scene.layout.VBox;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /** Coquille applicative : menu latéral, barre supérieure, navigation entre écrans (§6). */
@@ -143,9 +145,10 @@ public class MainShellController {
         addNav("Compare", () -> new ComparisonView(allItems, this::scoreOf), false);
 
         addSectionLabel("REFERENCE");
-        addNav("Calibration", () -> new CalibrationView(outcomeDao.findAll()), false);
-        addNav("Methodology",
-                () -> new MethodologyView(scoringConfig.currentProfile(), this::saveMethodology), false);
+        // Ces deux vues lisent la base : on charge en tâche de fond (sinon gel au clic).
+        addNavAsync("Calibration", outcomeDao::findAll, CalibrationView::new);
+        addNavAsync("Methodology", scoringConfig::currentProfile,
+                p -> new MethodologyView(p, this::saveMethodology));
 
         // Signature discrète, ton sur ton : invisible à l'œil, sélectionnable à la souris.
         Region spacer = new Region();
@@ -169,7 +172,11 @@ public class MainShellController {
                 s -> {
                     apply(s);
                     setBusy(false);
-                    setContent(currentView.get());
+                    // Reconstruit la méthodologie avec les valeurs enregistrées (pur, sans DB).
+                    ScoringProfile saved = ScoringProfile.fromMap(params);
+                    Supplier<Node> v = () -> new MethodologyView(saved, this::saveMethodology);
+                    currentView = v;
+                    setContent(v.get());
                     Alert done = new Alert(Alert.AlertType.INFORMATION);
                     done.setTitle("Methodology");
                     done.setHeaderText("Methodology saved");
@@ -208,6 +215,35 @@ public class MainShellController {
             btn.setSelected(true);
             show(view);
         }
+    }
+
+    /**
+     * Onglet dont le contenu dépend d'un accès base : la lecture ({@code fetch}) se fait
+     * hors thread UI, la construction de la vue ({@code build}) sur le thread UI. Évite
+     * le gel de l'interface au clic (cf. §13.4). Les données sont figées pour un
+     * re-rendu instantané.
+     */
+    private <T> void addNavAsync(String label, Supplier<T> fetch, Function<T, Node> build) {
+        ToggleButton btn = new ToggleButton(label);
+        btn.getStyleClass().add("nav-button");
+        btn.setMaxWidth(Double.MAX_VALUE);
+        btn.setToggleGroup(navGroup);
+        btn.setOnAction(e -> {
+            btn.setSelected(true);
+            setBusy(true);
+            Async.run(fetch,
+                    data -> {
+                        setBusy(false);
+                        Supplier<Node> v = () -> build.apply(data);
+                        currentView = v;
+                        setContent(v.get());
+                    },
+                    ex -> {
+                        setBusy(false);
+                        ErrorDialog.show(ex);
+                    });
+        });
+        sidebar.getChildren().add(btn);
     }
 
     private Node section(Category category) {
