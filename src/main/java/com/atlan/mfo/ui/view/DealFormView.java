@@ -39,7 +39,11 @@ public final class DealFormView extends BorderPane {
     private final ComboBox<String> geoCombo = FormControls.geographyCombo();
 
     private final TextField nameField = FormControls.field("deal name");
-    private final TextField industryField = FormControls.field("industry");
+    private final ComboBox<String> industryCombo = FormControls.editableCombo("industry",
+            "Technology", "Software", "Fintech", "Financial services", "Healthcare", "Biotech",
+            "Energy", "Consumer", "Retail", "Industrials", "Real estate", "Media & telecom",
+            "Business services", "Materials", "Transport & logistics", "Education",
+            "Agriculture & food", "Other");
     private final TextField gpField = FormControls.field("GP / sponsor");
     private final TextField invTypeField = FormControls.field("investment type");
     private final TextField commitmentField = FormControls.field("e.g. 40m");
@@ -107,7 +111,7 @@ public final class DealFormView extends BorderPane {
         r = row(g, r, "Name", nameField);
         r = row(g, r, "Status", statusCombo);
         r = row(g, r, "Vs. benchmark", benchCombo);
-        r = row(g, r, "Industry", industryField);
+        r = row(g, r, "Industry", industryCombo);
         r = row(g, r, "GP / sponsor", gpField);
         r = row(g, r, "Geography", geoCombo);
         r = row(g, r, "Investment type", invTypeField);
@@ -188,7 +192,7 @@ public final class DealFormView extends BorderPane {
             nameField.setText(existing.name());
             statusCombo.setValue(existing.status());
             benchCombo.setValue(existing.vsBenchmark());
-            industryField.setText(existing.industry());
+            industryCombo.getEditor().setText(existing.industry());
             gpField.setText(existing.gp());
             geoCombo.setValue(existing.geography());
             invTypeField.setText(existing.invType());
@@ -238,7 +242,7 @@ public final class DealFormView extends BorderPane {
                 tn(nextStepsArea.getText()),
                 statusCombo.getValue(),
                 benchCombo.getValue(),
-                tn(industryField.getText()),
+                FormControls.comboText(industryCombo),
                 tn(gpField.getText()),
                 geoCombo.getValue(),
                 tn(invTypeField.getText()),

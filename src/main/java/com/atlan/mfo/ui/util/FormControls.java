@@ -65,4 +65,23 @@ public final class FormControls {
         t.setPromptText(prompt);
         return t;
     }
+
+    /**
+     * ComboBox de chaînes <b>éditable</b> : choix dans la liste proposée, ou saisie
+     * libre. La valeur retenue est le texte de l'éditeur (voir {@link #comboText}).
+     */
+    public static ComboBox<String> editableCombo(String prompt, String... options) {
+        ComboBox<String> cb = new ComboBox<>();
+        cb.setEditable(true);
+        cb.getItems().addAll(options);
+        cb.getEditor().setPromptText(prompt);
+        cb.setMaxWidth(Double.MAX_VALUE);
+        return cb;
+    }
+
+    /** Texte courant d'un combo éditable (éditeur), ou {@code null} si vide. */
+    public static String comboText(ComboBox<String> cb) {
+        String s = cb.getEditor().getText();
+        return (s == null || s.isBlank()) ? null : s.trim();
+    }
 }
