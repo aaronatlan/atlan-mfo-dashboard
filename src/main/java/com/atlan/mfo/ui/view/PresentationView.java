@@ -209,9 +209,10 @@ public final class PresentationView extends BorderPane {
         Circle hole = new Circle(cx, cy, rInner);
         hole.getStyleClass().add("donut-hole");
         ring.getChildren().add(hole);
-        Label totalValue = new Label(Formatters.money(total, "USD"));
+        // Le nombre seul tient dans le trou ; la devise passe dans le sous-libellé.
+        Label totalValue = new Label(Formatters.money(total));
         totalValue.getStyleClass().add("donut-total-value");
-        Label totalCap = new Label("COMMITTED");
+        Label totalCap = new Label("USD COMMITTED");
         totalCap.getStyleClass().add("donut-total-label");
         VBox center = new VBox(1, totalValue, totalCap);
         center.setAlignment(Pos.CENTER);
