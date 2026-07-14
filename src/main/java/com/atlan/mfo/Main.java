@@ -182,7 +182,7 @@ public class Main extends Application {
                 })
                 : null;
         java.util.function.Consumer<PipelineItem> onOpen =
-                item -> openPresentationDetail(item, data.fundById(), data.dealById(), data.engine());
+                item -> openPresentationDetail(user, data, item);
         java.util.function.Function<PipelineItem, String> headline =
                 item -> presentationHeadline(item, data.fundById(), data.dealById());
 
@@ -214,22 +214,20 @@ public class Main extends Application {
                 + "  ·  Exp. MOIC " + Formatters.multiple(d.expMoic());
     }
 
-    /** Ouvre la fiche complète (lecture seule) d'une opportunité dans une fenêtre modale. */
-    private void openPresentationDetail(PipelineItem item,
-                                        java.util.Map<Long, FundInvestment> fundById,
-                                        java.util.Map<Long, DirectDeal> dealById, ScoringEngine engine) {
-        Stage dialog = new Stage();
-        dialog.initOwner(stage);
-        dialog.initModality(javafx.stage.Modality.APPLICATION_MODAL);
-        dialog.setTitle(item.name());
-        Runnable close = dialog::close;
+    /**
+     * Affiche la fiche complète (lecture seule) d'une opportunité <b>dans la même
+     * fenêtre</b> (pas de modale). « Back » revient à la présentation à partir des
+     * données déjà chargées (aucun rechargement, reste en plein écran).
+     */
+    private void openPresentationDetail(AppUser user, PresentationData data, PipelineItem item) {
+        Runnable back = () -> showPresentationView(user, data);
+        ScoringEngine engine = data.engine();
         Parent content = item.type() == PipelineItem.Type.FUND
-                ? DetailView.ofFundReadOnly(fundById.get(item.id()), engine.score(fundById.get(item.id())), close)
-                : DetailView.ofDealReadOnly(dealById.get(item.id()), engine.score(dealById.get(item.id())), close);
-        Scene scene = new Scene(content, 1040, 780);
-        applyStylesheet(scene);
-        dialog.setScene(scene);
-        dialog.showAndWait();
+                ? DetailView.ofFundReadOnly(data.fundById().get(item.id()),
+                        engine.score(data.fundById().get(item.id())), back)
+                : DetailView.ofDealReadOnly(data.dealById().get(item.id()),
+                        engine.score(data.dealById().get(item.id())), back);
+        setScene(content, 1280, 800);
     }
 
     /* ---- Helpers ---- */
