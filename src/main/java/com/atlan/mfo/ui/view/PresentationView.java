@@ -12,6 +12,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -193,6 +194,8 @@ public final class PresentationView extends BorderPane {
         ring.setMinSize(184, 184);
         ring.setPrefSize(184, 184);
         ring.setMaxSize(184, 184);
+        java.util.List<Arc> arcs = new java.util.ArrayList<>();
+        java.util.List<Integer> arcSeg = new java.util.ArrayList<>();
         double startAngle = 90; // haut ; les secteurs tournent dans le sens horaire (longueur négative)
         for (int k = 0; k < values.length; k++) {
             double frac = total > 0 ? values[k] / total : 0;
@@ -204,6 +207,8 @@ public final class PresentationView extends BorderPane {
             arc.setType(ArcType.ROUND);
             arc.getStyleClass().addAll("donut-seg", "donut-seg-" + k);
             ring.getChildren().add(arc);
+            arcs.add(arc);
+            arcSeg.add(k);
             startAngle += sweep;
         }
         Circle hole = new Circle(cx, cy, rInner);
@@ -216,14 +221,46 @@ public final class PresentationView extends BorderPane {
         totalCap.getStyleClass().add("donut-total-label");
         VBox center = new VBox(1, totalValue, totalCap);
         center.setAlignment(Pos.CENTER);
+        center.setMouseTransparent(true);   // laisse passer le survol vers les secteurs
         StackPane donut = new StackPane(ring, center);
         donut.setMinSize(180, 180);
 
         VBox legend = new VBox(12);
         legend.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(legend, Priority.ALWAYS);
+        HBox[] legendRows = new HBox[SEG_LABELS.length];
         for (int k = 0; k < SEG_LABELS.length; k++) {
-            legend.getChildren().add(legendRow(k, SEG_LABELS[k], values[k], total));
+            legendRows[k] = legendRow(k, SEG_LABELS[k], values[k], total);
+            legend.getChildren().add(legendRows[k]);
+        }
+
+        // Interactivité : survol d'un secteur → surbrillance (les autres s'atténuent),
+        // centre = montant + part, ligne de légende mise en avant, et tooltip précis.
+        final double totalF = total;
+        for (int a = 0; a < arcs.size(); a++) {
+            Arc arc = arcs.get(a);
+            int k = arcSeg.get(a);
+            long pct = totalF > 0 ? Math.round(values[k] / totalF * 100) : 0;
+            arc.setCursor(javafx.scene.Cursor.HAND);
+            Tooltip tip = new Tooltip(SEG_LABELS[k] + ":  " + Formatters.money(values[k], "USD") + "  ·  " + pct + "%");
+            tip.setShowDelay(javafx.util.Duration.millis(120));
+            Tooltip.install(arc, tip);
+            arc.setOnMouseEntered(e -> {
+                for (Arc other : arcs) {
+                    other.setOpacity(other == arc ? 1.0 : 0.28);
+                }
+                totalValue.setText(Formatters.money(values[k]));
+                totalCap.setText(pct + "% OF TOTAL");
+                legendRows[k].getStyleClass().add("legend-row-active");
+            });
+            arc.setOnMouseExited(e -> {
+                for (Arc other : arcs) {
+                    other.setOpacity(1.0);
+                }
+                totalValue.setText(Formatters.money(totalF));
+                totalCap.setText("USD COMMITTED");
+                legendRows[k].getStyleClass().remove("legend-row-active");
+            });
         }
 
         HBox row = new HBox(28, donut, legend);

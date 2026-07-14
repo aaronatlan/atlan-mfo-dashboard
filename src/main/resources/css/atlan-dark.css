@@ -930,6 +930,11 @@
     -fx-text-fill: -atlan-text-3;
     -fx-font-size: 15px;
 }
+/* Ligne de légende mise en avant quand son secteur est survolé */
+.legend-row-active {
+    -fx-background-color: rgba(255,255,255,0.06);
+    -fx-background-radius: 6;
+}
 
 /* Pipeline par étape : barres horizontales */
 .funnel-label {

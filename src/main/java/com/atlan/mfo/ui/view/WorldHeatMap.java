@@ -1,9 +1,11 @@
 package com.atlan.mfo.ui.view;
 
 import javafx.scene.Group;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
+import javafx.util.Duration;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -26,6 +28,7 @@ public final class WorldHeatMap extends Pane {
     private static final double VW = 900, VH = 470;
     private static final Color NO_DATA = Color.web("#22495A");
     private static final Color OCEAN_STROKE = Color.web("#FFFFFF", 0.10);
+    private static final Color HOVER_STROKE = Color.web("#FFFFFF", 0.9);
 
     // Rampe « chaleur » alignée sur le thème : pétrole → bronze → terracotta.
     private static final Color[] RAMP = {
@@ -54,12 +57,38 @@ public final class WorldHeatMap extends Pane {
         }
         Map<String, String> paths = load();
         for (Map.Entry<String, String> e : paths.entrySet()) {
+            String country = e.getKey();
             SVGPath p = new SVGPath();
             p.setContent(e.getValue());
-            long count = countFor(e.getKey(), regionCounts);
-            p.setFill(count > 0 ? heat(count, max) : NO_DATA);
+            long count = countFor(country, regionCounts);
+            final Color base = count > 0 ? heat(count, max) : NO_DATA;
+            p.setFill(base);
             p.setStroke(OCEAN_STROKE);
             p.setStrokeWidth(0.5);
+
+            // Tooltip : région + nombre d'opportunités si le pays est couvert, sinon nom seul.
+            String region = regionOf(country);
+            String tipText = region == null
+                    ? country
+                    : country + " — " + regionLabel(region) + ": " + count
+                            + (count == 1 ? " opportunity" : " opportunities");
+            Tooltip tip = new Tooltip(tipText);
+            tip.setShowDelay(Duration.millis(120));
+            Tooltip.install(p, tip);
+
+            // Survol : contour clair + léger éclaircissement + passage au premier plan.
+            p.setCursor(javafx.scene.Cursor.HAND);
+            p.setOnMouseEntered(ev -> {
+                p.setStroke(HOVER_STROKE);
+                p.setStrokeWidth(1.3);
+                p.setFill(base.interpolate(Color.WHITE, 0.22));
+                p.toFront();
+            });
+            p.setOnMouseExited(ev -> {
+                p.setStroke(OCEAN_STROKE);
+                p.setStrokeWidth(0.5);
+                p.setFill(base);
+            });
             content.getChildren().add(p);
         }
         getChildren().add(content);
@@ -79,6 +108,29 @@ public final class WorldHeatMap extends Pane {
             return counts.getOrDefault("EUROPE", 0L);
         }
         return 0;
+    }
+
+    /** Token régional d'un pays cartographié, ou {@code null} si non couvert. */
+    private static String regionOf(String country) {
+        if (US.contains(country)) {
+            return "US";
+        }
+        if (UK.contains(country)) {
+            return "UK";
+        }
+        if (EUROPE.contains(country)) {
+            return "EUROPE";
+        }
+        return null;
+    }
+
+    private static String regionLabel(String region) {
+        return switch (region) {
+            case "US" -> "US";
+            case "UK" -> "UK";
+            case "EUROPE" -> "Europe";
+            default -> region;
+        };
     }
 
     /** Interpolation sur la rampe pour {@code count} dans (0, max]. */
