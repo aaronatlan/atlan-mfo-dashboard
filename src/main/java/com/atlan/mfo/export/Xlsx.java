@@ -11,37 +11,39 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * Écrivain {@code .xlsx} minimal et autonome (aucune dépendance) : un classeur à une
- * feuille, chaînes en ligne (inline strings) et nombres. Suffisant pour exporter un
- * tableau vers Excel / Numbers / LibreOffice. Format OOXML (ECMA-376).
+ * Écrivain {@code .xlsx} minimal et autonome (aucune dépendance) : un classeur à une ou
+ * plusieurs feuilles, chaînes en ligne (inline strings) et nombres. Suffisant pour
+ * exporter des tableaux vers Excel / Numbers / LibreOffice. Format OOXML (ECMA-376).
  */
 public final class Xlsx {
+
+    /** Une feuille : nom, en-têtes de colonnes, lignes (valeurs String, Number ou null). */
+    public record Sheet(String name, List<String> headers, List<List<Object>> rows) {
+    }
 
     private Xlsx() {
     }
 
-    /** Écrit une feuille : en-têtes + lignes (valeurs String, Number ou null). */
+    /** Écrit un classeur à une seule feuille. */
     public static void write(Path file, String sheetName, List<String> headers,
                              List<List<Object>> rows) throws IOException {
+        write(file, List.of(new Sheet(sheetName, headers, rows)));
+    }
+
+    /** Écrit un classeur à plusieurs feuilles (une par élément de {@code sheets}). */
+    public static void write(Path file, List<Sheet> sheets) throws IOException {
         try (ZipOutputStream z = new ZipOutputStream(new FileOutputStream(file.toFile()))) {
-            entry(z, "[Content_Types].xml", CONTENT_TYPES);
+            entry(z, "[Content_Types].xml", contentTypes(sheets.size()));
             entry(z, "_rels/.rels", RELS);
-            entry(z, "xl/workbook.xml", workbook(sheetName));
-            entry(z, "xl/_rels/workbook.xml.rels", WB_RELS);
-            entry(z, "xl/worksheets/sheet1.xml", sheet(headers, rows));
+            entry(z, "xl/workbook.xml", workbook(sheets));
+            entry(z, "xl/_rels/workbook.xml.rels", workbookRels(sheets.size()));
+            for (int i = 0; i < sheets.size(); i++) {
+                entry(z, "xl/worksheets/sheet" + (i + 1) + ".xml", sheet(sheets.get(i)));
+            }
         }
     }
 
-    /* ---- Parties fixes ---- */
-
-    private static final String CONTENT_TYPES = """
-            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-            <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-            <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-            <Default Extension="xml" ContentType="application/xml"/>
-            <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
-            <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
-            </Types>""";
+    /* ---- Parties fixes / générées ---- */
 
     private static final String RELS = """
             <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -49,20 +51,44 @@ public final class Xlsx {
             <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
             </Relationships>""";
 
-    private static final String WB_RELS = """
-            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-            <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-            <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
-            </Relationships>""";
-
-    private static String workbook(String sheetName) {
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-                + "<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\""
-                + " xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">"
-                + "<sheets><sheet name=\"" + esc(sheetName) + "\" sheetId=\"1\" r:id=\"rId1\"/></sheets></workbook>";
+    private static String contentTypes(int nSheets) {
+        StringBuilder sb = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+                + "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">"
+                + "<Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>"
+                + "<Default Extension=\"xml\" ContentType=\"application/xml\"/>"
+                + "<Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/>");
+        for (int i = 1; i <= nSheets; i++) {
+            sb.append("<Override PartName=\"/xl/worksheets/sheet").append(i).append(".xml\""
+                    + " ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/>");
+        }
+        return sb.append("</Types>").toString();
     }
 
-    private static String sheet(List<String> headers, List<List<Object>> rows) {
+    private static String workbookRels(int nSheets) {
+        StringBuilder sb = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+                + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">");
+        for (int i = 1; i <= nSheets; i++) {
+            sb.append("<Relationship Id=\"rId").append(i)
+                    .append("\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\""
+                            + " Target=\"worksheets/sheet").append(i).append(".xml\"/>");
+        }
+        return sb.append("</Relationships>").toString();
+    }
+
+    private static String workbook(List<Sheet> sheets) {
+        StringBuilder sb = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+                + "<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\""
+                + " xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><sheets>");
+        for (int i = 0; i < sheets.size(); i++) {
+            sb.append("<sheet name=\"").append(esc(sheets.get(i).name())).append("\" sheetId=\"")
+                    .append(i + 1).append("\" r:id=\"rId").append(i + 1).append("\"/>");
+        }
+        return sb.append("</sheets></workbook>").toString();
+    }
+
+    private static String sheet(Sheet sheet) {
+        List<String> headers = sheet.headers();
+        List<List<Object>> rows = sheet.rows();
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>")
                 .append("<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData>");

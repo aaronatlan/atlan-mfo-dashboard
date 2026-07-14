@@ -26,7 +26,13 @@ public record PipelineItem(
         Double dpi,
         Double irr,          // fonds : IRR du millésime récent ; deals : IRR attendu
         Double moic,
-        String geography) {  // token géographique canonique (US, EUROPE, DACH…)
+        String geography,    // token géographique canonique (US, EUROPE, DACH…)
+        // Métriques propres aux deals directs (null pour les fonds) : la grille C (§5.4)
+        // ne partage pas DPI/millésime avec les grilles fonds A/B.
+        Double dealCagr,
+        Double dealEbitdaMargin,
+        Double dealEntryMultiple,
+        java.time.LocalDate dealTargetExit) {
 
     public enum Type {
         FUND, DEAL
@@ -65,7 +71,8 @@ public record PipelineItem(
                 newest == null ? null : newest.dpi(),
                 newest == null ? null : newest.irr(),
                 newest == null ? null : newest.moic(),
-                f.geography());
+                f.geography(),
+                null, null, null, null);
     }
 
     public static PipelineItem ofDeal(DirectDeal d, ScoreBreakdown b) {
@@ -73,6 +80,7 @@ public record PipelineItem(
                 d.id(), Type.DEAL, d.name(), null,
                 DEALS_STRATEGY, d.status(), b.score(), d.commitment(),
                 b.reportedCount(), b.criteriaCount(),
-                null, null, d.expIrrPct(), d.expMoic(), d.geography());
+                null, null, d.expIrrPct(), d.expMoic(), d.geography(),
+                d.cagrPct(), d.ebitdaMgnPct(), d.entryMult(), d.targetExit());
     }
 }

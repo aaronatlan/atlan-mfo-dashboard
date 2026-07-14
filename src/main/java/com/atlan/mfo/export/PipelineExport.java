@@ -10,61 +10,95 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/** Exporte le pipeline (opportunités) vers Excel (.xlsx) ou PDF. */
+/**
+ * Exporte le pipeline (opportunités) vers Excel (.xlsx) ou PDF.
+ *
+ * <p>Fonds et deals directs ne partagent pas les mêmes métriques (grilles A/B vs C,
+ * §5.2-5.4) : les fonds ont un millésime/DPI, les deals un CAGR/marge EBITDA/multiple
+ * d'entrée. Plutôt que des colonnes vides pour l'un ou l'autre, l'export sépare les deux
+ * en sections/feuilles distinctes, chacune avec ses colonnes propres.
+ */
 public final class PipelineExport {
 
-    // Excel : garde Tier, valeurs brutes (score, DPI/IRR/MOIC, commitment) pour manipulation.
-    private static final List<String> XLSX_HEADERS = List.of(
-            "Name", "Strategy", "Status", "Score", "Tier",
-            "Vintage", "DPI", "IRR", "MOIC", "Geography", "Commitment");
+    private static final List<String> COMMON = List.of("Name", "Strategy", "Status", "Score");
 
-    // PDF : sans Tier, valeurs formatées ; paysage pour loger les colonnes.
-    private static final List<String> PDF_HEADERS = List.of(
-            "Name", "Strategy", "Status", "Score",
+    // Fonds : millésime le plus récent (§5.5). Excel garde Tier ; PDF non.
+    private static final List<String> FUND_XLSX_HEADERS = concat(COMMON,
+            "Tier", "Vintage", "DPI", "IRR", "MOIC", "Geography", "Commitment");
+    private static final List<String> FUND_PDF_HEADERS = concat(COMMON,
             "Vintage", "DPI", "IRR", "MOIC", "Geography", "Commitment");
-    private static final double[] PDF_WEIGHTS = {20, 13, 11, 6, 7, 7, 7, 7, 8, 9};
+    private static final double[] FUND_PDF_WEIGHTS = {20, 13, 11, 6, 7, 7, 7, 7, 8, 9};
+
+    // Deals directs (grille C) : CAGR, marge EBITDA, multiple d'entrée, exit visée.
+    private static final List<String> DEAL_XLSX_HEADERS = concat(COMMON,
+            "Tier", "Exp. IRR", "Exp. MOIC", "Revenue CAGR", "EBITDA Margin", "Entry Multiple",
+            "Target Exit", "Geography", "Commitment");
+    private static final List<String> DEAL_PDF_HEADERS = concat(COMMON,
+            "Exp. IRR", "Exp. MOIC", "CAGR", "EBITDA %", "Entry x", "Target Exit", "Geography", "Commitment");
+    private static final double[] DEAL_PDF_WEIGHTS = {17, 12, 9, 6, 7, 7, 7, 7, 7, 9, 9, 9};
 
     private PipelineExport() {
     }
 
-    /** Excel : nombres bruts (l'utilisateur formate dans le tableur ; IRR/DPI = fractions/multiples). */
+    /** Excel : deux feuilles (Funds, Direct deals), nombres bruts pour manipulation. */
     public static void toXlsx(List<PipelineItem> items, Path file) throws IOException {
-        List<List<Object>> rows = new ArrayList<>();
-        for (PipelineItem i : items) {
-            rows.add(Arrays.asList(
-                    i.name(),
-                    i.strategy(),
-                    i.status().label(),
-                    i.score(),
+        List<PipelineItem> funds = items.stream().filter(i -> i.type() == PipelineItem.Type.FUND).toList();
+        List<PipelineItem> deals = items.stream().filter(i -> i.type() == PipelineItem.Type.DEAL).toList();
+
+        List<List<Object>> fundRows = new ArrayList<>();
+        for (PipelineItem i : funds) {
+            fundRows.add(Arrays.asList(
+                    i.name(), i.strategy(), i.status().label(), i.score(),
                     i.tier() == null ? null : i.tier().label(),
-                    i.vintageYear(),
-                    i.dpi(),
-                    i.irr(),
-                    i.moic(),
-                    i.geography(),
-                    i.commitment()));
+                    i.vintageYear(), i.dpi(), i.irr(), i.moic(), i.geography(), i.commitment()));
         }
-        Xlsx.write(file, "Pipeline", XLSX_HEADERS, rows);
+        List<List<Object>> dealRows = new ArrayList<>();
+        for (PipelineItem i : deals) {
+            dealRows.add(Arrays.asList(
+                    i.name(), i.strategy(), i.status().label(), i.score(),
+                    i.tier() == null ? null : i.tier().label(),
+                    i.irr(), i.moic(), i.dealCagr(), i.dealEbitdaMargin(), i.dealEntryMultiple(),
+                    i.dealTargetExit() == null ? null : i.dealTargetExit().toString(),
+                    i.geography(), i.commitment()));
+        }
+        Xlsx.write(file, List.of(
+                new Xlsx.Sheet("Funds", FUND_XLSX_HEADERS, fundRows),
+                new Xlsx.Sheet("Direct deals", DEAL_XLSX_HEADERS, dealRows)));
     }
 
-    /** PDF : valeurs formatées pour l'affichage (IC / partage). */
+    /** PDF : deux sections (Funds, Direct deals), valeurs formatées pour l'affichage. */
     public static void toPdf(List<PipelineItem> items, Path file) throws IOException {
-        List<List<String>> rows = new ArrayList<>();
-        for (PipelineItem i : items) {
-            rows.add(Arrays.asList(
-                    i.name(),
-                    i.strategy(),
-                    i.status().label(),
-                    Formatters.score(i.score()),
+        List<PipelineItem> funds = items.stream().filter(i -> i.type() == PipelineItem.Type.FUND).toList();
+        List<PipelineItem> deals = items.stream().filter(i -> i.type() == PipelineItem.Type.DEAL).toList();
+
+        List<List<String>> fundRows = new ArrayList<>();
+        for (PipelineItem i : funds) {
+            fundRows.add(Arrays.asList(
+                    i.name(), i.strategy(), i.status().label(), Formatters.score(i.score()),
                     i.vintageYear() == null ? "—" : Integer.toString(i.vintageYear()),
-                    Formatters.multiple(i.dpi()),
-                    Formatters.percent(i.irr()),
-                    Formatters.multiple(i.moic()),
-                    Formatters.text(i.geography()),
-                    Formatters.money(i.commitment())));
+                    Formatters.multiple(i.dpi()), Formatters.percent(i.irr()), Formatters.multiple(i.moic()),
+                    Formatters.text(i.geography()), Formatters.money(i.commitment())));
         }
-        String subtitle = "Patrimium MFO — pipeline · " + LocalDate.now() + " · "
-                + items.size() + " opportunities";
-        Pdf.writeTable(file, "Investment pipeline", subtitle, PDF_HEADERS, PDF_WEIGHTS, rows, true);
+        List<List<String>> dealRows = new ArrayList<>();
+        for (PipelineItem i : deals) {
+            dealRows.add(Arrays.asList(
+                    i.name(), i.strategy(), i.status().label(), Formatters.score(i.score()),
+                    Formatters.percent(i.irr()), Formatters.multiple(i.moic()),
+                    Formatters.percent(i.dealCagr()), Formatters.percent(i.dealEbitdaMargin()),
+                    Formatters.multiple(i.dealEntryMultiple()), Formatters.date(i.dealTargetExit()),
+                    Formatters.text(i.geography()), Formatters.money(i.commitment())));
+        }
+        String subtitle = "Patrimium MFO — pipeline · " + LocalDate.now() + " · " + items.size() + " opportunities";
+        Pdf.writeSections(file, "Investment pipeline", subtitle, List.of(
+                new Pdf.Section("Funds (Buyout, growth, VC · Secondaries · Private credit)",
+                        FUND_PDF_HEADERS, FUND_PDF_WEIGHTS, fundRows),
+                new Pdf.Section("Direct deals (Co-investment & direct)",
+                        DEAL_PDF_HEADERS, DEAL_PDF_WEIGHTS, dealRows)), true);
+    }
+
+    private static List<String> concat(List<String> base, String... extra) {
+        List<String> l = new ArrayList<>(base);
+        l.addAll(Arrays.asList(extra));
+        return l;
     }
 }

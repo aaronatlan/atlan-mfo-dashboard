@@ -22,11 +22,15 @@ public final class Pdf {
     private static final double MARGIN = 42;
     private static final double ROW_H = 17;
 
+    /** Une table nommée (ex. « Funds », « Direct deals ») dans un rapport à sections. */
+    public record Section(String heading, List<String> headers, double[] weights, List<List<String>> rows) {
+    }
+
     private Pdf() {
     }
 
     /**
-     * Écrit un tableau paginé.
+     * Écrit un tableau paginé (une seule section).
      *
      * @param title    titre du rapport
      * @param subtitle sous-titre (ex. date, contexte) — peut être {@code null}
@@ -36,58 +40,86 @@ public final class Pdf {
      */
     public static void writeTable(Path file, String title, String subtitle, List<String> headers,
                                   double[] weights, List<List<String>> rows, boolean landscape) throws IOException {
+        writeSections(file, title, subtitle, List.of(new Section(null, headers, weights, rows)), landscape);
+    }
+
+    /**
+     * Écrit un rapport à plusieurs sections (tables distinctes, ex. Fonds / Deals directs
+     * — métriques non partagées, §5.2-5.4). Chaque section démarre une nouvelle page.
+     */
+    public static void writeSections(Path file, String title, String subtitle,
+                                     List<Section> sections, boolean landscape) throws IOException {
         double pageW = landscape ? PAGE_H : PAGE_W;   // A4 pivotée en paysage
         double pageH = landscape ? PAGE_W : PAGE_H;
         double contentW = pageW - 2 * MARGIN;
-        double sum = 0;
-        for (double w : weights) {
-            sum += w;
-        }
-        double[] x = new double[headers.size() + 1];
-        x[0] = MARGIN;
-        for (int i = 0; i < headers.size(); i++) {
-            x[i + 1] = x[i] + weights[i] / sum * contentW;
-        }
 
         List<String> pages = new ArrayList<>();
-        int i = 0;
-        while (i == 0 || i < rows.size()) {
-            StringBuilder cs = new StringBuilder();
-            double y = pageH - MARGIN;
-            if (i == 0) {
-                text(cs, "F2", 18, MARGIN, y, title);
-                y -= 24;
-                if (subtitle != null && !subtitle.isBlank()) {
-                    text(cs, "F1", 10, MARGIN, y, subtitle);
-                    y -= 20;
-                } else {
-                    y -= 4;
-                }
-            } else {
-                text(cs, "F2", 12, MARGIN, y, title + " (suite)");
-                y -= 22;
+        boolean firstSectionEver = true;
+        for (Section section : sections) {
+            List<String> headers = section.headers();
+            double[] weights = section.weights();
+            List<List<String>> rows = section.rows();
+            if (weights.length != headers.size()) {
+                throw new IllegalArgumentException("Section \"" + section.heading() + "\": "
+                        + weights.length + " weights for " + headers.size() + " headers");
             }
-            // en-tête de colonnes
+            double sum = 0;
+            for (double w : weights) {
+                sum += w;
+            }
+            double[] x = new double[headers.size() + 1];
+            x[0] = MARGIN;
             for (int c = 0; c < headers.size(); c++) {
-                text(cs, "F2", 9, x[c] + 2, y, fit(headers.get(c), x[c + 1] - x[c] - 4, 9));
+                x[c + 1] = x[c] + weights[c] / sum * contentW;
             }
-            y -= 6;
-            line(cs, MARGIN, y, pageW - MARGIN, y);
-            y -= ROW_H - 6;
-            // lignes de données
-            while (i < rows.size() && y > MARGIN + ROW_H) {
-                List<String> row = rows.get(i);
-                for (int c = 0; c < headers.size() && c < row.size(); c++) {
-                    String v = row.get(c) == null ? "" : row.get(c);
-                    text(cs, "F1", 9, x[c] + 2, y, fit(v, x[c + 1] - x[c] - 4, 9));
+
+            int i = 0;
+            boolean firstPageOfSection = true;
+            while (i == 0 || i < rows.size()) {
+                StringBuilder cs = new StringBuilder();
+                double y = pageH - MARGIN;
+                if (firstSectionEver && firstPageOfSection) {
+                    text(cs, "F2", 18, MARGIN, y, title);
+                    y -= 24;
+                    if (subtitle != null && !subtitle.isBlank()) {
+                        text(cs, "F1", 10, MARGIN, y, subtitle);
+                        y -= 20;
+                    } else {
+                        y -= 4;
+                    }
                 }
-                y -= ROW_H;
-                i++;
-            }
-            line(cs, MARGIN, y + ROW_H - 5, pageW - MARGIN, y + ROW_H - 5);
-            pages.add(cs.toString());
-            if (i >= rows.size()) {
-                break;
+                if (section.heading() != null) {
+                    text(cs, "F2", 13, MARGIN, y, firstPageOfSection
+                            ? section.heading() : section.heading() + " (suite)");
+                    y -= 20;
+                } else if (!firstPageOfSection) {
+                    text(cs, "F2", 12, MARGIN, y, title + " (suite)");
+                    y -= 22;
+                }
+                // en-tête de colonnes
+                for (int c = 0; c < headers.size(); c++) {
+                    text(cs, "F2", 9, x[c] + 2, y, fit(headers.get(c), x[c + 1] - x[c] - 4, 9));
+                }
+                y -= 6;
+                line(cs, MARGIN, y, pageW - MARGIN, y);
+                y -= ROW_H - 6;
+                // lignes de données
+                while (i < rows.size() && y > MARGIN + ROW_H) {
+                    List<String> row = rows.get(i);
+                    for (int c = 0; c < headers.size() && c < row.size(); c++) {
+                        String v = row.get(c) == null ? "" : row.get(c);
+                        text(cs, "F1", 9, x[c] + 2, y, fit(v, x[c + 1] - x[c] - 4, 9));
+                    }
+                    y -= ROW_H;
+                    i++;
+                }
+                line(cs, MARGIN, y + ROW_H - 5, pageW - MARGIN, y + ROW_H - 5);
+                pages.add(cs.toString());
+                firstPageOfSection = false;
+                firstSectionEver = false;
+                if (i >= rows.size()) {
+                    break;
+                }
             }
         }
         writePdf(file, pages, pageW, pageH);
