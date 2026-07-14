@@ -26,6 +26,8 @@ public final class FundInvestmentDao {
             SELECT id, category, name, next_steps, status, vs_benchmark, geography, asset_class, commitment,
                    first_close, final_close, comments,
                    contact_name, contact_email, contact_phone, currency,
+                   asset_class_pm, sub_strategy, access_route, secondary_mandate,
+                   underlying_strategy, vehicle_type, lifecycle_stage, sector_focus,
                    score_snapshot, sub_dpi, sub_irr, sub_moic, sub_geo, sub_time,
                    version, updated_at, updated_by
               FROM fund_investment
@@ -66,8 +68,11 @@ public final class FundInvestmentDao {
               (category, name, next_steps, status, vs_benchmark, geography, asset_class, commitment,
                first_close, final_close, comments,
                score_snapshot, sub_dpi, sub_irr, sub_moic, sub_geo, sub_time,
-               contact_name, contact_email, contact_phone, currency, updated_by)
-            VALUES (?::category, ?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               contact_name, contact_email, contact_phone, currency,
+               asset_class_pm, sub_strategy, access_route, secondary_mandate,
+               underlying_strategy, vehicle_type, lifecycle_stage, sector_focus, updated_by)
+            VALUES (?::category, ?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING id
             """;
 
@@ -77,6 +82,8 @@ public final class FundInvestmentDao {
                geography=?, asset_class=?, commitment=?, first_close=?, final_close=?, comments=?,
                score_snapshot=?, sub_dpi=?, sub_irr=?, sub_moic=?, sub_geo=?, sub_time=?,
                contact_name=?, contact_email=?, contact_phone=?, currency=?,
+               asset_class_pm=?, sub_strategy=?, access_route=?, secondary_mandate=?,
+               underlying_strategy=?, vehicle_type=?, lifecycle_stage=?, sector_focus=?,
                version=version+1, updated_at=now(), updated_by=?
              WHERE id=? AND version=?
             """;
@@ -89,7 +96,7 @@ public final class FundInvestmentDao {
                 long id;
                 try (PreparedStatement ps = conn.prepareStatement(INSERT)) {
                     setFundParams(ps, f, score);
-                    ps.setLong(22, userId);
+                    ps.setLong(30, userId);
                     try (ResultSet rs = ps.executeQuery()) {
                         rs.next();
                         id = rs.getLong(1);
@@ -150,9 +157,9 @@ public final class FundInvestmentDao {
                 int rows;
                 try (PreparedStatement ps = conn.prepareStatement(UPDATE)) {
                     setFundParams(ps, f, score);
-                    ps.setLong(22, userId);
-                    ps.setLong(23, f.id());
-                    ps.setLong(24, f.version());
+                    ps.setLong(30, userId);
+                    ps.setLong(31, f.id());
+                    ps.setLong(32, f.version());
                     rows = ps.executeUpdate();
                 }
                 if (rows == 0) {
@@ -197,6 +204,14 @@ public final class FundInvestmentDao {
         JdbcSupport.setString(ps, 19, f.contactEmail());
         JdbcSupport.setString(ps, 20, f.contactPhone());
         ps.setString(21, f.currency() == null ? "USD" : f.currency());
+        JdbcSupport.setString(ps, 22, f.assetClassPm());
+        JdbcSupport.setString(ps, 23, f.subStrategy());
+        JdbcSupport.setString(ps, 24, f.accessRoute());
+        JdbcSupport.setString(ps, 25, f.secondaryMandate());
+        JdbcSupport.setString(ps, 26, f.underlyingStrategy());
+        JdbcSupport.setString(ps, 27, f.vehicleType());
+        JdbcSupport.setString(ps, 28, f.lifecycleStage());
+        JdbcSupport.setString(ps, 29, f.sectorFocus());
     }
 
     private FundInvestment map(ResultSet rs, List<FundVintage> vintages) throws SQLException {
@@ -234,6 +249,15 @@ public final class FundInvestmentDao {
                 rs.getString("contact_email"),
                 rs.getString("contact_phone"),
 
-                rs.getString("currency"));
+                rs.getString("currency"),
+
+                rs.getString("asset_class_pm"),
+                rs.getString("sub_strategy"),
+                rs.getString("access_route"),
+                rs.getString("secondary_mandate"),
+                rs.getString("underlying_strategy"),
+                rs.getString("vehicle_type"),
+                rs.getString("lifecycle_stage"),
+                rs.getString("sector_focus"));
     }
 }

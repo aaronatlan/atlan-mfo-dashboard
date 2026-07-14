@@ -51,6 +51,7 @@ public final class FundFormView extends BorderPane {
     private final TextField contactNameField = FormControls.field("first & last name");
     private final TextField contactEmailField = FormControls.field("email");
     private final TextField contactPhoneField = FormControls.field("phone");
+    private final ClassificationFields classification = new ClassificationFields();
     private final TextArea nextStepsArea = new TextArea();
     private final TextArea commentsArea = new TextArea();
     private final VBox vintageBox = new VBox(6);
@@ -116,6 +117,13 @@ public final class FundFormView extends BorderPane {
         r = row(g, r, "Contact name", contactNameField);
         r = row(g, r, "Contact email", contactEmailField);
         r = row(g, r, "Contact phone", contactPhoneField);
+
+        Label classSection = new Label("CLASSIFICATION");
+        classSection.getStyleClass().add("form-section");
+        g.add(classSection, 0, r, 2, 1);
+        r++;
+        g.add(classification, 0, r, 2, 1);
+        r++;
 
         Label vintTitle = new Label("VINTAGES");
         vintTitle.getStyleClass().add("form-section");
@@ -253,6 +261,9 @@ public final class FundFormView extends BorderPane {
             contactNameField.setText(existing.contactName());
             contactEmailField.setText(existing.contactEmail());
             contactPhoneField.setText(existing.contactPhone());
+            classification.populate(existing.assetClassPm(), existing.subStrategy(), existing.accessRoute(),
+                    existing.secondaryMandate(), existing.underlyingStrategy(), existing.vehicleType(),
+                    existing.lifecycleStage(), existing.sectorFocus());
             nextStepsArea.setText(existing.nextSteps());
             commentsArea.setText(existing.comments());
             existing.vintages().forEach(this::addVintageRow);
@@ -298,7 +309,15 @@ public final class FundFormView extends BorderPane {
                 tn(contactNameField.getText()),
                 tn(contactEmailField.getText()),
                 tn(contactPhoneField.getText()),
-                currencyCombo.getValue());
+                currencyCombo.getValue(),
+                classification.assetClassPm(),
+                classification.subStrategy(),
+                classification.accessRoute(),
+                classification.secondaryMandate(),
+                classification.underlyingStrategy(),
+                classification.vehicleType(),
+                classification.lifecycleStage(),
+                classification.sectorFocus());
     }
 
     private void save() {
