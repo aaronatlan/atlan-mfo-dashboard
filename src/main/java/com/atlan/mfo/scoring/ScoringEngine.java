@@ -97,6 +97,7 @@ public final class ScoringEngine {
     }
 
     /* ---- Agrégation multi-millésimes, pondérée par récence (§5.5) ---- */
+    /* ---- poids = 0,5 ^ (âge ÷ demi-vie) ---- */
 
     private Double blended(List<FundVintage> vintages, Function<FundVintage, Double> metric) {
         if (vintages == null || vintages.isEmpty()) {
