@@ -609,6 +609,12 @@
 }
 
 /* ---- Fiche détail / méthodologie ---- */
+/* Fiche affichée seule (mode présentation, plein écran) : marge autour, sinon
+   l'en-tête (titre + score) colle aux bords de la fenêtre. */
+.detail-standalone {
+    -fx-padding: 28 44 24 44;
+}
+
 .detail-scroll {
     -fx-background-color: transparent;
     -fx-background: transparent;

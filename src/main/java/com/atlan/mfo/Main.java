@@ -227,6 +227,8 @@ public class Main extends Application {
                         engine.score(data.fundById().get(item.id())), back)
                 : DetailView.ofDealReadOnly(data.dealById().get(item.id()),
                         engine.score(data.dealById().get(item.id())), back);
+        // Affichée seule (pas dans la coquille rembourrée) : marge propre autour.
+        content.getStyleClass().add("detail-standalone");
         setScene(content, 1280, 800);
     }
 
