@@ -268,7 +268,7 @@
 
 .view-title {
     -fx-text-fill: -atlan-text;
-    -fx-font-size: 25px;
+    -fx-font-size: 30px;
     -fx-font-weight: bold;
 }
 
@@ -282,18 +282,18 @@
     -fx-background-radius: 8;
     -fx-border-color: -atlan-line;
     -fx-border-radius: 8;
-    -fx-padding: 20 24 18 24;
+    -fx-padding: 24 28 22 28;
 }
 
 .kpi-value {
     -fx-text-fill: -atlan-text;
-    -fx-font-size: 34px;
+    -fx-font-size: 42px;
     -fx-font-weight: bold;
 }
 
 .kpi-label {
     -fx-text-fill: -atlan-text-3;
-    -fx-font-size: 10px;
+    -fx-font-size: 12px;
     -fx-letter-spacing: 0.15em;
     -fx-padding: 8 0 0 0;
 }
@@ -414,7 +414,7 @@
 
 .opportunity-table .column-header .label {
     -fx-text-fill: -atlan-text-3;
-    -fx-font-size: 10px;
+    -fx-font-size: 12px;
     -fx-letter-spacing: 0.12em;
     -fx-alignment: CENTER-LEFT;
 }
@@ -439,8 +439,8 @@
 
 .opportunity-table .table-cell {
     -fx-text-fill: -atlan-text;
-    -fx-font-size: 13px;
-    -fx-padding: 14 8 14 8;
+    -fx-font-size: 15px;
+    -fx-padding: 17 8 17 8;
     -fx-border-color: transparent;
 }
 
@@ -490,7 +490,7 @@
 
 .tier-name {
     -fx-text-fill: -atlan-text-2;
-    -fx-font-size: 13px;
+    -fx-font-size: 15px;
 }
 
 /* ---- Complétude des données ---- */
@@ -499,7 +499,7 @@
    est centré comme les colonnes Statut/Tier. */
 .completeness {
     -fx-text-fill: -atlan-text-3;
-    -fx-font-size: 12px;
+    -fx-font-size: 14px;
 }
 
 /* Score fondé sur des données incomplètes : teinte d'alerte sobre */
@@ -510,7 +510,7 @@
 /* ---- Statut + puce « Decided » ---- */
 .cell-status {
     -fx-text-fill: -atlan-text-2;
-    -fx-font-size: 13px;
+    -fx-font-size: 15px;
 }
 
 .decided-chip {
@@ -618,52 +618,52 @@
 
 .detail-title {
     -fx-text-fill: -atlan-text;
-    -fx-font-size: 20px;
+    -fx-font-size: 24px;
     -fx-font-weight: bold;
 }
 
 .detail-subtitle {
     -fx-text-fill: -atlan-text-3;
-    -fx-font-size: 12px;
+    -fx-font-size: 14px;
 }
 
 .detail-score {
     -fx-text-fill: -atlan-text;
-    -fx-font-size: 30px;
+    -fx-font-size: 36px;
     -fx-font-weight: bold;
 }
 
 .detail-section {
     -fx-text-fill: -atlan-text-3;
-    -fx-font-size: 10px;
+    -fx-font-size: 12px;
     -fx-letter-spacing: 0.14em;
     -fx-padding: 6 0 2 0;
 }
 
 .detail-key {
     -fx-text-fill: -atlan-text-3;
-    -fx-font-size: 12px;
+    -fx-font-size: 14px;
 }
 
 .detail-value {
     -fx-text-fill: -atlan-text;
-    -fx-font-size: 13px;
+    -fx-font-size: 15px;
 }
 
 .detail-paragraph {
     -fx-text-fill: -atlan-text-2;
-    -fx-font-size: 13px;
+    -fx-font-size: 15px;
 }
 
 .method-head {
     -fx-text-fill: -atlan-text-3;
-    -fx-font-size: 10px;
+    -fx-font-size: 12px;
     -fx-letter-spacing: 0.10em;
 }
 
 .method-cell {
     -fx-text-fill: -atlan-text;
-    -fx-font-size: 13px;
+    -fx-font-size: 15px;
 }
 
 /* ============================================================
@@ -787,77 +787,77 @@
 
 .pres-brand {
     -fx-text-fill: -atlan-text;
-    -fx-font-size: 16px;
+    -fx-font-size: 20px;
     -fx-font-weight: bold;
     -fx-letter-spacing: 0.16em;
 }
 
 .pres-brand-sub {
     -fx-text-fill: -atlan-text-3;
-    -fx-font-size: 10px;
+    -fx-font-size: 12px;
     -fx-letter-spacing: 0.20em;
     -fx-padding: 4 0 0 0;
 }
 
 .presentation-body {
-    -fx-padding: 44 60 30 60;
+    -fx-padding: 48 72 36 72;
 }
 
 /* Chiffre-phare et métriques : Newsreader serif, blanc (§8.2) */
 .pres-hero-label {
     -fx-text-fill: -atlan-text-3;
-    -fx-font-size: 12px;
+    -fx-font-size: 14px;
     -fx-letter-spacing: 0.18em;
 }
 
 .pres-hero-value {
     -fx-text-fill: -atlan-text;
     -fx-font-family: "Newsreader", "Georgia", serif;
-    -fx-font-size: 84px;
+    -fx-font-size: 104px;
     -fx-font-weight: bold;
 }
 
 .pres-metric-value {
     -fx-text-fill: -atlan-text;
     -fx-font-family: "Newsreader", "Georgia", serif;
-    -fx-font-size: 38px;
+    -fx-font-size: 48px;
     -fx-font-weight: bold;
 }
 
 .pres-metric-label {
     -fx-text-fill: -atlan-text-3;
-    -fx-font-size: 10px;
+    -fx-font-size: 12px;
     -fx-letter-spacing: 0.14em;
 }
 
 .pres-section-title {
     -fx-text-fill: -atlan-text-3;
-    -fx-font-size: 11px;
+    -fx-font-size: 14px;
     -fx-letter-spacing: 0.16em;
 }
 
 /* Barres d'allocation (registre sobre, désaturé) */
 .bar-label {
     -fx-text-fill: -atlan-text-2;
-    -fx-font-size: 13px;
+    -fx-font-size: 16px;
 }
 
 .bar-track {
     -fx-background-color: -atlan-raised;
     -fx-background-radius: 3;
-    -fx-min-height: 16;
-    -fx-pref-height: 16;
+    -fx-min-height: 20;
+    -fx-pref-height: 20;
 }
 
 .bar-fill {
     -fx-background-color: -atlan-text-2;
     -fx-background-radius: 3;
-    -fx-min-height: 16;
+    -fx-min-height: 20;
 }
 
 .bar-value {
     -fx-text-fill: -atlan-text;
-    -fx-font-size: 13px;
+    -fx-font-size: 16px;
 }
 
 /* Opportunités prioritaires */
@@ -880,12 +880,12 @@
     -fx-background-radius: 6;
     -fx-border-color: -atlan-line;
     -fx-border-radius: 6;
-    -fx-padding: 12 18 12 18;
+    -fx-padding: 16 22 16 22;
 }
 
 .pres-priority-name {
     -fx-text-fill: -atlan-text;
-    -fx-font-size: 14px;
+    -fx-font-size: 18px;
 }
 
 .link-name {
@@ -899,17 +899,17 @@
 
 .pres-priority-metrics {
     -fx-text-fill: -atlan-text-3;
-    -fx-font-size: 11px;
+    -fx-font-size: 14px;
 }
 
 .pres-priority-strategy {
     -fx-text-fill: -atlan-text-3;
-    -fx-font-size: 12px;
+    -fx-font-size: 15px;
 }
 
 .pres-priority-score {
     -fx-text-fill: -atlan-text;
-    -fx-font-size: 15px;
+    -fx-font-size: 20px;
     -fx-font-weight: bold;
 }
 
