@@ -45,7 +45,7 @@ public final class FormControls {
     public static ComboBox<String> geographyCombo() {
         ComboBox<String> cb = new ComboBox<>();
         cb.getItems().add(null);
-        cb.getItems().addAll("US", "EUROPE", "UK", "DACH", "GLOBAL", "OTHER");
+        cb.getItems().addAll("US", "EUROPE", "UK", "GLOBAL", "OTHER");
         cb.setConverter(new StringConverter<>() {
             @Override
             public String toString(String s) {

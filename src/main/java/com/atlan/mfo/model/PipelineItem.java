@@ -26,7 +26,7 @@ public record PipelineItem(
         Double dpi,
         Double irr,          // fonds : IRR du millésime récent ; deals : IRR attendu
         Double moic,
-        String geography,    // token géographique canonique (US, EUROPE, DACH…)
+        String geography,    // token géographique canonique (US, EUROPE, UK…)
         // Métriques propres aux deals directs (null pour les fonds) : la grille C (§5.4)
         // ne partage pas DPI/millésime avec les grilles fonds A/B.
         Double dealCagr,

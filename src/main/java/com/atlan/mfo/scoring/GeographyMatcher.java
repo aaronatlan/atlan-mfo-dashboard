@@ -8,11 +8,11 @@ import java.util.Set;
  * Normalisation de la géographie vers un vocabulaire canonique, pour éviter les
  * non-match silencieux (« USA » vs « US ») — voir §13.1.
  *
- * <p>Tokens canoniques : {@code US, EUROPE, UK, DACH, GLOBAL, OTHER}.
+ * <p>Tokens canoniques : {@code US, EUROPE, UK, GLOBAL, OTHER}.
  */
 public final class GeographyMatcher {
 
-    public static final Set<String> CANONICAL = Set.of("US", "EUROPE", "UK", "DACH", "GLOBAL", "OTHER");
+    public static final Set<String> CANONICAL = Set.of("US", "EUROPE", "UK", "GLOBAL", "OTHER");
 
     private static final Map<String, String> ALIASES = buildAliases();
 
@@ -55,14 +55,14 @@ public final class GeographyMatcher {
                 Map.entry("UNITED KINGDOM", "UK"),
                 Map.entry("ENGLAND", "UK"),
                 Map.entry("BRITAIN", "UK"),
-                Map.entry("GERMANY", "DACH"),
-                Map.entry("ALLEMAGNE", "DACH"),
-                Map.entry("DEUTSCHLAND", "DACH"),
-                Map.entry("AUSTRIA", "DACH"),
-                Map.entry("AUTRICHE", "DACH"),
-                Map.entry("SWITZERLAND", "DACH"),
-                Map.entry("SUISSE", "DACH"),
-                Map.entry("D-A-CH", "DACH"),
+                Map.entry("GERMANY", "EUROPE"),
+                Map.entry("ALLEMAGNE", "EUROPE"),
+                Map.entry("DEUTSCHLAND", "EUROPE"),
+                Map.entry("AUSTRIA", "EUROPE"),
+                Map.entry("AUTRICHE", "EUROPE"),
+                Map.entry("SWITZERLAND", "EUROPE"),
+                Map.entry("SUISSE", "EUROPE"),
+                Map.entry("D-A-CH", "EUROPE"),
                 Map.entry("WORLD", "GLOBAL"),
                 Map.entry("WORLDWIDE", "GLOBAL"),
                 Map.entry("MONDE", "GLOBAL"),

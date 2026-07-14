@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS fund_investment (
     next_steps     TEXT,
     status         deal_status NOT NULL DEFAULT 'INITIAL_REVIEW',
     vs_benchmark   benchmark_status DEFAULT 'NA',
-    geography      TEXT,                    -- token canonique : 'US','EUROPE','UK','DACH','GLOBAL','OTHER' (§13.1)
+    geography      TEXT,                    -- token canonique : 'US','EUROPE','UK','GLOBAL','OTHER' (§13.1)
     asset_class    TEXT,
     commitment     NUMERIC,                 -- capital envisagé par Atlan (devise de base) — KPI « capital en revue »
 

@@ -65,7 +65,7 @@ public final class ScoringProfile {
 
     /** Configuration par défaut (méthodologie §5). */
     public static ScoringProfile defaults() {
-        Set<String> fundPreferred = Set.of("US", "EUROPE", "UK", "DACH");
+        Set<String> fundPreferred = Set.of("US", "EUROPE", "UK");
         Set<String> dealPreferred = Set.of("US", "EUROPE", "UK");
 
         FundGrid gridA = new FundGrid(
@@ -138,7 +138,7 @@ public final class ScoringProfile {
         var d = defaults().toMap();
         java.util.function.Function<String, Double> g =
                 k -> overrides.getOrDefault(k, d.get(k));
-        Set<String> fundPref = Set.of("US", "EUROPE", "UK", "DACH");
+        Set<String> fundPref = Set.of("US", "EUROPE", "UK");
         Set<String> dealPref = Set.of("US", "EUROPE", "UK");
 
         FundGrid a = fundGridFrom(g, "gridA", fundPref);

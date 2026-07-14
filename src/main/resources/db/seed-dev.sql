@@ -91,7 +91,7 @@ DO $$ BEGIN
       ('Project Vega','SCREENING','NA','Healthcare','Cedar Partners','EUROPE','Co-investment',18000000,
        60000000,0.30,12000000,0.35,0.20,6000000,0.50,300000000, 10,NULL,550000000,0.22,1.9,
        DATE '2026-02-15', NULL, 58),
-      ('Project Atlas','INITIAL_REVIEW','BELOW_THRESHOLD','Industrials','Forge Equity','DACH','Direct',22000000,
+      ('Project Atlas','INITIAL_REVIEW','BELOW_THRESHOLD','Industrials','Forge Equity','EUROPE','Direct',22000000,
        200000000,0.12,25000000,0.08,0.125,8000000,0.40,500000000, 9,NULL,NULL,0.15,1.5,
        NULL, NULL, 41),
       ('Project Lyra','IC_VOTE','ABOVE_THRESHOLD','Fintech','Quill Ventures','UK','Direct/Growth Equity',28000000,

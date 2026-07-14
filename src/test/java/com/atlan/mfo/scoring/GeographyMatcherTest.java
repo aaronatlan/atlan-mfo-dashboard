@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GeographyMatcherTest {
 
-    private static final Set<String> FUND_PREFERRED = Set.of("US", "EUROPE", "UK", "DACH");
+    private static final Set<String> FUND_PREFERRED = Set.of("US", "EUROPE", "UK");
     private static final Set<String> DEAL_PREFERRED = Set.of("US", "EUROPE", "UK");
 
     @Test
@@ -20,7 +20,7 @@ class GeographyMatcherTest {
         assertEquals("US", GeographyMatcher.normalize("USA"));
         assertEquals("US", GeographyMatcher.normalize("United States"));
         assertEquals("UK", GeographyMatcher.normalize("united kingdom"));
-        assertEquals("DACH", GeographyMatcher.normalize("Germany"));
+        assertEquals("EUROPE", GeographyMatcher.normalize("Germany"));
         assertEquals("GLOBAL", GeographyMatcher.normalize("Worldwide"));
     }
 
@@ -42,6 +42,6 @@ class GeographyMatcherTest {
         assertTrue(GeographyMatcher.isMatch("GLOBAL", FUND_PREFERRED)); // GLOBAL toujours match
         assertFalse(GeographyMatcher.isMatch("OTHER", FUND_PREFERRED));
         assertTrue(GeographyMatcher.isMatch("UK", DEAL_PREFERRED));
-        assertFalse(GeographyMatcher.isMatch("DACH", DEAL_PREFERRED)); // hors set grille C
+        assertFalse(GeographyMatcher.isMatch("OTHER", DEAL_PREFERRED)); // hors set préféré
     }
 }

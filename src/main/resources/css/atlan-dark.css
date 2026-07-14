@@ -954,6 +954,24 @@
     -fx-font-size: 15px;
 }
 
+/* Carte du monde (exposition géographique) */
+.map-legend-bar {
+    -fx-background-color: linear-gradient(to right, #2E5A62, #6E6A44, #9A6E3A, #C0796A);
+    -fx-background-radius: 3;
+}
+.map-legend-cap {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 12px;
+}
+.map-legend-scale {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 12px;
+}
+.map-legend-note {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 13px;
+}
+
 /* Opportunités prioritaires */
 .pres-status-combo {
     -fx-min-width: 170;

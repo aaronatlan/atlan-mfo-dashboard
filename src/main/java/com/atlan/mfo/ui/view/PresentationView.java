@@ -125,7 +125,9 @@ public final class PresentationView extends BorderPane {
                 metric(avg.isPresent() ? Long.toString(Math.round(avg.getAsDouble())) : "—", "AVERAGE SCORE"),
                 metric(Long.toString(strong), "STRONG TIER"));
 
-        VBox box = new VBox(28, hero, metrics, panelsRow(active, all), decisions(all));
+        VBox box = new VBox(28, hero, metrics, panelsRow(active, all),
+                panel("GEOGRAPHIC EXPOSURE — BY OPPORTUNITY COUNT", geographyChart(active)),
+                decisions(all));
         box.getStyleClass().add("presentation-body");
         return box;
     }
@@ -292,6 +294,50 @@ public final class PresentationView extends BorderPane {
         HBox row = new HBox(14, label, track, value);
         row.setAlignment(Pos.CENTER_LEFT);
         return row;
+    }
+
+    /* ---- Exposition géographique : carte du monde en heat map ---- */
+
+    private VBox geographyChart(List<PipelineItem> active) {
+        java.util.Map<String, Long> counts = new java.util.HashMap<>();
+        for (PipelineItem i : active) {
+            String region = com.atlan.mfo.scoring.GeographyMatcher.normalize(i.geography());
+            if (region != null) {
+                counts.merge(region, 1L, Long::sum);
+            }
+        }
+        long us = counts.getOrDefault("US", 0L);
+        long eu = counts.getOrDefault("EUROPE", 0L);
+        long uk = counts.getOrDefault("UK", 0L);
+        long global = counts.getOrDefault("GLOBAL", 0L);
+        long other = counts.getOrDefault("OTHER", 0L);
+        long max = Math.max(1, Math.max(us, Math.max(eu, uk)));
+
+        WorldHeatMap map = new WorldHeatMap(java.util.Map.of("US", us, "EUROPE", eu, "UK", uk));
+        map.setMaxWidth(Double.MAX_VALUE);
+
+        // Légende : dégradé + repères, et encart pour les régions non cartographiables.
+        Label fewer = new Label("Fewer");
+        fewer.getStyleClass().add("map-legend-cap");
+        Region gradient = new Region();
+        gradient.getStyleClass().add("map-legend-bar");
+        gradient.setMinSize(180, 12);
+        gradient.setPrefSize(180, 12);
+        Label more = new Label("More");
+        more.getStyleClass().add("map-legend-cap");
+        Label scale = new Label("1 – " + max + " opps");
+        scale.getStyleClass().add("map-legend-scale");
+        HBox legend = new HBox(10, fewer, gradient, more, scale);
+        legend.setAlignment(Pos.CENTER_LEFT);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        Label notMapped = new Label("Not mapped:  Global " + global + "  ·  Other " + other);
+        notMapped.getStyleClass().add("map-legend-note");
+        HBox footer = new HBox(16, legend, spacer, notMapped);
+        footer.setAlignment(Pos.CENTER_LEFT);
+
+        return new VBox(14, map, footer);
     }
 
     /* ---- Opportunités : liste de décision (statut modifiable en comité) ---- */
