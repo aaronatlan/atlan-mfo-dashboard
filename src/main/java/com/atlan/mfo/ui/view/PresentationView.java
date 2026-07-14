@@ -314,7 +314,10 @@ public final class PresentationView extends BorderPane {
         long max = Math.max(1, Math.max(us, Math.max(eu, uk)));
 
         WorldHeatMap map = new WorldHeatMap(java.util.Map.of("US", us, "EUROPE", eu, "UK", uk));
-        map.setMaxWidth(Double.MAX_VALUE);
+        // Plafonne la taille (la carte a beaucoup d'océan) et centre-la sous les panneaux.
+        map.setMaxWidth(640);
+        HBox mapRow = new HBox(map);
+        mapRow.setAlignment(Pos.CENTER);
 
         // Légende : dégradé + repères, et encart pour les régions non cartographiables.
         Label fewer = new Label("Fewer");
@@ -337,7 +340,7 @@ public final class PresentationView extends BorderPane {
         HBox footer = new HBox(16, legend, spacer, notMapped);
         footer.setAlignment(Pos.CENTER_LEFT);
 
-        return new VBox(14, map, footer);
+        return new VBox(14, mapRow, footer);
     }
 
     /* ---- Opportunités : liste de décision (statut modifiable en comité) ---- */
