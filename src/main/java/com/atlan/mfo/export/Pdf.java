@@ -21,9 +21,13 @@ public final class Pdf {
     private static final double PAGE_H = 841.89;
     private static final double MARGIN = 42;
     private static final double ROW_H = 17;
+    private static final double BASE_FONT = 9;
+    private static final double MIN_FONT = 6.5;     // en-deçà, illisible : dernier recours
+    private static final double CHAR_W = 0.52;      // largeur moyenne Helvetica ≈ 0.52 × taille
+    private static final double CELL_PAD = 8;       // marge intérieure (4pt de chaque côté)
 
     /** Une table nommée (ex. « Funds », « Direct deals ») dans un rapport à sections. */
-    public record Section(String heading, List<String> headers, double[] weights, List<List<String>> rows) {
+    public record Section(String heading, List<String> headers, List<List<String>> rows) {
     }
 
     private Pdf() {
@@ -35,17 +39,20 @@ public final class Pdf {
      * @param title    titre du rapport
      * @param subtitle sous-titre (ex. date, contexte) — peut être {@code null}
      * @param headers  libellés de colonnes
-     * @param weights  largeurs relatives des colonnes (même taille que {@code headers})
      * @param rows     lignes (valeurs déjà formatées en texte)
      */
     public static void writeTable(Path file, String title, String subtitle, List<String> headers,
-                                  double[] weights, List<List<String>> rows, boolean landscape) throws IOException {
-        writeSections(file, title, subtitle, List.of(new Section(null, headers, weights, rows)), landscape);
+                                  List<List<String>> rows, boolean landscape) throws IOException {
+        writeSections(file, title, subtitle, List.of(new Section(null, headers, rows)), landscape);
     }
 
     /**
      * Écrit un rapport à plusieurs sections (tables distinctes, ex. Fonds / Deals directs
      * — métriques non partagées, §5.2-5.4). Chaque section démarre une nouvelle page.
+     *
+     * <p>La largeur des colonnes est calculée à partir du contenu réel (aucun mot n'est
+     * jamais tronqué) ; si la table ne tient pas à la taille de police par défaut, celle-ci
+     * est réduite (jusqu'à {@link #MIN_FONT}) plutôt que de couper le texte.
      */
     public static void writeSections(Path file, String title, String subtitle,
                                      List<Section> sections, boolean landscape) throws IOException {
@@ -57,21 +64,15 @@ public final class Pdf {
         boolean firstSectionEver = true;
         for (Section section : sections) {
             List<String> headers = section.headers();
-            double[] weights = section.weights();
             List<List<String>> rows = section.rows();
-            if (weights.length != headers.size()) {
-                throw new IllegalArgumentException("Section \"" + section.heading() + "\": "
-                        + weights.length + " weights for " + headers.size() + " headers");
-            }
-            double sum = 0;
-            for (double w : weights) {
-                sum += w;
-            }
+
+            Layout layout = fitColumns(headers, rows, contentW);
             double[] x = new double[headers.size() + 1];
             x[0] = MARGIN;
             for (int c = 0; c < headers.size(); c++) {
-                x[c + 1] = x[c] + weights[c] / sum * contentW;
+                x[c + 1] = x[c] + layout.widths()[c];
             }
+            double fs = layout.fontSize();
 
             int i = 0;
             boolean firstPageOfSection = true;
@@ -96,9 +97,9 @@ public final class Pdf {
                     text(cs, "F2", 12, MARGIN, y, title + " (suite)");
                     y -= 22;
                 }
-                // en-tête de colonnes
+                // en-tête de colonnes (jamais tronqué : largeur calculée sur le contenu)
                 for (int c = 0; c < headers.size(); c++) {
-                    text(cs, "F2", 9, x[c] + 2, y, fit(headers.get(c), x[c + 1] - x[c] - 4, 9));
+                    text(cs, "F2", fs, x[c] + 4, y, headers.get(c));
                 }
                 y -= 6;
                 line(cs, MARGIN, y, pageW - MARGIN, y);
@@ -108,7 +109,7 @@ public final class Pdf {
                     List<String> row = rows.get(i);
                     for (int c = 0; c < headers.size() && c < row.size(); c++) {
                         String v = row.get(c) == null ? "" : row.get(c);
-                        text(cs, "F1", 9, x[c] + 2, y, fit(v, x[c + 1] - x[c] - 4, 9));
+                        text(cs, "F1", fs, x[c] + 4, y, v);
                     }
                     y -= ROW_H;
                     i++;
@@ -125,10 +126,55 @@ public final class Pdf {
         writePdf(file, pages, pageW, pageH);
     }
 
+    /* ---- Dimensionnement automatique des colonnes (aucune troncature) ---- */
+
+    private record Layout(double[] widths, double fontSize) {
+    }
+
+    /**
+     * Calcule la largeur de chaque colonne à partir du texte le plus long qu'elle
+     * contient (en-tête compris). Si la somme dépasse la largeur disponible, réduit la
+     * police (linéairement, jusqu'à {@link #MIN_FONT}) plutôt que de tronquer un mot.
+     */
+    private static Layout fitColumns(List<String> headers, List<List<String>> rows, double contentW) {
+        int n = headers.size();
+        double[] natural = new double[n];
+        for (int c = 0; c < n; c++) {
+            double max = headers.get(c).length();
+            for (List<String> row : rows) {
+                if (c < row.size() && row.get(c) != null) {
+                    max = Math.max(max, row.get(c).length());
+                }
+            }
+            natural[c] = max * CHAR_W * BASE_FONT + CELL_PAD;
+        }
+        double sum = 0;
+        for (double w : natural) {
+            sum += w;
+        }
+        double fontSize = BASE_FONT;
+        if (sum > contentW) {
+            // Réduit la police proportionnellement au dépassement (jamais sous MIN_FONT).
+            double scale = Math.max(MIN_FONT / BASE_FONT, contentW / sum);
+            fontSize = BASE_FONT * scale;
+            for (int c = 0; c < n; c++) {
+                natural[c] *= scale;
+            }
+            sum *= scale;
+        }
+        // Distribue l'espace restant proportionnellement (remplit toute la largeur de page).
+        double extra = Math.max(0, contentW - sum);
+        double[] widths = new double[n];
+        for (int c = 0; c < n; c++) {
+            widths[c] = natural[c] + extra * (natural[c] / sum);
+        }
+        return new Layout(widths, fontSize);
+    }
+
     /* ---- Commandes de flux de contenu ---- */
 
-    private static void text(StringBuilder cs, String font, int size, double px, double py, String s) {
-        cs.append("BT /").append(font).append(' ').append(size).append(" Tf ")
+    private static void text(StringBuilder cs, String font, double size, double px, double py, String s) {
+        cs.append("BT /").append(font).append(' ').append(fmt(size)).append(" Tf ")
                 .append(fmt(px)).append(' ').append(fmt(py)).append(" Td (")
                 .append(escPdf(s)).append(") Tj ET\n");
     }
@@ -136,15 +182,6 @@ public final class Pdf {
     private static void line(StringBuilder cs, double x1, double y1, double x2, double y2) {
         cs.append("0.7 w 0.75 G ").append(fmt(x1)).append(' ').append(fmt(y1)).append(" m ")
                 .append(fmt(x2)).append(' ').append(fmt(y2)).append(" l S\n");
-    }
-
-    /** Tronque un texte pour tenir dans une largeur (approximation Helvetica ~0.52·taille). */
-    private static String fit(String s, double width, int size) {
-        int max = Math.max(1, (int) (width / (size * 0.52)));
-        if (s.length() <= max) {
-            return s;
-        }
-        return s.substring(0, Math.max(1, max - 3)) + "...";
     }
 
     /* ---- Assemblage PDF (objets + xref) ---- */

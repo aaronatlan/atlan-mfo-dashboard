@@ -27,7 +27,6 @@ public final class PipelineExport {
             "Tier", "Vintage", "DPI", "IRR", "MOIC", "Geography", "Commitment");
     private static final List<String> FUND_PDF_HEADERS = concat(COMMON,
             "Vintage", "DPI", "IRR", "MOIC", "Geography", "Commitment");
-    private static final double[] FUND_PDF_WEIGHTS = {20, 13, 11, 6, 7, 7, 7, 7, 8, 9};
 
     // Deals directs (grille C) : CAGR, marge EBITDA, multiple d'entrée, exit visée.
     private static final List<String> DEAL_XLSX_HEADERS = concat(COMMON,
@@ -35,7 +34,6 @@ public final class PipelineExport {
             "Target Exit", "Geography", "Commitment");
     private static final List<String> DEAL_PDF_HEADERS = concat(COMMON,
             "Exp. IRR", "Exp. MOIC", "CAGR", "EBITDA %", "Entry x", "Target Exit", "Geography", "Commitment");
-    private static final double[] DEAL_PDF_WEIGHTS = {17, 12, 9, 6, 7, 7, 7, 7, 7, 9, 9, 9};
 
     private PipelineExport() {
     }
@@ -91,9 +89,9 @@ public final class PipelineExport {
         String subtitle = "Patrimium MFO — pipeline · " + LocalDate.now() + " · " + items.size() + " opportunities";
         Pdf.writeSections(file, "Investment pipeline", subtitle, List.of(
                 new Pdf.Section("Funds (Buyout, growth, VC · Secondaries · Private credit)",
-                        FUND_PDF_HEADERS, FUND_PDF_WEIGHTS, fundRows),
+                        FUND_PDF_HEADERS, fundRows),
                 new Pdf.Section("Direct deals (Co-investment & direct)",
-                        DEAL_PDF_HEADERS, DEAL_PDF_WEIGHTS, dealRows)), true);
+                        DEAL_PDF_HEADERS, dealRows)), true);
     }
 
     private static List<String> concat(List<String> base, String... extra) {
