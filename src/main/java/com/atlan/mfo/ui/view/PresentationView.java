@@ -28,10 +28,13 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Mode présentation : épuré, lecture seule, pensé pour la projection en comité
- * d'investissement (voir §6.3). Pas de menu latéral ni de filtres.
+ * Mode présentation : épuré, pensé pour la projection en comité d'investissement
+ * (voir §6.3). Pas de menu latéral. Un filtre par stratégie et le clic sur une
+ * opportunité (→ fiche complète) sont disponibles.
  */
 public final class PresentationView extends BorderPane {
+
+    private static final String ALL_STRATEGIES = "All strategies";
 
     private final BiConsumer<PipelineItem, DealStatus> onStatusChange;
     private final Consumer<PipelineItem> onOpen;
@@ -191,23 +194,50 @@ public final class PresentationView extends BorderPane {
         Label title = new Label(onStatusChange != null
                 ? "OPPORTUNITIES — STATUS DECISIONS" : "OPPORTUNITIES");
         title.getStyleClass().add("pres-section-title");
+
+        // Filtre par stratégie (catégorie)
+        ComboBox<String> filter = new ComboBox<>();
+        filter.getItems().add(ALL_STRATEGIES);
+        filter.getItems().addAll(
+                Category.BUYOUT_GROWTH_VC.label(),
+                Category.SECONDARIES.label(),
+                Category.PRIVATE_CREDIT.label(),
+                PipelineItem.DEALS_STRATEGY);
+        filter.setValue(ALL_STRATEGIES);
+        filter.getStyleClass().add("pres-status-combo");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox header = new HBox(16, title, spacer, filter);
+        header.setAlignment(Pos.CENTER_LEFT);
+
         VBox rows = new VBox(8);
-        for (PipelineItem i : sorted) {
-            rows.getChildren().add(decisionRow(i));
-        }
-        return new VBox(14, title, rows);
+        Runnable render = () -> {
+            rows.getChildren().clear();
+            String f = filter.getValue();
+            for (PipelineItem i : sorted) {
+                if (ALL_STRATEGIES.equals(f) || i.strategy().equals(f)) {
+                    rows.getChildren().add(decisionRow(i));
+                }
+            }
+        };
+        filter.valueProperty().addListener((o, a, b) -> render.run());
+        render.run();
+
+        return new VBox(14, header, rows);
     }
 
     private HBox decisionRow(PipelineItem i) {
         Label name = new Label(i.name());
         name.getStyleClass().add("pres-priority-name");
-        // Nom cliquable : ouvre la fiche complète (toutes les données)
-        name.getStyleClass().add("link-name");
-        name.setOnMouseClicked(e -> onOpen.accept(i));
+        name.getStyleClass().add("link-name");   // affordance visuelle (survol)
         Label metrics = new Label(headline.apply(i));
         metrics.getStyleClass().add("pres-priority-metrics");
+        // Toute la zone nom + métriques est cliquable → ouvre la fiche complète (toutes les infos).
         VBox nameBox = new VBox(3, name, metrics);
         nameBox.setMinWidth(320);
+        nameBox.setCursor(javafx.scene.Cursor.HAND);
+        nameBox.setOnMouseClicked(e -> onOpen.accept(i));
 
         Label strat = new Label(i.strategy());
         strat.getStyleClass().add("pres-priority-strategy");
