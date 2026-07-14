@@ -952,6 +952,60 @@
     -fx-font-size: 15px;
 }
 
+/* Nuage de calibration (prédit vs réalisé) */
+.axis-line { -fx-stroke: -atlan-line-strong; }
+.calib-diagonal {
+    -fx-stroke: -atlan-text-3;
+    -fx-stroke-dash-array: 5 5;
+}
+.calib-point-good { -fx-fill: -atlan-strong; }
+.calib-point-bad { -fx-fill: -atlan-danger; }
+.axis-title {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 12px;
+}
+.axis-tick {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 11px;
+}
+.legend-dot {
+    -fx-min-width: 11;
+    -fx-min-height: 11;
+    -fx-max-width: 11;
+    -fx-max-height: 11;
+    -fx-background-radius: 6;
+}
+.legend-dot.calib-point-good { -fx-background-color: -atlan-strong; }
+.legend-dot.calib-point-bad { -fx-background-color: -atlan-danger; }
+
+/* Distribution des scores par tier (dashboard) */
+.tier-panel {
+    -fx-background-color: -atlan-card;
+    -fx-background-radius: 12;
+    -fx-border-color: -atlan-line;
+    -fx-border-radius: 12;
+    -fx-padding: 20 26 22 26;
+}
+.tier-fill {
+    -fx-background-radius: 4 4 0 0;
+}
+.tier-fill-strong { -fx-background-color: -atlan-strong; }
+.tier-fill-moderate { -fx-background-color: -atlan-moderate; }
+.tier-fill-caution { -fx-background-color: -atlan-caution; }
+.tier-dist-value {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+.tier-dist-name {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 14px;
+}
+.tier-dist-range {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 11px;
+}
+
 /* Opportunités prioritaires */
 .pres-status-combo {
     -fx-min-width: 170;
