@@ -878,6 +878,80 @@
     -fx-font-size: 16px;
 }
 
+/* ---- Panneaux graphiques (mode présentation) ---- */
+.pres-panel {
+    -fx-background-color: -atlan-card;
+    -fx-background-radius: 14;
+    -fx-border-color: -atlan-line;
+    -fx-border-radius: 14;
+    -fx-padding: 22 26 26 26;
+}
+
+/* Donut d'allocation : couleurs de segments alignées sur les stratégies */
+.donut-seg-0 { -fx-stroke: -atlan-strong; }    /* Buyout, growth, VC */
+.donut-seg-1 { -fx-stroke: -atlan-moderate; }  /* Secondaries */
+.donut-seg-2 { -fx-stroke: -atlan-accent; }    /* Private credit */
+.donut-seg-3 { -fx-stroke: -atlan-caution; }   /* Co-investment & direct */
+
+.donut-total-value {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
+
+.donut-total-label {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 12px;
+}
+
+.legend-swatch {
+    -fx-min-width: 13;
+    -fx-min-height: 13;
+    -fx-max-width: 13;
+    -fx-max-height: 13;
+    -fx-background-radius: 3;
+}
+.swatch-0 { -fx-background-color: -atlan-strong; }
+.swatch-1 { -fx-background-color: -atlan-moderate; }
+.swatch-2 { -fx-background-color: -atlan-accent; }
+.swatch-3 { -fx-background-color: -atlan-caution; }
+
+.donut-legend-name {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 15px;
+}
+.donut-legend-value {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 15px;
+}
+.donut-legend-pct {
+    -fx-text-fill: -atlan-text-3;
+    -fx-font-size: 15px;
+}
+
+/* Pipeline par étape : barres horizontales */
+.funnel-label {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 15px;
+}
+.funnel-track {
+    -fx-background-color: -atlan-raised;
+    -fx-background-radius: 4;
+    -fx-min-height: 24;
+    -fx-pref-height: 24;
+}
+.funnel-fill {
+    -fx-background-radius: 4;
+    -fx-min-height: 24;
+}
+.funnel-stage { -fx-background-color: -atlan-accent; }
+.funnel-approved { -fx-background-color: -atlan-strong; }
+.funnel-declined { -fx-background-color: -atlan-danger; }
+.funnel-value {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 15px;
+}
+
 /* Opportunités prioritaires */
 .pres-status-combo {
     -fx-min-width: 170;

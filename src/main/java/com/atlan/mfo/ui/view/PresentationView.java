@@ -14,15 +14,17 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Arc;
+import javafx.scene.shape.ArcType;
 
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -123,7 +125,7 @@ public final class PresentationView extends BorderPane {
                 metric(avg.isPresent() ? Long.toString(Math.round(avg.getAsDouble())) : "—", "AVERAGE SCORE"),
                 metric(Long.toString(strong), "STRONG TIER"));
 
-        VBox box = new VBox(28, hero, metrics, allocation(active), decisions(all));
+        VBox box = new VBox(28, hero, metrics, panelsRow(active, all), decisions(all));
         box.getStyleClass().add("presentation-body");
         return box;
     }
@@ -136,49 +138,155 @@ public final class PresentationView extends BorderPane {
         return new VBox(2, v, l);
     }
 
-    /* ---- Allocation par stratégie (barres) ---- */
+    /* ---- Panneaux graphiques (allocation + pipeline) côte à côte ---- */
 
-    private VBox allocation(List<PipelineItem> active) {
-        Map<String, Double> byStrategy = new LinkedHashMap<>();
-        byStrategy.put(Category.BUYOUT_GROWTH_VC.label(), 0d);
-        byStrategy.put(Category.SECONDARIES.label(), 0d);
-        byStrategy.put(Category.PRIVATE_CREDIT.label(), 0d);
-        byStrategy.put(PipelineItem.DEALS_STRATEGY, 0d);
-        for (PipelineItem i : active) {
-            if (i.commitment() != null) {
-                byStrategy.merge(i.strategy(), i.commitment(), Double::sum);
-            }
-        }
-        double max = byStrategy.values().stream().mapToDouble(Double::doubleValue).max().orElse(0d);
+    private HBox panelsRow(List<PipelineItem> active, List<PipelineItem> all) {
+        VBox allocation = panel("ALLOCATION BY STRATEGY", allocationChart(active));
+        VBox pipeline = panel("PIPELINE BY STAGE", statusFunnel(all));
+        allocation.setMaxWidth(Double.MAX_VALUE);
+        pipeline.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(allocation, Priority.ALWAYS);
+        HBox.setHgrow(pipeline, Priority.ALWAYS);
+        HBox row = new HBox(20, allocation, pipeline);
+        row.setFillHeight(true);
+        return row;
+    }
 
-        Label title = new Label("ALLOCATION BY STRATEGY");
+    private VBox panel(String titleText, Node content) {
+        Label title = new Label(titleText);
         title.getStyleClass().add("pres-section-title");
-        VBox rows = new VBox(10);
-        byStrategy.forEach((name, value) -> rows.getChildren().add(bar(name, value, max)));
-
-        VBox box = new VBox(14, title, rows);
+        VBox box = new VBox(18, title, content);
+        box.getStyleClass().add("pres-panel");
         return box;
     }
 
-    private HBox bar(String name, double value, double max) {
+    /* ---- Allocation par stratégie : donut (Arc natif) + légende ---- */
+
+    private static final String[] SEG_LABELS = {
+            Category.BUYOUT_GROWTH_VC.label(), Category.SECONDARIES.label(),
+            Category.PRIVATE_CREDIT.label(), PipelineItem.DEALS_STRATEGY};
+
+    private HBox allocationChart(List<PipelineItem> active) {
+        double[] values = new double[SEG_LABELS.length];
+        for (PipelineItem i : active) {
+            if (i.commitment() == null) {
+                continue;
+            }
+            for (int k = 0; k < SEG_LABELS.length; k++) {
+                if (SEG_LABELS[k].equals(i.strategy())) {
+                    values[k] += i.commitment();
+                    break;
+                }
+            }
+        }
+        double total = 0;
+        for (double v : values) {
+            total += v;
+        }
+
+        // Anneau : un Arc par segment, partant du haut (90°) et tournant dans le sens horaire.
+        double r = 72, thickness = 36, cx = 90, cy = 90;
+        Pane ring = new Pane();
+        ring.setMinSize(180, 180);
+        ring.setPrefSize(180, 180);
+        ring.setMaxSize(180, 180);
+        double startFrac = 0;
+        for (int k = 0; k < values.length; k++) {
+            double frac = total > 0 ? values[k] / total : 0;
+            if (frac <= 0) {
+                continue;
+            }
+            Arc arc = new Arc(cx, cy, r, r, 90 - startFrac * 360, -frac * 360);
+            arc.setType(ArcType.OPEN);
+            arc.setFill(Color.TRANSPARENT);
+            arc.setStrokeWidth(thickness);
+            arc.getStyleClass().addAll("donut-seg", "donut-seg-" + k);
+            ring.getChildren().add(arc);
+            startFrac += frac;
+        }
+        Label totalValue = new Label(Formatters.money(total));
+        totalValue.getStyleClass().add("donut-total-value");
+        Label totalCap = new Label("COMMITTED");
+        totalCap.getStyleClass().add("donut-total-label");
+        VBox center = new VBox(1, totalValue, totalCap);
+        center.setAlignment(Pos.CENTER);
+        StackPane donut = new StackPane(ring, center);
+        donut.setMinSize(180, 180);
+
+        VBox legend = new VBox(12);
+        legend.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(legend, Priority.ALWAYS);
+        for (int k = 0; k < SEG_LABELS.length; k++) {
+            legend.getChildren().add(legendRow(k, SEG_LABELS[k], values[k], total));
+        }
+
+        HBox row = new HBox(28, donut, legend);
+        row.setAlignment(Pos.CENTER_LEFT);
+        return row;
+    }
+
+    private HBox legendRow(int idx, String name, double value, double total) {
+        Region swatch = new Region();
+        swatch.getStyleClass().addAll("legend-swatch", "swatch-" + idx);
         Label label = new Label(name);
-        label.getStyleClass().add("bar-label");
-        label.setMinWidth(210);
+        label.getStyleClass().add("donut-legend-name");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        Label amount = new Label(Formatters.money(value));
+        amount.getStyleClass().add("donut-legend-value");
+        long pct = total > 0 ? Math.round(value / total * 100) : 0;
+        Label percent = new Label(pct + "%");
+        percent.getStyleClass().add("donut-legend-pct");
+        percent.setMinWidth(52);
+        percent.setAlignment(Pos.CENTER_RIGHT);
+        HBox row = new HBox(12, swatch, label, spacer, amount, percent);
+        row.setAlignment(Pos.CENTER_LEFT);
+        return row;
+    }
+
+    /* ---- Pipeline par étape : barres horizontales colorées ---- */
+
+    private VBox statusFunnel(List<PipelineItem> all) {
+        java.util.EnumMap<DealStatus, Long> counts = new java.util.EnumMap<>(DealStatus.class);
+        for (DealStatus s : DealStatus.values()) {
+            counts.put(s, 0L);
+        }
+        for (PipelineItem i : all) {
+            counts.merge(i.status(), 1L, Long::sum);
+        }
+        long max = counts.values().stream().mapToLong(Long::longValue).max().orElse(0L);
+
+        VBox rows = new VBox(12);
+        for (DealStatus s : DealStatus.values()) {
+            rows.getChildren().add(funnelBar(s, counts.get(s), max));
+        }
+        return rows;
+    }
+
+    private HBox funnelBar(DealStatus status, long count, long max) {
+        Label label = new Label(status.label());
+        label.getStyleClass().add("funnel-label");
+        label.setMinWidth(150);
 
         Region fill = new Region();
-        fill.getStyleClass().add("bar-fill");
+        fill.getStyleClass().add("funnel-fill");
+        fill.getStyleClass().add(switch (status) {
+            case APPROVED -> "funnel-approved";
+            case DECLINED_LOST -> "funnel-declined";
+            default -> "funnel-stage";
+        });
         StackPane track = new StackPane(fill);
-        track.getStyleClass().add("bar-track");
+        track.getStyleClass().add("funnel-track");
         track.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(track, Priority.ALWAYS);
-        double fraction = max > 0 ? value / max : 0;
+        double fraction = max > 0 ? (double) count / max : 0;
         fill.maxWidthProperty().bind(track.widthProperty().multiply(fraction));
 
-        Label amount = new Label(Formatters.money(value));
-        amount.getStyleClass().add("bar-value");
-        amount.setMinWidth(90);
+        Label value = new Label(Long.toString(count));
+        value.getStyleClass().add("funnel-value");
+        value.setMinWidth(36);
 
-        HBox row = new HBox(14, label, track, amount);
+        HBox row = new HBox(14, label, track, value);
         row.setAlignment(Pos.CENTER_LEFT);
         return row;
     }
