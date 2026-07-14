@@ -2,6 +2,9 @@ package com.atlan.mfo.ui.view;
 
 import com.atlan.mfo.model.PipelineItem;
 import com.atlan.mfo.model.enums.Category;
+import com.atlan.mfo.model.enums.Classification;
+import com.atlan.mfo.model.enums.Classification.AccessRoute;
+import com.atlan.mfo.model.enums.Classification.AssetClass;
 import com.atlan.mfo.model.enums.DealStatus;
 import com.atlan.mfo.model.enums.Tier;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -32,16 +35,22 @@ public final class OpportunityTable extends VBox {
     private static final String ALL_STATUSES = "All statuses";
     private static final String ALL_TIERS = "All tiers";
     private static final String ALL_INDUSTRIES = "All industries";
+    private static final String ALL_ASSET_CLASSES = "All asset classes";
+    private static final String ALL_ROUTES = "All access routes";
 
     private final int total;
     private final boolean showStrategyFilter;
     private final boolean hasIndustry;
+    private final boolean hasAssetClass;
+    private final boolean hasAccessRoute;
     private final FilteredList<PipelineItem> filtered;
 
     private final ComboBox<String> strategyFilter = new ComboBox<>();
     private final ComboBox<String> statusFilter = new ComboBox<>();
     private final ComboBox<String> tierFilter = new ComboBox<>();
     private final ComboBox<String> industryFilter = new ComboBox<>();
+    private final ComboBox<String> assetClassFilter = new ComboBox<>();
+    private final ComboBox<String> routeFilter = new ComboBox<>();
     private final CheckBox activeOnly = new CheckBox("Active only");
     private final TextField search = new TextField();
     private final Label countLabel = new Label();
@@ -60,9 +69,20 @@ public final class OpportunityTable extends VBox {
                 .distinct().sorted().toList();
         this.hasIndustry = !industries.isEmpty();
 
+        // Classification (§ dictionnaire analystes) : colonne/filtres seulement si renseignés.
+        List<String> assetClasses = items.stream()
+                .map(i -> assetClassLabel(i.assetClassPm()))
+                .filter(s -> s != null).distinct().sorted().toList();
+        this.hasAssetClass = !assetClasses.isEmpty();
+
+        List<String> routes = items.stream()
+                .flatMap(i -> Classification.listFromCsv(AccessRoute.class, i.accessRoute()).stream())
+                .map(AccessRoute::label).distinct().sorted().toList();
+        this.hasAccessRoute = !routes.isEmpty();
+
         filtered = new FilteredList<>(FXCollections.observableArrayList(items), p -> true);
 
-        buildFilters(industries);
+        buildFilters(industries, assetClasses, routes);
         TableView<PipelineItem> table = buildTable(onOpen);
 
         VBox.setVgrow(table, Priority.ALWAYS);
@@ -91,6 +111,12 @@ public final class OpportunityTable extends VBox {
             row.getChildren().add(strategyFilter);
         }
         row.getChildren().addAll(statusFilter, tierFilter);
+        if (hasAssetClass) {
+            row.getChildren().add(assetClassFilter);
+        }
+        if (hasAccessRoute) {
+            row.getChildren().add(routeFilter);
+        }
         if (hasIndustry) {
             row.getChildren().add(industryFilter);
         }
@@ -98,7 +124,13 @@ public final class OpportunityTable extends VBox {
         return row;
     }
 
-    private void buildFilters(List<String> industries) {
+    /** Libellé d'affichage d'une classe d'actifs à partir de son code, ou {@code null}. */
+    static String assetClassLabel(String code) {
+        AssetClass ac = Classification.fromCode(AssetClass.class, code);
+        return ac == null ? null : ac.label();
+    }
+
+    private void buildFilters(List<String> industries, List<String> assetClasses, List<String> routes) {
         strategyFilter.getItems().add(ALL_STRATEGIES);
         strategyFilter.getItems().addAll(
                 Category.BUYOUT_GROWTH_VC.label(),
@@ -126,6 +158,20 @@ public final class OpportunityTable extends VBox {
             industryFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
         }
 
+        if (hasAssetClass) {
+            assetClassFilter.getItems().add(ALL_ASSET_CLASSES);
+            assetClassFilter.getItems().addAll(assetClasses);
+            assetClassFilter.setValue(ALL_ASSET_CLASSES);
+            assetClassFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
+        }
+
+        if (hasAccessRoute) {
+            routeFilter.getItems().add(ALL_ROUTES);
+            routeFilter.getItems().addAll(routes);
+            routeFilter.setValue(ALL_ROUTES);
+            routeFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
+        }
+
         strategyFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
         statusFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
         tierFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
@@ -138,6 +184,8 @@ public final class OpportunityTable extends VBox {
         String status = statusFilter.getValue();
         String tier = tierFilter.getValue();
         String industry = hasIndustry ? industryFilter.getValue() : null;
+        String assetClass = hasAssetClass ? assetClassFilter.getValue() : null;
+        String route = hasAccessRoute ? routeFilter.getValue() : null;
         boolean active = activeOnly.isSelected();
         String q = search.getText() == null ? "" : search.getText().trim().toLowerCase();
 
@@ -155,6 +203,15 @@ public final class OpportunityTable extends VBox {
             if (industry != null && !ALL_INDUSTRIES.equals(industry) && !industry.equals(item.industry())) {
                 return false;
             }
+            if (assetClass != null && !ALL_ASSET_CLASSES.equals(assetClass)
+                    && !assetClass.equals(assetClassLabel(item.assetClassPm()))) {
+                return false;
+            }
+            if (route != null && !ALL_ROUTES.equals(route)
+                    && Classification.listFromCsv(AccessRoute.class, item.accessRoute()).stream()
+                            .noneMatch(r -> r.label().equals(route))) {
+                return false;
+            }
             if (active && !item.isActive()) {
                 return false;
             }
@@ -165,6 +222,8 @@ public final class OpportunityTable extends VBox {
         // Le lien « Réinitialiser » n'apparaît que si au moins un filtre est actif
         boolean anyActive = !ALL_STRATEGIES.equals(strat) || !ALL_STATUSES.equals(status)
                 || !ALL_TIERS.equals(tier) || (industry != null && !ALL_INDUSTRIES.equals(industry))
+                || (assetClass != null && !ALL_ASSET_CLASSES.equals(assetClass))
+                || (route != null && !ALL_ROUTES.equals(route))
                 || active || !q.isEmpty();
         reset.setVisible(anyActive);
         reset.setManaged(anyActive);
@@ -181,6 +240,12 @@ public final class OpportunityTable extends VBox {
         tierFilter.setValue(ALL_TIERS);
         if (hasIndustry) {
             industryFilter.setValue(ALL_INDUSTRIES);
+        }
+        if (hasAssetClass) {
+            assetClassFilter.setValue(ALL_ASSET_CLASSES);
+        }
+        if (hasAccessRoute) {
+            routeFilter.setValue(ALL_ROUTES);
         }
         activeOnly.setSelected(false);
         search.clear();
@@ -200,6 +265,13 @@ public final class OpportunityTable extends VBox {
         TableColumn<PipelineItem, String> stratCol = new TableColumn<>("Strategy");
         stratCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().strategy()));
         stratCol.getStyleClass().add("col-secondary");  // texte en retrait
+
+        TableColumn<PipelineItem, String> assetClassCol = new TableColumn<>("Asset class");
+        assetClassCol.setCellValueFactory(c -> {
+            String l = assetClassLabel(c.getValue().assetClassPm());
+            return new ReadOnlyObjectWrapper<>(l == null ? "" : l);
+        });
+        assetClassCol.getStyleClass().add("col-secondary");
 
         TableColumn<PipelineItem, String> industryCol = new TableColumn<>("Industry");
         industryCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(
@@ -269,6 +341,9 @@ public final class OpportunityTable extends VBox {
 
         table.getColumns().add(nameCol);
         table.getColumns().add(stratCol);
+        if (hasAssetClass) {
+            table.getColumns().add(assetClassCol);
+        }
         if (hasIndustry) {
             table.getColumns().add(industryCol);
         }
