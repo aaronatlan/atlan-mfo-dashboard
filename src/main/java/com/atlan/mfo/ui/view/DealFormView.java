@@ -58,6 +58,9 @@ public final class DealFormView extends BorderPane {
     private final TextField expMoicField = FormControls.field("expected MOIC");
     private final DatePicker deadlinePicker = new DatePicker();
     private final DatePicker targetExitPicker = new DatePicker();
+    private final TextField contactNameField = FormControls.field("first & last name");
+    private final TextField contactEmailField = FormControls.field("email");
+    private final TextField contactPhoneField = FormControls.field("phone");
     private final TextArea nextStepsArea = new TextArea();
     private final TextArea commentsArea = new TextArea();
 
@@ -127,6 +130,10 @@ public final class DealFormView extends BorderPane {
         r = section(g, r, "TIMELINE");
         r = row(g, r, "Deadline", deadlinePicker);
         r = row(g, r, "Target exit", targetExitPicker);
+        r = section(g, r, "CONTACT");
+        r = row(g, r, "Contact name", contactNameField);
+        r = row(g, r, "Contact email", contactEmailField);
+        r = row(g, r, "Contact phone", contactPhoneField);
 
         nextStepsArea.setPromptText("next steps");
         nextStepsArea.setPrefRowCount(2);
@@ -201,6 +208,9 @@ public final class DealFormView extends BorderPane {
             expMoicField.setText(str(existing.expMoic()));
             deadlinePicker.setValue(existing.dealDeadline());
             targetExitPicker.setValue(existing.targetExit());
+            contactNameField.setText(existing.contactName());
+            contactEmailField.setText(existing.contactEmail());
+            contactPhoneField.setText(existing.contactPhone());
             nextStepsArea.setText(existing.nextSteps());
             commentsArea.setText(existing.comments());
         }
@@ -250,7 +260,10 @@ public final class DealFormView extends BorderPane {
                 targetExitPicker.getValue(),
                 tn(commentsArea.getText()),
                 null, null, null, null, null, null, null,
-                version, null, null);
+                version, null, null,
+                tn(contactNameField.getText()),
+                tn(contactEmailField.getText()),
+                tn(contactPhoneField.getText()));
     }
 
     private void save() {

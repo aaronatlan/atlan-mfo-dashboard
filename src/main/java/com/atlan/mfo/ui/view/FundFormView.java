@@ -47,6 +47,9 @@ public final class FundFormView extends BorderPane {
     private final TextField commitmentField = FormControls.field("e.g. 25m or 25000000");
     private final DatePicker firstClosePicker = new DatePicker();
     private final DatePicker finalClosePicker = new DatePicker();
+    private final TextField contactNameField = FormControls.field("first & last name");
+    private final TextField contactEmailField = FormControls.field("email");
+    private final TextField contactPhoneField = FormControls.field("phone");
     private final TextArea nextStepsArea = new TextArea();
     private final TextArea commentsArea = new TextArea();
     private final VBox vintageBox = new VBox(6);
@@ -103,6 +106,14 @@ public final class FundFormView extends BorderPane {
         r = row(g, r, "Planned commitment", commitmentField);
         r = row(g, r, "First close", firstClosePicker);
         r = row(g, r, "Final close", finalClosePicker);
+
+        Label contactSection = new Label("CONTACT");
+        contactSection.getStyleClass().add("form-section");
+        g.add(contactSection, 0, r, 2, 1);
+        r++;
+        r = row(g, r, "Contact name", contactNameField);
+        r = row(g, r, "Contact email", contactEmailField);
+        r = row(g, r, "Contact phone", contactPhoneField);
 
         Label vintTitle = new Label("VINTAGES");
         vintTitle.getStyleClass().add("form-section");
@@ -236,6 +247,9 @@ public final class FundFormView extends BorderPane {
             commitmentField.setText(str(existing.commitment()));
             firstClosePicker.setValue(existing.firstClose());
             finalClosePicker.setValue(existing.finalClose());
+            contactNameField.setText(existing.contactName());
+            contactEmailField.setText(existing.contactEmail());
+            contactPhoneField.setText(existing.contactPhone());
             nextStepsArea.setText(existing.nextSteps());
             commentsArea.setText(existing.comments());
             existing.vintages().forEach(this::addVintageRow);
@@ -277,7 +291,10 @@ public final class FundFormView extends BorderPane {
                 finalClosePicker.getValue(),
                 tn(commentsArea.getText()),
                 null, null, null, null, null, null,
-                version, null, null);
+                version, null, null,
+                tn(contactNameField.getText()),
+                tn(contactEmailField.getText()),
+                tn(contactPhoneField.getText()));
     }
 
     private void save() {

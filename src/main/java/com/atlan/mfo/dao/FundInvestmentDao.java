@@ -25,6 +25,7 @@ public final class FundInvestmentDao {
     private static final String SELECT = """
             SELECT id, category, name, next_steps, status, vs_benchmark, geography, asset_class, commitment,
                    first_close, final_close, comments,
+                   contact_name, contact_email, contact_phone,
                    score_snapshot, sub_dpi, sub_irr, sub_moic, sub_geo, sub_time,
                    version, updated_at, updated_by
               FROM fund_investment
@@ -64,8 +65,9 @@ public final class FundInvestmentDao {
             INSERT INTO fund_investment
               (category, name, next_steps, status, vs_benchmark, geography, asset_class, commitment,
                first_close, final_close, comments,
-               score_snapshot, sub_dpi, sub_irr, sub_moic, sub_geo, sub_time, updated_by)
-            VALUES (?::category, ?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               score_snapshot, sub_dpi, sub_irr, sub_moic, sub_geo, sub_time,
+               contact_name, contact_email, contact_phone, updated_by)
+            VALUES (?::category, ?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING id
             """;
 
@@ -74,6 +76,7 @@ public final class FundInvestmentDao {
                category=?::category, name=?, next_steps=?, status=?::deal_status, vs_benchmark=?::benchmark_status,
                geography=?, asset_class=?, commitment=?, first_close=?, final_close=?, comments=?,
                score_snapshot=?, sub_dpi=?, sub_irr=?, sub_moic=?, sub_geo=?, sub_time=?,
+               contact_name=?, contact_email=?, contact_phone=?,
                version=version+1, updated_at=now(), updated_by=?
              WHERE id=? AND version=?
             """;
@@ -86,7 +89,7 @@ public final class FundInvestmentDao {
                 long id;
                 try (PreparedStatement ps = conn.prepareStatement(INSERT)) {
                     setFundParams(ps, f, score);
-                    ps.setLong(18, userId);
+                    ps.setLong(21, userId);
                     try (ResultSet rs = ps.executeQuery()) {
                         rs.next();
                         id = rs.getLong(1);
@@ -147,9 +150,9 @@ public final class FundInvestmentDao {
                 int rows;
                 try (PreparedStatement ps = conn.prepareStatement(UPDATE)) {
                     setFundParams(ps, f, score);
-                    ps.setLong(18, userId);
-                    ps.setLong(19, f.id());
-                    ps.setLong(20, f.version());
+                    ps.setLong(21, userId);
+                    ps.setLong(22, f.id());
+                    ps.setLong(23, f.version());
                     rows = ps.executeUpdate();
                 }
                 if (rows == 0) {
@@ -190,6 +193,9 @@ public final class FundInvestmentDao {
         JdbcSupport.setDouble(ps, 15, s.subScoreOf("MOIC"));
         JdbcSupport.setDouble(ps, 16, s.subScoreOf("Geography"));
         JdbcSupport.setDouble(ps, 17, s.subScoreOf("Timeline"));
+        JdbcSupport.setString(ps, 18, f.contactName());
+        JdbcSupport.setString(ps, 19, f.contactEmail());
+        JdbcSupport.setString(ps, 20, f.contactPhone());
     }
 
     private FundInvestment map(ResultSet rs, List<FundVintage> vintages) throws SQLException {
@@ -221,6 +227,10 @@ public final class FundInvestmentDao {
 
                 rs.getLong("version"),
                 JdbcSupport.getOffsetDateTime(rs, "updated_at"),
-                JdbcSupport.getLong(rs, "updated_by"));
+                JdbcSupport.getLong(rs, "updated_by"),
+
+                rs.getString("contact_name"),
+                rs.getString("contact_email"),
+                rs.getString("contact_phone"));
     }
 }

@@ -50,6 +50,11 @@ CREATE TABLE IF NOT EXISTS fund_investment (
 
     comments       TEXT,
 
+    -- contact de l'opportunité (GP, sponsor, intermédiaire…)
+    contact_name   TEXT,
+    contact_email  TEXT,
+    contact_phone  TEXT,
+
     -- snapshot du score au dernier enregistrement (affichage = recalcul live)
     score_snapshot INT,
     sub_dpi        NUMERIC,
@@ -111,6 +116,11 @@ CREATE TABLE IF NOT EXISTS direct_deal (
 
     comments       TEXT,
 
+    -- contact de l'opportunité (GP, sponsor, intermédiaire…)
+    contact_name   TEXT,
+    contact_email  TEXT,
+    contact_phone  TEXT,
+
     score_snapshot INT,
     sub_cagr       NUMERIC,
     sub_ebitda_mgn NUMERIC,
@@ -127,6 +137,14 @@ CREATE TABLE IF NOT EXISTS direct_deal (
 -- Ajouts additifs idempotents (pour les bases créées avant l'ajout de colonnes)
 ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS commitment NUMERIC;
 ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS commitment NUMERIC;
+
+-- Contact par opportunité
+ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS contact_name  TEXT;
+ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS contact_email TEXT;
+ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS contact_phone TEXT;
+ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS contact_name  TEXT;
+ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS contact_email TEXT;
+ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS contact_phone TEXT;
 
 -- Paramètres de scoring modifiables (méthodologie éditable, §5). Clé → valeur ;
 -- si une clé est absente, le moteur utilise sa valeur par défaut.

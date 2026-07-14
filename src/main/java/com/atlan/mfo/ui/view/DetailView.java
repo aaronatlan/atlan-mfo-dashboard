@@ -66,10 +66,9 @@ public final class DetailView extends BorderPane {
         layout.add(card("General", g1), 1, 0);
         layout.add(card("Vintages (track record)", vintageTable(f.vintages())), 0, 1);
         layout.add(card("Timeline", g4), 1, 1);
+        layout.add(card("Contact", contactGrid(f.contactName(), f.contactEmail(), f.contactPhone())), 0, 2);
         if (f.comments() != null && !f.comments().isBlank()) {
-            Node comments = card("Comments", paragraph(f.comments()));
-            layout.add(comments, 0, 2);
-            GridPane.setColumnSpan(comments, 2);
+            layout.add(card("Comments", paragraph(f.comments())), 1, 2);
         }
 
         v.setCenter(scroll(layout));
@@ -118,8 +117,11 @@ public final class DetailView extends BorderPane {
         layout.add(card("Financial performance", g2), 0, 1);
         layout.add(card("Expected returns", g3), 1, 1);
         layout.add(card("Timeline", g4), 0, 2);
+        layout.add(card("Contact", contactGrid(d.contactName(), d.contactEmail(), d.contactPhone())), 1, 2);
         if (d.comments() != null && !d.comments().isBlank()) {
-            layout.add(card("Comments", paragraph(d.comments())), 1, 2);
+            Node comments = card("Comments", paragraph(d.comments()));
+            layout.add(comments, 0, 3);
+            GridPane.setColumnSpan(comments, 2);
         }
 
         v.setCenter(scroll(layout));
@@ -275,6 +277,15 @@ public final class DetailView extends BorderPane {
         g.getStyleClass().add("detail-grid");
         g.setHgap(24);
         g.setVgap(10);
+        return g;
+    }
+
+    /** Grille de contact (nom, email, téléphone). */
+    private static GridPane contactGrid(String name, String email, String phone) {
+        GridPane g = grid();
+        addRow(g, "Name", Formatters.text(name));
+        addRow(g, "Email", Formatters.text(email));
+        addRow(g, "Phone", Formatters.text(phone));
         return g;
     }
 

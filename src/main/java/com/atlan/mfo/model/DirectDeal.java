@@ -54,5 +54,10 @@ public record DirectDeal(
 
         long version,
         OffsetDateTime updatedAt,
-        Long updatedBy) {
+        Long updatedBy,
+
+        // Contact de l'opportunité (GP, sponsor, intermédiaire…)
+        String contactName,
+        String contactEmail,
+        String contactPhone) {
 }
