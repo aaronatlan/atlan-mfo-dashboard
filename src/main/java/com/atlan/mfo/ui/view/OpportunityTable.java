@@ -250,11 +250,15 @@ public final class OpportunityTable extends VBox {
 
         table.setRowFactory(tv -> {
             var r = new javafx.scene.control.TableRow<PipelineItem>();
-            // Ligne atténuée si l'opportunité est décidée (conservée mais en retrait).
+            // Ligne colorée selon la décision : vert = approuvé, rouge = décliné.
             r.itemProperty().addListener((o, a, b) -> {
-                r.getStyleClass().remove("row-decided");
-                if (b != null && b.isDecided()) {
-                    r.getStyleClass().add("row-decided");
+                r.getStyleClass().removeAll("row-approved", "row-declined");
+                if (b != null) {
+                    if (b.status() == DealStatus.APPROVED) {
+                        r.getStyleClass().add("row-approved");
+                    } else if (b.status() == DealStatus.DECLINED_LOST) {
+                        r.getStyleClass().add("row-declined");
+                    }
                 }
             });
             r.setOnMouseClicked(e -> {

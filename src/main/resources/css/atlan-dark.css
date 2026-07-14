@@ -523,9 +523,21 @@
     -fx-background-radius: 9;
 }
 
-/* Ligne d'une opportunité décidée : conservée mais atténuée */
-.opportunity-table .table-row-cell.row-decided {
-    -fx-opacity: 0.62;
+/* Ligne d'une opportunité décidée : fond vert (approuvé) / rouge (décliné) */
+.opportunity-table .table-row-cell.row-approved {
+    -fx-background-color: rgba(111,168,140,0.20);   /* -atlan-strong (sage) */
+}
+
+.opportunity-table .table-row-cell.row-approved:hover {
+    -fx-background-color: rgba(111,168,140,0.30);
+}
+
+.opportunity-table .table-row-cell.row-declined {
+    -fx-background-color: rgba(192,121,106,0.20);   /* -atlan-caution (terracotta) */
+}
+
+.opportunity-table .table-row-cell.row-declined:hover {
+    -fx-background-color: rgba(192,121,106,0.30);
 }
 
 /* ---- Vue comparaison : scorecards côte à côte ---- */
