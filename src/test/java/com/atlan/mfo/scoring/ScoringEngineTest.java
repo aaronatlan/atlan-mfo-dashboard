@@ -150,8 +150,7 @@ class ScoringEngineTest {
     private static FundInvestment fund(Category cat, String geo, LocalDate finalClose, List<FundVintage> vintages) {
         return new FundInvestment(1, cat, "Test", null, DealStatus.INITIAL_REVIEW, null, geo, null, null,
                 vintages, null, finalClose, null, null, null, null, null, null, null, 0, null, null,
-                null, null, null, "USD",
-                null, null, null, null, null, null, null, null);
+                null, null, null, "USD");
     }
 
     private static DirectDeal deal(String geo, LocalDate deadline, Double cagr, Double margin,
@@ -162,7 +161,6 @@ class ScoringEngineTest {
                 deadline, null, null,
                 null, null, null, null, null, null, null,
                 0, null, null,
-                null, null, null, "USD",
-                null, null, null, null, null, null, null, null);
+                null, null, null, "USD");
     }
 }

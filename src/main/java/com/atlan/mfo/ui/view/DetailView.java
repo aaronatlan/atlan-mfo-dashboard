@@ -70,9 +70,6 @@ public final class DetailView extends BorderPane {
         if (f.comments() != null && !f.comments().isBlank()) {
             layout.add(card("Comments", paragraph(f.comments())), 1, 2);
         }
-        layout.add(card("Classification", classificationGrid(f.assetClassPm(), f.subStrategy(),
-                f.accessRoute(), f.secondaryMandate(), f.underlyingStrategy(),
-                f.vehicleType(), f.lifecycleStage(), f.sectorFocus())), 0, 3);
 
         v.setCenter(scroll(layout));
         return v;
@@ -121,48 +118,14 @@ public final class DetailView extends BorderPane {
         layout.add(card("Expected returns", g3), 1, 1);
         layout.add(card("Timeline", g4), 0, 2);
         layout.add(card("Contact", contactGrid(d.contactName(), d.contactEmail(), d.contactPhone())), 1, 2);
-        Node classCard = card("Classification", classificationGrid(d.assetClassPm(), d.subStrategy(),
-                d.accessRoute(), d.secondaryMandate(), d.underlyingStrategy(),
-                d.vehicleType(), d.lifecycleStage(), d.sectorFocus()));
-        layout.add(classCard, 0, 3);
-        GridPane.setColumnSpan(classCard, 2);
         if (d.comments() != null && !d.comments().isBlank()) {
             Node comments = card("Comments", paragraph(d.comments()));
-            layout.add(comments, 0, 4);
+            layout.add(comments, 0, 3);
             GridPane.setColumnSpan(comments, 2);
         }
 
         v.setCenter(scroll(layout));
         return v;
-    }
-
-    /* ---- Classification (dictionnaire analystes) ---- */
-
-    private static GridPane classificationGrid(String assetClassPm, String subStrategy, String accessRoute,
-                                               String secondaryMandate, String underlyingStrategy,
-                                               String vehicleType, String lifecycleStage, String sectorFocus) {
-        GridPane g = grid();
-        var ac = com.atlan.mfo.model.enums.Classification.fromCode(
-                com.atlan.mfo.model.enums.Classification.AssetClass.class, assetClassPm);
-        addRow(g, "Asset class", ac == null ? "—" : ac.label());
-        addRow(g, "Sub-strategy", Formatters.text(subStrategy));
-        addRow(g, "Access route", Formatters.text(com.atlan.mfo.model.enums.Classification.labelsFromCsv(
-                com.atlan.mfo.model.enums.Classification.AccessRoute.class, accessRoute,
-                com.atlan.mfo.model.enums.Classification.AccessRoute::label)));
-        addRow(g, "Secondary mandate", Formatters.text(com.atlan.mfo.model.enums.Classification.labelsFromCsv(
-                com.atlan.mfo.model.enums.Classification.SecondaryMandate.class, secondaryMandate,
-                com.atlan.mfo.model.enums.Classification.SecondaryMandate::label)));
-        addRow(g, "Underlying strategy", Formatters.text(com.atlan.mfo.model.enums.Classification.labelsFromCsv(
-                com.atlan.mfo.model.enums.Classification.UnderlyingStrategy.class, underlyingStrategy,
-                com.atlan.mfo.model.enums.Classification.UnderlyingStrategy::label)));
-        var vt = com.atlan.mfo.model.enums.Classification.fromCode(
-                com.atlan.mfo.model.enums.Classification.VehicleType.class, vehicleType);
-        addRow(g, "Vehicle type", vt == null ? "—" : vt.label());
-        var ls = com.atlan.mfo.model.enums.Classification.fromCode(
-                com.atlan.mfo.model.enums.Classification.LifecycleStage.class, lifecycleStage);
-        addRow(g, "Lifecycle stage", ls == null ? "—" : ls.label());
-        addRow(g, "Sector focus", Formatters.text(sectorFocus));
-        return g;
     }
 
     /* ---- En-tête ---- */

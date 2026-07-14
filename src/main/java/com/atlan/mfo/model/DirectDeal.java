@@ -62,16 +62,5 @@ public record DirectDeal(
         String contactPhone,
 
         // Devise native du commitment (code ISO ; défaut USD). Agrégats convertis en USD.
-        String currency,
-
-        // Classification marchés privés (§ dictionnaire analystes). Codes d'enum / CSV /
-        // texte libre ; sert à la classification, pas encore au scoring.
-        String assetClassPm,        // Classification.AssetClass (name)
-        String subStrategy,         // libellé de sous-stratégie
-        String accessRoute,         // Classification.AccessRoute — CSV (multi)
-        String secondaryMandate,    // Classification.SecondaryMandate — CSV (si Secondary)
-        String underlyingStrategy,  // Classification.UnderlyingStrategy — CSV (si Secondary)
-        String vehicleType,         // Classification.VehicleType (name)
-        String lifecycleStage,      // Classification.LifecycleStage (name)
-        String sectorFocus) {       // texte libre
+        String currency) {
 }

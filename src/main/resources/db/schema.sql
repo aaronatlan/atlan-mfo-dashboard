@@ -152,26 +152,6 @@ ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS contact_phone TEXT;
 ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'USD';
 ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'USD';
 
--- Classification marchés privés (dictionnaire analystes). Codes d'enum / CSV / texte
--- libre ; sert à la classification, pas (encore) au scoring. asset_class_pm est distinct
--- de l'ancien champ libre asset_class des fonds.
-ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS asset_class_pm      TEXT;
-ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS sub_strategy        TEXT;
-ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS access_route        TEXT;
-ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS secondary_mandate   TEXT;
-ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS underlying_strategy TEXT;
-ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS vehicle_type        TEXT;
-ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS lifecycle_stage     TEXT;
-ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS sector_focus        TEXT;
-ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS asset_class_pm      TEXT;
-ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS sub_strategy        TEXT;
-ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS access_route        TEXT;
-ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS secondary_mandate   TEXT;
-ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS underlying_strategy TEXT;
-ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS vehicle_type        TEXT;
-ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS lifecycle_stage     TEXT;
-ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS sector_focus        TEXT;
-
 -- Paramètres de scoring modifiables (méthodologie éditable, §5). Clé → valeur ;
 -- si une clé est absente, le moteur utilise sa valeur par défaut.
 CREATE TABLE IF NOT EXISTS scoring_param (

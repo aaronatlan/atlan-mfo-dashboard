@@ -66,7 +66,6 @@ public final class DealFormView extends BorderPane {
     private final TextField contactNameField = FormControls.field("first & last name");
     private final TextField contactEmailField = FormControls.field("email");
     private final TextField contactPhoneField = FormControls.field("phone");
-    private final ClassificationFields classification = new ClassificationFields();
     private final TextArea nextStepsArea = new TextArea();
     private final TextArea commentsArea = new TextArea();
 
@@ -141,9 +140,6 @@ public final class DealFormView extends BorderPane {
         r = row(g, r, "Contact name", contactNameField);
         r = row(g, r, "Contact email", contactEmailField);
         r = row(g, r, "Contact phone", contactPhoneField);
-        r = section(g, r, "CLASSIFICATION");
-        g.add(classification, 0, r, 2, 1);
-        r++;
 
         nextStepsArea.setPromptText("next steps");
         nextStepsArea.setPrefRowCount(2);
@@ -222,9 +218,6 @@ public final class DealFormView extends BorderPane {
             contactNameField.setText(existing.contactName());
             contactEmailField.setText(existing.contactEmail());
             contactPhoneField.setText(existing.contactPhone());
-            classification.populate(existing.assetClassPm(), existing.subStrategy(), existing.accessRoute(),
-                    existing.secondaryMandate(), existing.underlyingStrategy(), existing.vehicleType(),
-                    existing.lifecycleStage(), existing.sectorFocus());
             nextStepsArea.setText(existing.nextSteps());
             commentsArea.setText(existing.comments());
         }
@@ -278,15 +271,7 @@ public final class DealFormView extends BorderPane {
                 tn(contactNameField.getText()),
                 tn(contactEmailField.getText()),
                 tn(contactPhoneField.getText()),
-                currencyCombo.getValue(),
-                classification.assetClassPm(),
-                classification.subStrategy(),
-                classification.accessRoute(),
-                classification.secondaryMandate(),
-                classification.underlyingStrategy(),
-                classification.vehicleType(),
-                classification.lifecycleStage(),
-                classification.sectorFocus());
+                currencyCombo.getValue());
     }
 
     private void save() {

@@ -35,9 +35,7 @@ public record PipelineItem(
         java.time.LocalDate dealTargetExit,
         String industry,      // secteur (deals directs uniquement), null pour les fonds
         String currency,      // devise native du commitment (code ISO ; défaut USD)
-        Double commitmentUsd, // commitment converti en USD (agrégats), null si non renseigné
-        String assetClassPm,  // Classification.AssetClass (code), null si non classé
-        String accessRoute) { // Classification.AccessRoute — CSV de codes (multi), null si absent
+        Double commitmentUsd) {  // commitment converti en USD (agrégats), null si non renseigné
 
     public enum Type {
         FUND, DEAL
@@ -78,8 +76,7 @@ public record PipelineItem(
                 newest == null ? null : newest.moic(),
                 f.geography(),
                 null, null, null, null, null,
-                f.currency(), fx.toUsd(f.commitment(), f.currency()),
-                f.assetClassPm(), f.accessRoute());
+                f.currency(), fx.toUsd(f.commitment(), f.currency()));
     }
 
     public static PipelineItem ofDeal(DirectDeal d, ScoreBreakdown b, FxRates fx) {
@@ -89,7 +86,6 @@ public record PipelineItem(
                 b.reportedCount(), b.criteriaCount(),
                 null, null, d.expIrrPct(), d.expMoic(), d.geography(),
                 d.cagrPct(), d.ebitdaMgnPct(), d.entryMult(), d.targetExit(), d.industry(),
-                d.currency(), fx.toUsd(d.commitment(), d.currency()),
-                d.assetClassPm(), d.accessRoute());
+                d.currency(), fx.toUsd(d.commitment(), d.currency()));
     }
 }
