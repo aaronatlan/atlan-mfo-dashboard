@@ -31,14 +31,17 @@ public final class OpportunityTable extends VBox {
     private static final String ALL_STRATEGIES = "All strategies";
     private static final String ALL_STATUSES = "All statuses";
     private static final String ALL_TIERS = "All tiers";
+    private static final String ALL_INDUSTRIES = "All industries";
 
     private final int total;
     private final boolean showStrategyFilter;
+    private final boolean hasIndustry;
     private final FilteredList<PipelineItem> filtered;
 
     private final ComboBox<String> strategyFilter = new ComboBox<>();
     private final ComboBox<String> statusFilter = new ComboBox<>();
     private final ComboBox<String> tierFilter = new ComboBox<>();
+    private final ComboBox<String> industryFilter = new ComboBox<>();
     private final CheckBox activeOnly = new CheckBox("Active only");
     private final TextField search = new TextField();
     private final Label countLabel = new Label();
@@ -50,9 +53,16 @@ public final class OpportunityTable extends VBox {
         this.total = items.size();
         this.showStrategyFilter = showStrategyFilter;
 
+        // Secteur : colonne + filtre affichés seulement s'il y a des deals renseignés.
+        List<String> industries = items.stream()
+                .map(PipelineItem::industry)
+                .filter(s -> s != null && !s.isBlank())
+                .distinct().sorted().toList();
+        this.hasIndustry = !industries.isEmpty();
+
         filtered = new FilteredList<>(FXCollections.observableArrayList(items), p -> true);
 
-        buildFilters();
+        buildFilters(industries);
         TableView<PipelineItem> table = buildTable(onOpen);
 
         VBox.setVgrow(table, Priority.ALWAYS);
@@ -80,11 +90,15 @@ public final class OpportunityTable extends VBox {
         if (showStrategyFilter) {
             row.getChildren().add(strategyFilter);
         }
-        row.getChildren().addAll(statusFilter, tierFilter, activeOnly, search, countLabel, reset);
+        row.getChildren().addAll(statusFilter, tierFilter);
+        if (hasIndustry) {
+            row.getChildren().add(industryFilter);
+        }
+        row.getChildren().addAll(activeOnly, search, countLabel, reset);
         return row;
     }
 
-    private void buildFilters() {
+    private void buildFilters(List<String> industries) {
         strategyFilter.getItems().add(ALL_STRATEGIES);
         strategyFilter.getItems().addAll(
                 Category.BUYOUT_GROWTH_VC.label(),
@@ -105,6 +119,13 @@ public final class OpportunityTable extends VBox {
         }
         tierFilter.setValue(ALL_TIERS);
 
+        if (hasIndustry) {
+            industryFilter.getItems().add(ALL_INDUSTRIES);
+            industryFilter.getItems().addAll(industries);
+            industryFilter.setValue(ALL_INDUSTRIES);
+            industryFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
+        }
+
         strategyFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
         statusFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
         tierFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
@@ -116,6 +137,7 @@ public final class OpportunityTable extends VBox {
         String strat = strategyFilter.getValue();
         String status = statusFilter.getValue();
         String tier = tierFilter.getValue();
+        String industry = hasIndustry ? industryFilter.getValue() : null;
         boolean active = activeOnly.isSelected();
         String q = search.getText() == null ? "" : search.getText().trim().toLowerCase();
 
@@ -130,6 +152,9 @@ public final class OpportunityTable extends VBox {
                     && (item.tier() == null || !item.tier().label().equals(tier))) {
                 return false;
             }
+            if (industry != null && !ALL_INDUSTRIES.equals(industry) && !industry.equals(item.industry())) {
+                return false;
+            }
             if (active && !item.isActive()) {
                 return false;
             }
@@ -139,7 +164,8 @@ public final class OpportunityTable extends VBox {
 
         // Le lien « Réinitialiser » n'apparaît que si au moins un filtre est actif
         boolean anyActive = !ALL_STRATEGIES.equals(strat) || !ALL_STATUSES.equals(status)
-                || !ALL_TIERS.equals(tier) || active || !q.isEmpty();
+                || !ALL_TIERS.equals(tier) || (industry != null && !ALL_INDUSTRIES.equals(industry))
+                || active || !q.isEmpty();
         reset.setVisible(anyActive);
         reset.setManaged(anyActive);
     }
@@ -153,6 +179,9 @@ public final class OpportunityTable extends VBox {
         strategyFilter.setValue(ALL_STRATEGIES);
         statusFilter.setValue(ALL_STATUSES);
         tierFilter.setValue(ALL_TIERS);
+        if (hasIndustry) {
+            industryFilter.setValue(ALL_INDUSTRIES);
+        }
         activeOnly.setSelected(false);
         search.clear();
     }
@@ -171,6 +200,11 @@ public final class OpportunityTable extends VBox {
         TableColumn<PipelineItem, String> stratCol = new TableColumn<>("Strategy");
         stratCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().strategy()));
         stratCol.getStyleClass().add("col-secondary");  // texte en retrait
+
+        TableColumn<PipelineItem, String> industryCol = new TableColumn<>("Industry");
+        industryCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(
+                c.getValue().industry() == null ? "" : c.getValue().industry()));
+        industryCol.getStyleClass().add("col-secondary");
 
         // Statut + puce « Decided » pour les opportunités décidées (conservées au tableau).
         TableColumn<PipelineItem, PipelineItem> statusCol = new TableColumn<>("Status");
@@ -235,6 +269,9 @@ public final class OpportunityTable extends VBox {
 
         table.getColumns().add(nameCol);
         table.getColumns().add(stratCol);
+        if (hasIndustry) {
+            table.getColumns().add(industryCol);
+        }
         table.getColumns().add(statusCol);
         table.getColumns().add(scoreCol);
         table.getColumns().add(dataCol);

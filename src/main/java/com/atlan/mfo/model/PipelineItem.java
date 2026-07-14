@@ -32,7 +32,8 @@ public record PipelineItem(
         Double dealCagr,
         Double dealEbitdaMargin,
         Double dealEntryMultiple,
-        java.time.LocalDate dealTargetExit) {
+        java.time.LocalDate dealTargetExit,
+        String industry) {    // secteur (deals directs uniquement), null pour les fonds
 
     public enum Type {
         FUND, DEAL
@@ -72,7 +73,7 @@ public record PipelineItem(
                 newest == null ? null : newest.irr(),
                 newest == null ? null : newest.moic(),
                 f.geography(),
-                null, null, null, null);
+                null, null, null, null, null);
     }
 
     public static PipelineItem ofDeal(DirectDeal d, ScoreBreakdown b) {
@@ -81,6 +82,6 @@ public record PipelineItem(
                 DEALS_STRATEGY, d.status(), b.score(), d.commitment(),
                 b.reportedCount(), b.criteriaCount(),
                 null, null, d.expIrrPct(), d.expMoic(), d.geography(),
-                d.cagrPct(), d.ebitdaMgnPct(), d.entryMult(), d.targetExit());
+                d.cagrPct(), d.ebitdaMgnPct(), d.entryMult(), d.targetExit(), d.industry());
     }
 }
