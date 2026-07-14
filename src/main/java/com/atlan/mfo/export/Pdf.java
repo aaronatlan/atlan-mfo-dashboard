@@ -35,8 +35,10 @@ public final class Pdf {
      * @param rows     lignes (valeurs déjà formatées en texte)
      */
     public static void writeTable(Path file, String title, String subtitle, List<String> headers,
-                                  double[] weights, List<List<String>> rows) throws IOException {
-        double contentW = PAGE_W - 2 * MARGIN;
+                                  double[] weights, List<List<String>> rows, boolean landscape) throws IOException {
+        double pageW = landscape ? PAGE_H : PAGE_W;   // A4 pivotée en paysage
+        double pageH = landscape ? PAGE_W : PAGE_H;
+        double contentW = pageW - 2 * MARGIN;
         double sum = 0;
         for (double w : weights) {
             sum += w;
@@ -51,7 +53,7 @@ public final class Pdf {
         int i = 0;
         while (i == 0 || i < rows.size()) {
             StringBuilder cs = new StringBuilder();
-            double y = PAGE_H - MARGIN;
+            double y = pageH - MARGIN;
             if (i == 0) {
                 text(cs, "F2", 18, MARGIN, y, title);
                 y -= 24;
@@ -70,7 +72,7 @@ public final class Pdf {
                 text(cs, "F2", 9, x[c] + 2, y, fit(headers.get(c), x[c + 1] - x[c] - 4, 9));
             }
             y -= 6;
-            line(cs, MARGIN, y, PAGE_W - MARGIN, y);
+            line(cs, MARGIN, y, pageW - MARGIN, y);
             y -= ROW_H - 6;
             // lignes de données
             while (i < rows.size() && y > MARGIN + ROW_H) {
@@ -82,13 +84,13 @@ public final class Pdf {
                 y -= ROW_H;
                 i++;
             }
-            line(cs, MARGIN, y + ROW_H - 5, PAGE_W - MARGIN, y + ROW_H - 5);
+            line(cs, MARGIN, y + ROW_H - 5, pageW - MARGIN, y + ROW_H - 5);
             pages.add(cs.toString());
             if (i >= rows.size()) {
                 break;
             }
         }
-        writePdf(file, pages);
+        writePdf(file, pages, pageW, pageH);
     }
 
     /* ---- Commandes de flux de contenu ---- */
@@ -115,7 +117,7 @@ public final class Pdf {
 
     /* ---- Assemblage PDF (objets + xref) ---- */
 
-    private static void writePdf(Path file, List<String> pageContents) throws IOException {
+    private static void writePdf(Path file, List<String> pageContents, double pageW, double pageH) throws IOException {
         int nPages = pageContents.size();
         int catalog = 1, pagesObj = 2, fReg = 3, fBold = 4;
         int firstPage = 5;
@@ -138,7 +140,7 @@ public final class Pdf {
         for (int i = 0; i < nPages; i++) {
             objects.set(firstPage + i - 1,
                     "<< /Type /Page /Parent " + pagesObj + " 0 R /MediaBox [0 0 "
-                            + fmt(PAGE_W) + " " + fmt(PAGE_H) + "]"
+                            + fmt(pageW) + " " + fmt(pageH) + "]"
                             + " /Resources << /Font << /F1 " + fReg + " 0 R /F2 " + fBold + " 0 R >> >>"
                             + " /Contents " + (firstContent + i) + " 0 R >>");
             String stream = pageContents.get(i);

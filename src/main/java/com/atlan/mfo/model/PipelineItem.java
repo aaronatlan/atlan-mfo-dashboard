@@ -4,6 +4,8 @@ import com.atlan.mfo.model.enums.Category;
 import com.atlan.mfo.model.enums.DealStatus;
 import com.atlan.mfo.model.enums.Tier;
 
+import java.util.Comparator;
+
 /**
  * Projection d'une opportunité (fonds ou deal) pour les tableaux de listes
  * (Pipeline summary et sections). Le tier est dérivé du score (§5.6).
@@ -18,7 +20,13 @@ public record PipelineItem(
         Integer score,       // peut être null (non scoré)
         Double commitment,
         int reported,        // critères de scoring renseignés
-        int criteria) {      // total de critères de la grille
+        int criteria,        // total de critères de la grille
+        // Métriques d'export : fonds = millésime le plus récent ; deals = retours attendus
+        Integer vintageYear, // année du millésime le plus récent (fonds), null pour deals
+        Double dpi,
+        Double irr,          // fonds : IRR du millésime récent ; deals : IRR attendu
+        Double moic,
+        String geography) {  // token géographique canonique (US, EUROPE, DACH…)
 
     public enum Type {
         FUND, DEAL
@@ -47,16 +55,24 @@ public record PipelineItem(
 
     /** Le score est recalculé en direct par le moteur (§13.4), pas lu depuis score_snapshot. */
     public static PipelineItem ofFund(FundInvestment f, ScoreBreakdown b) {
+        FundVintage newest = f.vintages() == null ? null : f.vintages().stream()
+                .max(Comparator.comparingInt(FundVintage::vintageYear)).orElse(null);
         return new PipelineItem(
                 f.id(), Type.FUND, f.name(), f.category(),
                 f.category().label(), f.status(), b.score(), f.commitment(),
-                b.reportedCount(), b.criteriaCount());
+                b.reportedCount(), b.criteriaCount(),
+                newest == null ? null : newest.vintageYear(),
+                newest == null ? null : newest.dpi(),
+                newest == null ? null : newest.irr(),
+                newest == null ? null : newest.moic(),
+                f.geography());
     }
 
     public static PipelineItem ofDeal(DirectDeal d, ScoreBreakdown b) {
         return new PipelineItem(
                 d.id(), Type.DEAL, d.name(), null,
                 DEALS_STRATEGY, d.status(), b.score(), d.commitment(),
-                b.reportedCount(), b.criteriaCount());
+                b.reportedCount(), b.criteriaCount(),
+                null, null, d.expIrrPct(), d.expMoic(), d.geography());
     }
 }
