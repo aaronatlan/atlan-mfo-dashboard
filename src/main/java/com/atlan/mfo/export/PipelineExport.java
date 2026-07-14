@@ -28,12 +28,12 @@ public final class PipelineExport {
     private static final List<String> FUND_PDF_HEADERS = concat(COMMON,
             "Vintage", "DPI", "IRR", "MOIC", "Geography", "Commitment");
 
-    // Deals directs (grille C) : CAGR, marge EBITDA, multiple d'entrée, exit visée.
+    // Deals directs (grille C) : secteur, CAGR, marge EBITDA, multiple d'entrée, exit visée.
     private static final List<String> DEAL_XLSX_HEADERS = concat(COMMON,
-            "Tier", "Exp. IRR", "Exp. MOIC", "Revenue CAGR", "EBITDA Margin", "Entry Multiple",
+            "Industry", "Tier", "Exp. IRR", "Exp. MOIC", "Revenue CAGR", "EBITDA Margin", "Entry Multiple",
             "Target Exit", "Geography", "Commitment");
     private static final List<String> DEAL_PDF_HEADERS = concat(COMMON,
-            "Exp. IRR", "Exp. MOIC", "CAGR", "EBITDA %", "Entry x", "Target Exit", "Geography", "Commitment");
+            "Industry", "Exp. IRR", "Exp. MOIC", "CAGR", "EBITDA %", "Entry x", "Target Exit", "Geography", "Commitment");
 
     private PipelineExport() {
     }
@@ -54,6 +54,7 @@ public final class PipelineExport {
         for (PipelineItem i : deals) {
             dealRows.add(Arrays.asList(
                     i.name(), i.strategy(), i.status().label(), i.score(),
+                    i.industry(),
                     i.tier() == null ? null : i.tier().label(),
                     i.irr(), i.moic(), i.dealCagr(), i.dealEbitdaMargin(), i.dealEntryMultiple(),
                     i.dealTargetExit() == null ? null : i.dealTargetExit().toString(),
@@ -81,6 +82,7 @@ public final class PipelineExport {
         for (PipelineItem i : deals) {
             dealRows.add(Arrays.asList(
                     i.name(), i.strategy(), i.status().label(), Formatters.score(i.score()),
+                    Formatters.text(i.industry()),
                     Formatters.percent(i.irr()), Formatters.multiple(i.moic()),
                     Formatters.percent(i.dealCagr()), Formatters.percent(i.dealEbitdaMargin()),
                     Formatters.multiple(i.dealEntryMultiple()), Formatters.date(i.dealTargetExit()),
