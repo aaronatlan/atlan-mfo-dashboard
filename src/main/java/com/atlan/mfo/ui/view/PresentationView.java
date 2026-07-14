@@ -19,9 +19,9 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Arc;
 import javafx.scene.shape.ArcType;
+import javafx.scene.shape.Circle;
 
 import java.util.Comparator;
 import java.util.List;
@@ -184,26 +184,29 @@ public final class PresentationView extends BorderPane {
             total += v;
         }
 
-        // Anneau : un Arc par segment, partant du haut (90°) et tournant dans le sens horaire.
-        double r = 72, thickness = 36, cx = 90, cy = 90;
+        // Anneau : secteurs pleins (Arc ROUND depuis le centre) + un disque central couleur
+        // carte qui « perce » le trou. Rendu net, sans artefact de contour.
+        double rOuter = 92, rInner = 56, cx = 92, cy = 92;
         Pane ring = new Pane();
-        ring.setMinSize(180, 180);
-        ring.setPrefSize(180, 180);
-        ring.setMaxSize(180, 180);
-        double startFrac = 0;
+        ring.setMinSize(184, 184);
+        ring.setPrefSize(184, 184);
+        ring.setMaxSize(184, 184);
+        double startAngle = 90; // haut ; les secteurs tournent dans le sens horaire (longueur négative)
         for (int k = 0; k < values.length; k++) {
             double frac = total > 0 ? values[k] / total : 0;
             if (frac <= 0) {
                 continue;
             }
-            Arc arc = new Arc(cx, cy, r, r, 90 - startFrac * 360, -frac * 360);
-            arc.setType(ArcType.OPEN);
-            arc.setFill(Color.TRANSPARENT);
-            arc.setStrokeWidth(thickness);
+            double sweep = -frac * 360;
+            Arc arc = new Arc(cx, cy, rOuter, rOuter, startAngle, sweep);
+            arc.setType(ArcType.ROUND);
             arc.getStyleClass().addAll("donut-seg", "donut-seg-" + k);
             ring.getChildren().add(arc);
-            startFrac += frac;
+            startAngle += sweep;
         }
+        Circle hole = new Circle(cx, cy, rInner);
+        hole.getStyleClass().add("donut-hole");
+        ring.getChildren().add(hole);
         Label totalValue = new Label(Formatters.money(total));
         totalValue.getStyleClass().add("donut-total-value");
         Label totalCap = new Label("COMMITTED");

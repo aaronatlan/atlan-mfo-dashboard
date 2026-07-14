@@ -5,22 +5,14 @@ import com.atlan.mfo.model.enums.Tier;
 import com.atlan.mfo.ui.util.Formatters;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
-import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Line;
 
 import java.util.List;
-import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
 
 /**
@@ -56,12 +48,6 @@ public final class CalibrationView extends ScrollPane {
                     paragraph("No outcomes recorded yet. Open a decided opportunity and use "
                             + "\"Outcome\" to record its realized result.")));
         } else {
-            List<Outcome> plot = outcomes.stream()
-                    .filter(o -> o.expectedIrr() != null && o.realizedIrr() != null)
-                    .toList();
-            if (!plot.isEmpty()) {
-                body.getChildren().add(card("Predicted vs realized IRR", scatter(plot)));
-            }
             body.getChildren().add(card("By score band", bandSummary(outcomes)));
             body.getChildren().add(card("Recorded outcomes", table(outcomes)));
         }
@@ -101,95 +87,6 @@ public final class CalibrationView extends ScrollPane {
             r++;
         }
         return g;
-    }
-
-    /* ---- Nuage prédit vs réalisé (diagonale y = x = prédiction parfaite) ---- */
-
-    private javafx.scene.Node scatter(List<Outcome> pts) {
-        double w = 560, h = 340, x0 = 62, y0 = 16, x1 = 540, y1 = 296;
-
-        double lo = Double.MAX_VALUE, hi = -Double.MAX_VALUE;
-        for (Outcome o : pts) {
-            lo = Math.min(lo, Math.min(o.expectedIrr(), o.realizedIrr()));
-            hi = Math.max(hi, Math.max(o.expectedIrr(), o.realizedIrr()));
-        }
-        if (lo == hi) {
-            lo -= 0.05;
-            hi += 0.05;
-        }
-        double pad = (hi - lo) * 0.10;
-        final double LO = lo - pad, HI = hi + pad;
-        DoubleUnaryOperator px = v -> x0 + (v - LO) / (HI - LO) * (x1 - x0);
-        DoubleUnaryOperator py = v -> y1 - (v - LO) / (HI - LO) * (y1 - y0);
-
-        Pane p = new Pane();
-        p.setMinSize(w, h);
-        p.setPrefSize(w, h);
-        p.setMaxSize(w, h);
-
-        Line yAxis = new Line(x0, y0, x0, y1);
-        yAxis.getStyleClass().add("axis-line");
-        Line xAxis = new Line(x0, y1, x1, y1);
-        xAxis.getStyleClass().add("axis-line");
-        Line diagonal = new Line(px.applyAsDouble(LO), py.applyAsDouble(LO),
-                px.applyAsDouble(HI), py.applyAsDouble(HI));
-        diagonal.getStyleClass().add("calib-diagonal");
-        p.getChildren().addAll(diagonal, yAxis, xAxis);
-
-        // Repères min/max sur les deux axes.
-        tick(p, x0 - 56, py.applyAsDouble(LO) - 8, Formatters.percent(LO));
-        tick(p, x0 - 56, py.applyAsDouble(HI) - 8, Formatters.percent(HI));
-        tick(p, px.applyAsDouble(LO) - 14, y1 + 6, Formatters.percent(LO));
-        tick(p, px.applyAsDouble(HI) - 14, y1 + 6, Formatters.percent(HI));
-        Label yx = new Label("y = x");
-        yx.getStyleClass().add("axis-tick");
-        yx.setLayoutX(px.applyAsDouble(HI) - 44);
-        yx.setLayoutY(py.applyAsDouble(HI) + 2);
-        p.getChildren().add(yx);
-
-        for (Outcome o : pts) {
-            double ex = o.expectedIrr(), re = o.realizedIrr();
-            Circle c = new Circle(px.applyAsDouble(ex), py.applyAsDouble(re), 5.5);
-            c.getStyleClass().add(re >= ex ? "calib-point-good" : "calib-point-bad");
-            Tooltip.install(c, new Tooltip(o.name() + "\nExpected " + Formatters.percent(ex)
-                    + " · Realized " + Formatters.percent(re)));
-            p.getChildren().add(c);
-        }
-
-        Label xTitle = new Label("Expected IRR");
-        xTitle.getStyleClass().add("axis-title");
-        xTitle.setLayoutX((x0 + x1) / 2 - 34);
-        xTitle.setLayoutY(y1 + 22);
-        Label yTitle = new Label("Realized IRR");
-        yTitle.getStyleClass().add("axis-title");
-        yTitle.setRotate(-90);
-        yTitle.setLayoutX(x0 - 66);
-        yTitle.setLayoutY((y0 + y1) / 2 - 8);
-        p.getChildren().addAll(xTitle, yTitle);
-
-        HBox legend = new HBox(20,
-                legendDot("calib-point-good", "Outperformed"),
-                legendDot("calib-point-bad", "Underperformed"));
-        legend.setAlignment(Pos.CENTER_LEFT);
-        return new VBox(10, p, legend);
-    }
-
-    private static void tick(Pane p, double x, double y, String text) {
-        Label l = new Label(text);
-        l.getStyleClass().add("axis-tick");
-        l.setLayoutX(x);
-        l.setLayoutY(y);
-        p.getChildren().add(l);
-    }
-
-    private static HBox legendDot(String pointClass, String text) {
-        Region dot = new Region();
-        dot.getStyleClass().addAll("legend-dot", pointClass);
-        Label l = new Label(text);
-        l.getStyleClass().add("axis-tick");
-        HBox box = new HBox(7, dot, l);
-        box.setAlignment(Pos.CENTER_LEFT);
-        return box;
     }
 
     private static String bandRange(Tier t) {
