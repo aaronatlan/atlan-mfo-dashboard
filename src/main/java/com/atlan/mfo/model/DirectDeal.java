@@ -59,5 +59,8 @@ public record DirectDeal(
         // Contact de l'opportunité (GP, sponsor, intermédiaire…)
         String contactName,
         String contactEmail,
-        String contactPhone) {
+        String contactPhone,
+
+        // Devise native du commitment (code ISO ; défaut USD). Agrégats convertis en USD.
+        String currency) {
 }

@@ -23,17 +23,19 @@ public final class PipelineExport {
     private static final List<String> COMMON = List.of("Name", "Strategy", "Status", "Score");
 
     // Fonds : millésime le plus récent (§5.5). Excel garde Tier ; PDF non.
+    // Commitment = devise native ; Commitment (USD) = converti (devise de référence).
     private static final List<String> FUND_XLSX_HEADERS = concat(COMMON,
-            "Tier", "Vintage", "DPI", "IRR", "MOIC", "Geography", "Commitment");
+            "Tier", "Vintage", "DPI", "IRR", "MOIC", "Geography", "Commitment", "Currency", "Commitment (USD)");
     private static final List<String> FUND_PDF_HEADERS = concat(COMMON,
-            "Vintage", "DPI", "IRR", "MOIC", "Geography", "Commitment");
+            "Vintage", "DPI", "IRR", "MOIC", "Geography", "Commitment", "Currency", "Commitment (USD)");
 
     // Deals directs (grille C) : secteur, CAGR, marge EBITDA, multiple d'entrée, exit visée.
     private static final List<String> DEAL_XLSX_HEADERS = concat(COMMON,
             "Industry", "Tier", "Exp. IRR", "Exp. MOIC", "Revenue CAGR", "EBITDA Margin", "Entry Multiple",
-            "Target Exit", "Geography", "Commitment");
+            "Target Exit", "Geography", "Commitment", "Currency", "Commitment (USD)");
     private static final List<String> DEAL_PDF_HEADERS = concat(COMMON,
-            "Industry", "Exp. IRR", "Exp. MOIC", "CAGR", "EBITDA %", "Entry x", "Target Exit", "Geography", "Commitment");
+            "Industry", "Exp. IRR", "Exp. MOIC", "CAGR", "EBITDA %", "Entry x", "Target Exit", "Geography",
+            "Commitment", "Currency", "Commitment (USD)");
 
     private PipelineExport() {
     }
@@ -48,7 +50,8 @@ public final class PipelineExport {
             fundRows.add(Arrays.asList(
                     i.name(), i.strategy(), i.status().label(), i.score(),
                     i.tier() == null ? null : i.tier().label(),
-                    i.vintageYear(), i.dpi(), i.irr(), i.moic(), i.geography(), i.commitment()));
+                    i.vintageYear(), i.dpi(), i.irr(), i.moic(), i.geography(),
+                    i.commitment(), i.currency(), i.commitmentUsd()));
         }
         List<List<Object>> dealRows = new ArrayList<>();
         for (PipelineItem i : deals) {
@@ -58,7 +61,7 @@ public final class PipelineExport {
                     i.tier() == null ? null : i.tier().label(),
                     i.irr(), i.moic(), i.dealCagr(), i.dealEbitdaMargin(), i.dealEntryMultiple(),
                     i.dealTargetExit() == null ? null : i.dealTargetExit().toString(),
-                    i.geography(), i.commitment()));
+                    i.geography(), i.commitment(), i.currency(), i.commitmentUsd()));
         }
         Xlsx.write(file, List.of(
                 new Xlsx.Sheet("Funds", FUND_XLSX_HEADERS, fundRows),
@@ -76,7 +79,8 @@ public final class PipelineExport {
                     i.name(), i.strategy(), i.status().label(), Formatters.score(i.score()),
                     i.vintageYear() == null ? "—" : Integer.toString(i.vintageYear()),
                     Formatters.multiple(i.dpi()), Formatters.percent(i.irr()), Formatters.multiple(i.moic()),
-                    Formatters.text(i.geography()), Formatters.money(i.commitment())));
+                    Formatters.text(i.geography()), Formatters.money(i.commitment()),
+                    Formatters.text(i.currency()), Formatters.money(i.commitmentUsd())));
         }
         List<List<String>> dealRows = new ArrayList<>();
         for (PipelineItem i : deals) {
@@ -86,7 +90,8 @@ public final class PipelineExport {
                     Formatters.percent(i.irr()), Formatters.multiple(i.moic()),
                     Formatters.percent(i.dealCagr()), Formatters.percent(i.dealEbitdaMargin()),
                     Formatters.multiple(i.dealEntryMultiple()), Formatters.date(i.dealTargetExit()),
-                    Formatters.text(i.geography()), Formatters.money(i.commitment())));
+                    Formatters.text(i.geography()), Formatters.money(i.commitment()),
+                    Formatters.text(i.currency()), Formatters.money(i.commitmentUsd())));
         }
         String subtitle = "Patrimium MFO — pipeline · " + LocalDate.now() + " · " + items.size() + " opportunities";
         Pdf.writeSections(file, "Investment pipeline", subtitle, List.of(

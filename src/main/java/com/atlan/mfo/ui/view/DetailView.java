@@ -54,7 +54,7 @@ public final class DetailView extends BorderPane {
         addRow(g1, "Geography", Formatters.text(f.geography()));
         addRow(g1, "Asset class", Formatters.text(f.assetClass()));
         addRow(g1, "Vs. benchmark", f.vsBenchmark() == null ? "—" : f.vsBenchmark().label());
-        addRow(g1, "Planned commitment", Formatters.money(f.commitment()));
+        addRow(g1, "Planned commitment", Formatters.money(f.commitment(), f.currency()));
         addRow(g1, "Next steps", Formatters.text(f.nextSteps()));
 
         GridPane g4 = grid();
@@ -87,23 +87,23 @@ public final class DetailView extends BorderPane {
         addRow(g1, "Geography", Formatters.text(d.geography()));
         addRow(g1, "Investment type", Formatters.text(d.invType()));
         addRow(g1, "Vs. benchmark", d.vsBenchmark() == null ? "—" : d.vsBenchmark().label());
-        addRow(g1, "Planned commitment", Formatters.money(d.commitment()));
+        addRow(g1, "Planned commitment", Formatters.money(d.commitment(), d.currency()));
         addRow(g1, "Next steps", Formatters.text(d.nextSteps()));
 
         GridPane g2 = grid();
-        addRow(g2, "Revenue", Formatters.money(d.revenue()));
+        addRow(g2, "Revenue", Formatters.money(d.revenue(), d.currency()));
         addRow(g2, "Revenue CAGR", Formatters.percent(d.cagrPct()));
-        addRow(g2, "EBITDA", Formatters.money(d.ebitda()));
+        addRow(g2, "EBITDA", Formatters.money(d.ebitda(), d.currency()));
         addRow(g2, "EBITDA growth", Formatters.percent(d.ebitdaGrPct()));
         addRow(g2, "EBITDA margin", Formatters.percent(d.ebitdaMgnPct()));
-        addRow(g2, "FCF", Formatters.money(d.fcf()));
+        addRow(g2, "FCF", Formatters.money(d.fcf(), d.currency()));
         addRow(g2, "FCF conversion", Formatters.percent(d.fcfConvPct()));
-        addRow(g2, "EV", Formatters.money(d.ev()));
+        addRow(g2, "EV", Formatters.money(d.ev(), d.currency()));
 
         GridPane g3 = grid();
         addRow(g3, "Entry multiple", Formatters.multiple(d.entryMult()));
         addRow(g3, "Peer multiples", Formatters.text(d.peersMult()));
-        addRow(g3, "Exit value", Formatters.money(d.exitVal()));
+        addRow(g3, "Exit value", Formatters.money(d.exitVal(), d.currency()));
         addRow(g3, "Expected IRR", Formatters.percent(d.expIrrPct()));
         addRow(g3, "Expected MOIC", Formatters.multiple(d.expMoic()));
 

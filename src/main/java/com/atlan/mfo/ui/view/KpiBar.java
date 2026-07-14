@@ -21,7 +21,7 @@ public final class KpiBar extends HBox {
 
         long activeCount = active.size();
         double capital = active.stream()
-                .map(PipelineItem::commitment)
+                .map(PipelineItem::commitmentUsd)
                 .filter(c -> c != null)
                 .mapToDouble(Double::doubleValue)
                 .sum();
@@ -36,7 +36,7 @@ public final class KpiBar extends HBox {
 
         getChildren().addAll(
                 card(Long.toString(activeCount), "ACTIVE DEALS"),
-                card(Formatters.money(capital), "CAPITAL UNDER REVIEW"),
+                card(Formatters.money(capital, "USD"), "CAPITAL UNDER REVIEW"),
                 card(avg.isPresent() ? Long.toString(Math.round(avg.getAsDouble())) : "—", "AVERAGE SCORE"),
                 card(Long.toString(strongCount), "STRONG TIER"));
     }

@@ -140,16 +140,17 @@ public class Main extends Application {
 
     private static PresentationData buildPresentationData() {
         ScoringEngine engine = new ScoringConfig().currentEngine();
+        com.atlan.mfo.model.FxRates fx = new com.atlan.mfo.dao.FxRateDao().load();
         java.time.LocalDate today = java.time.LocalDate.now();
         var fundById = new java.util.HashMap<Long, FundInvestment>();
         var dealById = new java.util.HashMap<Long, DirectDeal>();
         var items = new java.util.ArrayList<PipelineItem>();
         for (FundInvestment f : new FundInvestmentDao().findAll()) {
-            items.add(PipelineItem.ofFund(f, engine.score(f, today)));
+            items.add(PipelineItem.ofFund(f, engine.score(f, today), fx));
             fundById.put(f.id(), f);
         }
         for (DirectDeal d : new DirectDealDao().findAll()) {
-            items.add(PipelineItem.ofDeal(d, engine.score(d, today)));
+            items.add(PipelineItem.ofDeal(d, engine.score(d, today), fx));
             dealById.put(d.id(), d);
         }
         return new PresentationData(engine, items, fundById, dealById);

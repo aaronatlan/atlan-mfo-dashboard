@@ -25,6 +25,7 @@ import com.atlan.mfo.ui.view.DealFormView;
 import com.atlan.mfo.ui.view.DetailView;
 import com.atlan.mfo.ui.view.OutcomeView;
 import com.atlan.mfo.ui.view.FundFormView;
+import com.atlan.mfo.ui.view.FxRatesView;
 import com.atlan.mfo.ui.view.MethodologyView;
 import com.atlan.mfo.ui.view.PipelineView;
 import com.atlan.mfo.ui.view.SectionView;
@@ -117,10 +118,11 @@ public class MainShellController {
             Throwable cause = ce.getCause();
             throw (cause instanceof RuntimeException re) ? re : new IllegalStateException(cause);
         }
+        com.atlan.mfo.model.FxRates fx = new com.atlan.mfo.dao.FxRateDao().load();
         java.time.LocalDate today = java.time.LocalDate.now();
         List<PipelineItem> items = new ArrayList<>();
-        f.forEach(x -> items.add(PipelineItem.ofFund(x, engine.score(x, today))));
-        d.forEach(x -> items.add(PipelineItem.ofDeal(x, engine.score(x, today))));
+        f.forEach(x -> items.add(PipelineItem.ofFund(x, engine.score(x, today), fx)));
+        d.forEach(x -> items.add(PipelineItem.ofDeal(x, engine.score(x, today), fx)));
         return new Snapshot(f, d, items);
     }
 
@@ -175,6 +177,8 @@ public class MainShellController {
         addNavAsync("Calibration", outcomeDao::findAll, CalibrationView::new);
         addNavAsync("Methodology", scoringConfig::currentProfile,
                 p -> new MethodologyView(p, this::saveMethodology));
+        addNavAsync("Exchange rates", () -> new com.atlan.mfo.dao.FxRateDao().load(),
+                r -> new FxRatesView(r, this::saveFxRates));
 
         // Signature discrète, ton sur ton : invisible à l'œil, sélectionnable à la souris.
         Region spacer = new Region();
@@ -207,6 +211,39 @@ public class MainShellController {
                     done.setTitle("Methodology");
                     done.setHeaderText("Methodology saved");
                     done.setContentText("All opportunity scores have been recalculated.");
+                    done.setGraphic(null);
+                    done.getDialogPane().setGraphic(null);
+                    var css = getClass().getResource("/css/atlan-dark.css");
+                    if (css != null) {
+                        done.getDialogPane().getStylesheets().add(css.toExternalForm());
+                    }
+                    done.showAndWait();
+                },
+                ex -> {
+                    setBusy(false);
+                    ErrorDialog.show(ex);
+                });
+    }
+
+    /** Enregistre les taux de change puis reconvertit tous les agrégats en USD. */
+    private void saveFxRates(java.util.Map<String, Double> rates) {
+        setBusy(true);
+        Async.run(
+                () -> {
+                    new com.atlan.mfo.dao.FxRateDao().saveAll(rates);
+                    return fetch();   // commitmentUsd recalculé avec les nouveaux taux
+                },
+                s -> {
+                    apply(s);
+                    setBusy(false);
+                    Supplier<Node> v = () ->
+                            new FxRatesView(new com.atlan.mfo.dao.FxRateDao().load(), this::saveFxRates);
+                    currentView = v;
+                    setContent(v.get());
+                    Alert done = new Alert(Alert.AlertType.INFORMATION);
+                    done.setTitle("Exchange rates");
+                    done.setHeaderText("Exchange rates saved");
+                    done.setContentText("All USD aggregates have been recalculated.");
                     done.setGraphic(null);
                     done.getDialogPane().setGraphic(null);
                     var css = getClass().getResource("/css/atlan-dark.css");

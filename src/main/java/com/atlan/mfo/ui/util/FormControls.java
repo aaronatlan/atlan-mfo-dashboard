@@ -60,6 +60,30 @@ public final class FormControls {
         return cb;
     }
 
+    /** ComboBox des devises supportées (codes ISO) ; défaut USD (devise de référence). */
+    public static ComboBox<String> currencyCombo() {
+        ComboBox<String> cb = new ComboBox<>();
+        for (com.atlan.mfo.model.enums.Currency c : com.atlan.mfo.model.enums.Currency.values()) {
+            cb.getItems().add(c.code());
+        }
+        cb.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(String code) {
+                if (code == null) {
+                    return "";
+                }
+                return code + " — " + com.atlan.mfo.model.enums.Currency.fromCode(code).label();
+            }
+
+            @Override
+            public String fromString(String s) {
+                return s;
+            }
+        });
+        cb.setValue(com.atlan.mfo.model.enums.Currency.REFERENCE.code());
+        return cb;
+    }
+
     public static TextField field(String prompt) {
         TextField t = new TextField();
         t.setPromptText(prompt);

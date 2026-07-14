@@ -15,7 +15,7 @@ public final class Formatters {
     private Formatters() {
     }
 
-    /** Montant en devise de base → suffixe k / m / bn. */
+    /** Montant → suffixe k / m / bn (sans devise). */
     public static String money(Double value) {
         if (value == null) {
             return DASH;
@@ -32,6 +32,19 @@ public final class Formatters {
             return trim(v / 1_000d) + "k";
         }
         return trim(v);
+    }
+
+    /**
+     * Montant préfixé du code devise (ex. « EUR 12m », « USD 154m »). Les agrégats
+     * globaux passent {@code "USD"} (devise de référence, §4) ; les opportunités leur
+     * devise native.
+     */
+    public static String money(Double value, String currencyCode) {
+        if (value == null) {
+            return DASH;
+        }
+        String code = (currencyCode == null || currencyCode.isBlank()) ? "USD" : currencyCode.trim();
+        return code + " " + money(value);
     }
 
     /** Fraction décimale → pourcentage (0.137 → « 13.7% »). */

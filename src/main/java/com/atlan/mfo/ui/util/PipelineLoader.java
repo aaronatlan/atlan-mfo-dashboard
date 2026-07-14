@@ -2,7 +2,9 @@ package com.atlan.mfo.ui.util;
 
 import com.atlan.mfo.dao.DirectDealDao;
 import com.atlan.mfo.dao.FundInvestmentDao;
+import com.atlan.mfo.dao.FxRateDao;
 import com.atlan.mfo.dao.ScoringConfig;
+import com.atlan.mfo.model.FxRates;
 import com.atlan.mfo.model.PipelineItem;
 import com.atlan.mfo.scoring.ScoringEngine;
 
@@ -18,12 +20,13 @@ public final class PipelineLoader {
 
     public static List<PipelineItem> loadItems() {
         ScoringEngine engine = new ScoringConfig().currentEngine();
+        FxRates fx = new FxRateDao().load();
         LocalDate today = LocalDate.now();
         List<PipelineItem> items = new ArrayList<>();
         new FundInvestmentDao().findAll()
-                .forEach(f -> items.add(PipelineItem.ofFund(f, engine.score(f, today))));
+                .forEach(f -> items.add(PipelineItem.ofFund(f, engine.score(f, today), fx)));
         new DirectDealDao().findAll()
-                .forEach(d -> items.add(PipelineItem.ofDeal(d, engine.score(d, today))));
+                .forEach(d -> items.add(PipelineItem.ofDeal(d, engine.score(d, today), fx)));
         return items;
     }
 }

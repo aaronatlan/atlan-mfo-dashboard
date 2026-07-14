@@ -33,7 +33,9 @@ public record PipelineItem(
         Double dealEbitdaMargin,
         Double dealEntryMultiple,
         java.time.LocalDate dealTargetExit,
-        String industry) {    // secteur (deals directs uniquement), null pour les fonds
+        String industry,      // secteur (deals directs uniquement), null pour les fonds
+        String currency,      // devise native du commitment (code ISO ; défaut USD)
+        Double commitmentUsd) {  // commitment converti en USD (agrégats), null si non renseigné
 
     public enum Type {
         FUND, DEAL
@@ -61,7 +63,7 @@ public record PipelineItem(
     }
 
     /** Le score est recalculé en direct par le moteur (§13.4), pas lu depuis score_snapshot. */
-    public static PipelineItem ofFund(FundInvestment f, ScoreBreakdown b) {
+    public static PipelineItem ofFund(FundInvestment f, ScoreBreakdown b, FxRates fx) {
         FundVintage newest = f.vintages() == null ? null : f.vintages().stream()
                 .max(Comparator.comparingInt(FundVintage::vintageYear)).orElse(null);
         return new PipelineItem(
@@ -73,15 +75,17 @@ public record PipelineItem(
                 newest == null ? null : newest.irr(),
                 newest == null ? null : newest.moic(),
                 f.geography(),
-                null, null, null, null, null);
+                null, null, null, null, null,
+                f.currency(), fx.toUsd(f.commitment(), f.currency()));
     }
 
-    public static PipelineItem ofDeal(DirectDeal d, ScoreBreakdown b) {
+    public static PipelineItem ofDeal(DirectDeal d, ScoreBreakdown b, FxRates fx) {
         return new PipelineItem(
                 d.id(), Type.DEAL, d.name(), null,
                 DEALS_STRATEGY, d.status(), b.score(), d.commitment(),
                 b.reportedCount(), b.criteriaCount(),
                 null, null, d.expIrrPct(), d.expMoic(), d.geography(),
-                d.cagrPct(), d.ebitdaMgnPct(), d.entryMult(), d.targetExit(), d.industry());
+                d.cagrPct(), d.ebitdaMgnPct(), d.entryMult(), d.targetExit(), d.industry(),
+                d.currency(), fx.toUsd(d.commitment(), d.currency()));
     }
 }

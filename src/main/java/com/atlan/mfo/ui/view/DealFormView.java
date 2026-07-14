@@ -47,6 +47,7 @@ public final class DealFormView extends BorderPane {
     private final TextField gpField = FormControls.field("GP / sponsor");
     private final TextField invTypeField = FormControls.field("investment type");
     private final TextField commitmentField = FormControls.field("e.g. 40m");
+    private final ComboBox<String> currencyCombo = FormControls.currencyCombo();
     private final TextField revenueField = FormControls.field("revenue");
     private final TextField cagrField = FormControls.field("e.g. 47% or 0.47");
     private final TextField ebitdaField = FormControls.field("EBITDA");
@@ -116,6 +117,7 @@ public final class DealFormView extends BorderPane {
         r = row(g, r, "Geography", geoCombo);
         r = row(g, r, "Investment type", invTypeField);
         r = row(g, r, "Planned commitment", commitmentField);
+        r = row(g, r, "Currency", currencyCombo);
         r = section(g, r, "FINANCIAL PERFORMANCE");
         r = row(g, r, "Revenue", revenueField);
         r = row(g, r, "Revenue CAGR", cagrField);
@@ -197,6 +199,7 @@ public final class DealFormView extends BorderPane {
             geoCombo.setValue(existing.geography());
             invTypeField.setText(existing.invType());
             commitmentField.setText(str(existing.commitment()));
+            currencyCombo.setValue(com.atlan.mfo.model.enums.Currency.fromCode(existing.currency()).code());
             revenueField.setText(str(existing.revenue()));
             cagrField.setText(str(existing.cagrPct()));
             ebitdaField.setText(str(existing.ebitda()));
@@ -267,7 +270,8 @@ public final class DealFormView extends BorderPane {
                 version, null, null,
                 tn(contactNameField.getText()),
                 tn(contactEmailField.getText()),
-                tn(contactPhoneField.getText()));
+                tn(contactPhoneField.getText()),
+                currencyCombo.getValue());
     }
 
     private void save() {

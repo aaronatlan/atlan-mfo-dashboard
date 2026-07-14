@@ -108,7 +108,7 @@ public final class PresentationView extends BorderPane {
     /* ---- Corps ---- */
 
     private VBox body(List<PipelineItem> active, List<PipelineItem> all) {
-        double capital = active.stream().map(PipelineItem::commitment)
+        double capital = active.stream().map(PipelineItem::commitmentUsd)
                 .filter(c -> c != null).mapToDouble(Double::doubleValue).sum();
         var avg = active.stream().map(PipelineItem::score)
                 .filter(s -> s != null).mapToInt(Integer::intValue).average();
@@ -116,7 +116,7 @@ public final class PresentationView extends BorderPane {
 
         Label heroLabel = new Label("CAPITAL UNDER REVIEW");
         heroLabel.getStyleClass().add("pres-hero-label");
-        Label heroValue = new Label(Formatters.money(capital));
+        Label heroValue = new Label(Formatters.money(capital, "USD"));
         heroValue.getStyleClass().add("pres-hero-value");
         VBox hero = new VBox(2, heroLabel, heroValue);
 
@@ -171,12 +171,12 @@ public final class PresentationView extends BorderPane {
     private HBox allocationChart(List<PipelineItem> active) {
         double[] values = new double[SEG_LABELS.length];
         for (PipelineItem i : active) {
-            if (i.commitment() == null) {
+            if (i.commitmentUsd() == null) {
                 continue;
             }
             for (int k = 0; k < SEG_LABELS.length; k++) {
                 if (SEG_LABELS[k].equals(i.strategy())) {
-                    values[k] += i.commitment();
+                    values[k] += i.commitmentUsd();
                     break;
                 }
             }
@@ -209,7 +209,7 @@ public final class PresentationView extends BorderPane {
         Circle hole = new Circle(cx, cy, rInner);
         hole.getStyleClass().add("donut-hole");
         ring.getChildren().add(hole);
-        Label totalValue = new Label(Formatters.money(total));
+        Label totalValue = new Label(Formatters.money(total, "USD"));
         totalValue.getStyleClass().add("donut-total-value");
         Label totalCap = new Label("COMMITTED");
         totalCap.getStyleClass().add("donut-total-label");
@@ -237,7 +237,7 @@ public final class PresentationView extends BorderPane {
         label.getStyleClass().add("donut-legend-name");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        Label amount = new Label(Formatters.money(value));
+        Label amount = new Label(Formatters.money(value, "USD"));
         amount.getStyleClass().add("donut-legend-value");
         long pct = total > 0 ? Math.round(value / total * 100) : 0;
         Label percent = new Label(pct + "%");

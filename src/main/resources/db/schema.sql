@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS fund_investment (
     vs_benchmark   benchmark_status DEFAULT 'NA',
     geography      TEXT,                    -- token canonique : 'US','EUROPE','UK','GLOBAL','OTHER' (§13.1)
     asset_class    TEXT,
-    commitment     NUMERIC,                 -- capital envisagé par Atlan (devise de base) — KPI « capital en revue »
+    commitment     NUMERIC,                 -- capital envisagé (devise native ci-dessous) — agrégats convertis en USD
+    currency       TEXT NOT NULL DEFAULT 'USD',  -- devise native du commitment (code ISO)
 
     -- Les millésimes (track record complet, N par fonds) sont dans fund_vintage.
 
@@ -91,7 +92,8 @@ CREATE TABLE IF NOT EXISTS direct_deal (
     gp             TEXT,                    -- general partner / sponsor
     geography      TEXT,                    -- token canonique (§13.1)
     inv_type       TEXT,                    -- ex. 'Direct/Growth Equity'
-    commitment     NUMERIC,                 -- capital envisagé par Atlan (devise de base) — KPI « capital en revue »
+    commitment     NUMERIC,                 -- capital envisagé (devise native ci-dessous) — agrégats convertis en USD
+    currency       TEXT NOT NULL DEFAULT 'USD',  -- devise native du commitment (code ISO)
 
     -- performance financière (fractions pour les %)
     revenue        NUMERIC,
@@ -146,12 +148,30 @@ ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS contact_name  TEXT;
 ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS contact_email TEXT;
 ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS contact_phone TEXT;
 
+-- Devise native par opportunité (USD = référence, agrégats convertis en USD)
+ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'USD';
+ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'USD';
+
 -- Paramètres de scoring modifiables (méthodologie éditable, §5). Clé → valeur ;
 -- si une clé est absente, le moteur utilise sa valeur par défaut.
 CREATE TABLE IF NOT EXISTS scoring_param (
     name  TEXT PRIMARY KEY,
     value NUMERIC NOT NULL
 );
+
+-- Taux de change éditables vers l'USD (devise de référence, §4) : valeur d'1 unité
+-- de la devise en USD. Repli sur les défauts du code si une devise est absente.
+CREATE TABLE IF NOT EXISTS fx_rate (
+    currency     TEXT PRIMARY KEY,        -- code ISO (EUR, GBP, AED…)
+    usd_per_unit NUMERIC NOT NULL,        -- 1 unité de `currency` = usd_per_unit USD
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Seed des taux (idempotent) : ne réécrit pas une valeur déjà ajustée par l'utilisateur.
+INSERT INTO fx_rate (currency, usd_per_unit) VALUES
+    ('USD', 1.0), ('EUR', 1.08), ('GBP', 1.27), ('AED', 0.2723), ('CHF', 1.11),
+    ('CAD', 0.73), ('AUD', 0.66), ('JPY', 0.0067), ('ILS', 0.27)
+ON CONFLICT (currency) DO NOTHING;
 
 -- Boucle prédit → réalisé (calibration). Auto-suffisant (snapshot du prédit +
 -- réalisé) et NON purgé à la réinitialisation du pipeline : le jeu de données

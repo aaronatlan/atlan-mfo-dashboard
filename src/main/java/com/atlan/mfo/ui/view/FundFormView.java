@@ -45,6 +45,7 @@ public final class FundFormView extends BorderPane {
     private final TextField nameField = FormControls.field("fund name");
     private final TextField assetClassField = FormControls.field("asset class");
     private final TextField commitmentField = FormControls.field("e.g. 25m or 25000000");
+    private final ComboBox<String> currencyCombo = FormControls.currencyCombo();
     private final DatePicker firstClosePicker = new DatePicker();
     private final DatePicker finalClosePicker = new DatePicker();
     private final TextField contactNameField = FormControls.field("first & last name");
@@ -104,6 +105,7 @@ public final class FundFormView extends BorderPane {
         r = row(g, r, "Geography", geoCombo);
         r = row(g, r, "Asset class", assetClassField);
         r = row(g, r, "Planned commitment", commitmentField);
+        r = row(g, r, "Currency", currencyCombo);
         r = row(g, r, "First close", firstClosePicker);
         r = row(g, r, "Final close", finalClosePicker);
 
@@ -245,6 +247,7 @@ public final class FundFormView extends BorderPane {
             geoCombo.setValue(existing.geography());
             assetClassField.setText(existing.assetClass());
             commitmentField.setText(str(existing.commitment()));
+            currencyCombo.setValue(com.atlan.mfo.model.enums.Currency.fromCode(existing.currency()).code());
             firstClosePicker.setValue(existing.firstClose());
             finalClosePicker.setValue(existing.finalClose());
             contactNameField.setText(existing.contactName());
@@ -294,7 +297,8 @@ public final class FundFormView extends BorderPane {
                 version, null, null,
                 tn(contactNameField.getText()),
                 tn(contactEmailField.getText()),
-                tn(contactPhoneField.getText()));
+                tn(contactPhoneField.getText()),
+                currencyCombo.getValue());
     }
 
     private void save() {
