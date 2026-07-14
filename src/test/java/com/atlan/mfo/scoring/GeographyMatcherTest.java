@@ -15,18 +15,18 @@ class GeographyMatcherTest {
     private static final Set<String> DEAL_PREFERRED = Set.of("US", "EUROPE", "UK");
 
     @Test
-    void normalizeCanonicalAndAliases() {
-        assertEquals("US", GeographyMatcher.normalize("us"));
-        assertEquals("US", GeographyMatcher.normalize("USA"));
-        assertEquals("US", GeographyMatcher.normalize("United States"));
-        assertEquals("UK", GeographyMatcher.normalize("united kingdom"));
+    void countryToRegion() {
+        assertEquals("US", GeographyMatcher.normalize("United States of America"));
+        assertEquals("US", GeographyMatcher.normalize("USA"));               // token hérité
+        assertEquals("UK", GeographyMatcher.normalize("United Kingdom"));
         assertEquals("EUROPE", GeographyMatcher.normalize("Germany"));
-        assertEquals("GLOBAL", GeographyMatcher.normalize("Worldwide"));
+        assertEquals("EUROPE", GeographyMatcher.normalize("France"));
     }
 
     @Test
-    void unknownBecomesOther() {
+    void nonPreferredCountryBecomesOther() {
         assertEquals("OTHER", GeographyMatcher.normalize("Brazil"));
+        assertEquals("OTHER", GeographyMatcher.normalize("Japan"));
     }
 
     @Test
@@ -39,8 +39,9 @@ class GeographyMatcherTest {
     @Test
     void matchRules() {
         assertTrue(GeographyMatcher.isMatch("US", FUND_PREFERRED));
-        assertTrue(GeographyMatcher.isMatch("GLOBAL", FUND_PREFERRED)); // GLOBAL toujours match
+        assertTrue(GeographyMatcher.isMatch("EUROPE", FUND_PREFERRED));
         assertFalse(GeographyMatcher.isMatch("OTHER", FUND_PREFERRED));
+        assertFalse(GeographyMatcher.isMatch(null, FUND_PREFERRED));
         assertTrue(GeographyMatcher.isMatch("UK", DEAL_PREFERRED));
         assertFalse(GeographyMatcher.isMatch("OTHER", DEAL_PREFERRED)); // hors set préféré
     }

@@ -337,27 +337,23 @@ public final class PresentationView extends BorderPane {
     /* ---- Exposition géographique : carte du monde en heat map ---- */
 
     private VBox geographyChart(List<PipelineItem> active) {
+        // La géographie est un pays : on compte directement par pays.
         java.util.Map<String, Long> counts = new java.util.HashMap<>();
         for (PipelineItem i : active) {
-            String region = com.atlan.mfo.scoring.GeographyMatcher.normalize(i.geography());
-            if (region != null) {
-                counts.merge(region, 1L, Long::sum);
+            String country = i.geography();
+            if (country != null && !country.isBlank()) {
+                counts.merge(country.trim(), 1L, Long::sum);
             }
         }
-        long us = counts.getOrDefault("US", 0L);
-        long eu = counts.getOrDefault("EUROPE", 0L);
-        long uk = counts.getOrDefault("UK", 0L);
-        long global = counts.getOrDefault("GLOBAL", 0L);
-        long other = counts.getOrDefault("OTHER", 0L);
-        long max = Math.max(1, Math.max(us, Math.max(eu, uk)));
+        long max = Math.max(1, counts.values().stream().mapToLong(Long::longValue).max().orElse(0L));
 
-        WorldHeatMap map = new WorldHeatMap(java.util.Map.of("US", us, "EUROPE", eu, "UK", uk));
+        WorldHeatMap map = new WorldHeatMap(counts);
         // Plafonne la taille (la carte a beaucoup d'océan) et centre-la sous les panneaux.
         map.setMaxWidth(640);
         HBox mapRow = new HBox(map);
         mapRow.setAlignment(Pos.CENTER);
 
-        // Légende : dégradé + repères, et encart pour les régions non cartographiables.
+        // Légende : dégradé + repères d'intensité.
         Label fewer = new Label("Fewer");
         fewer.getStyleClass().add("map-legend-cap");
         Region gradient = new Region();
@@ -371,14 +367,7 @@ public final class PresentationView extends BorderPane {
         HBox legend = new HBox(10, fewer, gradient, more, scale);
         legend.setAlignment(Pos.CENTER_LEFT);
 
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        Label notMapped = new Label("Not mapped:  Global " + global + "  ·  Other " + other);
-        notMapped.getStyleClass().add("map-legend-note");
-        HBox footer = new HBox(16, legend, spacer, notMapped);
-        footer.setAlignment(Pos.CENTER_LEFT);
-
-        return new VBox(14, mapRow, footer);
+        return new VBox(14, mapRow, legend);
     }
 
     /* ---- Opportunités : liste de décision (statut modifiable en comité) ---- */

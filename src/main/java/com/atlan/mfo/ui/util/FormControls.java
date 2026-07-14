@@ -41,11 +41,12 @@ public final class FormControls {
         return cb;
     }
 
-    /** ComboBox des tokens géographiques canoniques (§13.1) ; « — » = non renseigné. */
+    /** ComboBox de tous les pays (§13.1) ; « — » = non renseigné. Tape pour filtrer. */
     public static ComboBox<String> geographyCombo() {
         ComboBox<String> cb = new ComboBox<>();
         cb.getItems().add(null);
-        cb.getItems().addAll("US", "EUROPE", "UK", "GLOBAL", "OTHER");
+        cb.getItems().addAll(com.atlan.mfo.model.Countries.names());
+        cb.setVisibleRowCount(14);
         cb.setConverter(new StringConverter<>() {
             @Override
             public String toString(String s) {

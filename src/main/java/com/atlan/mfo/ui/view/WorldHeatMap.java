@@ -13,15 +13,13 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Carte du monde (choroplèthe) colorée en heat map selon le nombre d'opportunités
- * par région. La topologie (Natural Earth, domaine public) est embarquée en ressource
- * — un tracé SVG par pays — donc aucun accès réseau : rendu 100 % hors-ligne (§6.3,
- * confidentialité). Les tokens géographiques régionaux (US, EUROPE, UK) sont projetés
- * sur les pays correspondants ; GLOBAL/OTHER ne pointent aucun pays et sont traités en
- * légende par la vue appelante.
+ * <b>par pays</b>. La topologie (Natural Earth, domaine public) est embarquée en
+ * ressource — un tracé SVG par pays — donc aucun accès réseau : rendu 100 % hors-ligne
+ * (§6.3, confidentialité). La géographie d'une opportunité étant un pays, chaque pays
+ * est colorié directement d'après son nombre d'opportunités.
  */
 public final class WorldHeatMap extends Pane {
 
@@ -34,25 +32,16 @@ public final class WorldHeatMap extends Pane {
     private static final Color[] RAMP = {
             Color.web("#2E5A62"), Color.web("#6E6A44"), Color.web("#9A6E3A"), Color.web("#C0796A")};
 
-    private static final Set<String> US = Set.of("United States of America");
-    private static final Set<String> UK = Set.of("United Kingdom");
-    // EUROPE inclut désormais l'Allemagne / l'Autriche / la Suisse (DACH supprimé).
-    private static final Set<String> EUROPE = Set.of(
-            "Germany", "Austria", "Switzerland", "France", "Italy", "Spain", "Netherlands", "Belgium",
-            "Sweden", "Norway", "Denmark", "Finland", "Poland", "Ireland", "Portugal", "Czechia",
-            "Greece", "Hungary", "Romania", "Bulgaria", "Croatia", "Slovakia", "Slovenia", "Lithuania",
-            "Latvia", "Estonia", "Luxembourg", "Iceland");
-
     private final Group content = new Group();
 
     /**
-     * @param regionCounts nombre d'opportunités par token régional cartographiable
-     *                     (clés attendues : {@code US}, {@code EUROPE}, {@code UK})
+     * @param countryCounts nombre d'opportunités par pays (clé = nom du pays tel que
+     *                      dans l'asset carte, ex. « United States of America »)
      */
-    public WorldHeatMap(Map<String, Long> regionCounts) {
+    public WorldHeatMap(Map<String, Long> countryCounts) {
         getStyleClass().add("world-heatmap");
         long max = 1;
-        for (long v : regionCounts.values()) {
+        for (long v : countryCounts.values()) {
             max = Math.max(max, v);
         }
         Map<String, String> paths = load();
@@ -60,18 +49,16 @@ public final class WorldHeatMap extends Pane {
             String country = e.getKey();
             SVGPath p = new SVGPath();
             p.setContent(e.getValue());
-            long count = countFor(country, regionCounts);
+            long count = countryCounts.getOrDefault(country, 0L);
             final Color base = count > 0 ? heat(count, max) : NO_DATA;
             p.setFill(base);
             p.setStroke(OCEAN_STROKE);
             p.setStrokeWidth(0.5);
 
-            // Tooltip : région + nombre d'opportunités si le pays est couvert, sinon nom seul.
-            String region = regionOf(country);
-            String tipText = region == null
-                    ? country
-                    : country + " — " + regionLabel(region) + ": " + count
-                            + (count == 1 ? " opportunity" : " opportunities");
+            // Tooltip : pays + nombre d'opportunités s'il y en a, sinon nom seul.
+            String tipText = count > 0
+                    ? country + " — " + count + (count == 1 ? " opportunity" : " opportunities")
+                    : country;
             Tooltip tip = new Tooltip(tipText);
             tip.setShowDelay(Duration.millis(120));
             Tooltip.install(p, tip);
@@ -95,42 +82,6 @@ public final class WorldHeatMap extends Pane {
         // La hauteur suit la largeur (ratio de la carte) : sans ça le parent alloue une
         // hauteur fixe et la carte, mise à l'échelle sur la largeur, déborde sur les voisins.
         prefHeightProperty().bind(widthProperty().multiply(VH / VW));
-    }
-
-    private static long countFor(String country, Map<String, Long> counts) {
-        if (US.contains(country)) {
-            return counts.getOrDefault("US", 0L);
-        }
-        if (UK.contains(country)) {
-            return counts.getOrDefault("UK", 0L);
-        }
-        if (EUROPE.contains(country)) {
-            return counts.getOrDefault("EUROPE", 0L);
-        }
-        return 0;
-    }
-
-    /** Token régional d'un pays cartographié, ou {@code null} si non couvert. */
-    private static String regionOf(String country) {
-        if (US.contains(country)) {
-            return "US";
-        }
-        if (UK.contains(country)) {
-            return "UK";
-        }
-        if (EUROPE.contains(country)) {
-            return "EUROPE";
-        }
-        return null;
-    }
-
-    private static String regionLabel(String region) {
-        return switch (region) {
-            case "US" -> "US";
-            case "UK" -> "UK";
-            case "EUROPE" -> "Europe";
-            default -> region;
-        };
     }
 
     /** Interpolation sur la rampe pour {@code count} dans (0, max]. */
