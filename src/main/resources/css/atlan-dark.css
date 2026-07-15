@@ -342,13 +342,13 @@
 }
 
 .search-field {
-    -fx-background-color: -atlan-card;
+    -fx-background-color: -atlan-raised;
     -fx-background-radius: 6;
     -fx-border-color: -atlan-line-strong;
     -fx-border-radius: 6;
     -fx-text-fill: -atlan-text;
-    -fx-prompt-text-fill: -atlan-text-3;
-    -fx-padding: 7 12 7 12;
+    -fx-prompt-text-fill: -atlan-text-2;
+    -fx-padding: 8 12 8 12;
 }
 
 .search-field:focused {

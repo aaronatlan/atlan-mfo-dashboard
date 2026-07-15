@@ -17,6 +17,7 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -83,7 +84,7 @@ public final class OpportunityTable extends VBox {
         TableView<PipelineItem> table = buildTable(onOpen);
 
         VBox.setVgrow(table, Priority.ALWAYS);
-        getChildren().addAll(buildFilterRow(), table);
+        getChildren().addAll(buildFilterBar(), table);
         updateCount();
     }
 
@@ -91,15 +92,18 @@ public final class OpportunityTable extends VBox {
         return Classification.label(AccessRoute.class, code, AccessRoute::label);
     }
 
-    private HBox buildFilterRow() {
-        HBox row = new HBox(10);
-        row.getStyleClass().add("filter-row");
-        row.setAlignment(Pos.CENTER_LEFT);
-
+    /**
+     * Barre de filtres sur deux niveaux, pour éviter tout débordement/troncature quand
+     * la fenêtre n'est pas en plein écran : recherche pleine largeur en haut, puis les
+     * filtres dans un {@link FlowPane} qui s'enroule automatiquement.
+     */
+    private VBox buildFilterBar() {
+        // Ligne 1 : recherche (pleine largeur) + compteur + réinitialiser.
         search.setPromptText("Search…");
         search.getStyleClass().add("search-field");
-        HBox.setHgrow(search, Priority.ALWAYS);
+        search.setMinWidth(180);
         search.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(search, Priority.ALWAYS);
 
         countLabel.getStyleClass().add("filter-count");
 
@@ -108,18 +112,29 @@ public final class OpportunityTable extends VBox {
         reset.setVisible(false);
         reset.setManaged(false);
 
+        HBox searchRow = new HBox(12, search, countLabel, reset);
+        searchRow.setAlignment(Pos.CENTER_LEFT);
+
+        // Ligne 2 : filtres qui s'enroulent (aucun n'est tronqué).
+        FlowPane filters = new FlowPane(10, 8);
+        filters.getStyleClass().add("filter-row");
+        filters.setRowValignment(javafx.geometry.VPos.CENTER);
+        for (ComboBox<String> f : List.of(routeFilter, subStratFilter, statusFilter, tierFilter, industryFilter)) {
+            f.setPrefWidth(168);
+        }
         if (hasRoute) {
-            row.getChildren().add(routeFilter);
+            filters.getChildren().add(routeFilter);
         }
         if (hasSubStrat) {
-            row.getChildren().add(subStratFilter);
+            filters.getChildren().add(subStratFilter);
         }
-        row.getChildren().addAll(statusFilter, tierFilter);
+        filters.getChildren().addAll(statusFilter, tierFilter);
         if (hasIndustry) {
-            row.getChildren().add(industryFilter);
+            filters.getChildren().add(industryFilter);
         }
-        row.getChildren().addAll(activeOnly, search, countLabel, reset);
-        return row;
+        filters.getChildren().add(activeOnly);
+
+        return new VBox(10, searchRow, filters);
     }
 
     private void buildFilters(List<String> routes, List<String> subStrats, List<String> industries) {
