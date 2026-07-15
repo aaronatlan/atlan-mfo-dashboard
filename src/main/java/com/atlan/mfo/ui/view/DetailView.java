@@ -47,7 +47,10 @@ public final class DetailView extends BorderPane {
     public static DetailView ofFund(FundInvestment f, ScoreBreakdown breakdown,
                                     Runnable onBack, Runnable onEdit, Runnable onDelete, Runnable onOutcome) {
         DetailView v = new DetailView();
-        v.setTop(v.header(f.name(), f.category().label() + "  ·  " + f.status().label(),
+        String fCls = com.atlan.mfo.model.enums.Classification.label(
+                com.atlan.mfo.model.enums.Classification.AssetClass.class, f.assetClass(),
+                com.atlan.mfo.model.enums.Classification.AssetClass::label);
+        v.setTop(v.header(f.name(), (fCls != null ? fCls : f.category().label()) + "  ·  " + f.status().label(),
                 breakdown, onBack, onEdit, onDelete, onOutcome));
 
         GridPane g1 = grid();
@@ -84,7 +87,10 @@ public final class DetailView extends BorderPane {
     public static DetailView ofDeal(DirectDeal d, ScoreBreakdown breakdown,
                                     Runnable onBack, Runnable onEdit, Runnable onDelete, Runnable onOutcome) {
         DetailView v = new DetailView();
-        v.setTop(v.header(d.name(), PipelineItem.DEALS_STRATEGY + "  ·  " + d.status().label(),
+        String dCls = com.atlan.mfo.model.enums.Classification.label(
+                com.atlan.mfo.model.enums.Classification.AssetClass.class, d.assetClass(),
+                com.atlan.mfo.model.enums.Classification.AssetClass::label);
+        v.setTop(v.header(d.name(), (dCls != null ? dCls : PipelineItem.DEALS_STRATEGY) + "  ·  " + d.status().label(),
                 breakdown, onBack, onEdit, onDelete, onOutcome));
 
         GridPane g1 = grid();

@@ -42,8 +42,8 @@ public final class MethodologyView extends ScrollPane {
 
         body.getChildren().addAll(
                 title("Scoring methodology"),
-                fundGridCard("Grid A — Buyout, growth, VC (and Secondaries)", "gridA"),
-                fundGridCard("Grid B — Private credit", "gridB"),
+                fundGridCard("Grid A — Fund commitments (PE, VC, Real assets, Secondaries)", "gridA"),
+                fundGridCard("Grid B — Private credit funds", "gridB"),
                 dealGridCard(),
                 globalCard(),
                 actions());
@@ -73,7 +73,7 @@ public final class MethodologyView extends ScrollPane {
         r = ratioRow(g, r, "Expected IRR", "gridC.irr");
         r = geoRow(g, r, "gridC.geo");
         timelineRow(g, r, "gridC.timeline");
-        return card("Grid C — Co-investment and direct", g);
+        return card("Grid C — Direct & co-investment deals", g);
     }
 
     private VBox globalCard() {

@@ -66,7 +66,7 @@ public final class SectionView extends VBox {
         addFund.getStyleClass().add("ghost-button");
         addFund.setOnAction(e -> onNewFund.run());
         Button addDeal = new Button("+ Deal");
-        addDeal.getStyleClass().add("primary-button");
+        addDeal.getStyleClass().add("ghost-button");
         addDeal.setOnAction(e -> onNewDeal.run());
         HBox bar = new HBox(12, header, spacer, addFund, addDeal);
         bar.setAlignment(Pos.CENTER_LEFT);
