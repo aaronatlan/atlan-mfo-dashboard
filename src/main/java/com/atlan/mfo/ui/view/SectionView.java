@@ -63,10 +63,10 @@ public final class SectionView extends VBox {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         Button addFund = new Button("+ Fund");
-        addFund.getStyleClass().add("ghost-button");
+        addFund.getStyleClass().add("primary-button");
         addFund.setOnAction(e -> onNewFund.run());
         Button addDeal = new Button("+ Deal");
-        addDeal.getStyleClass().add("ghost-button");
+        addDeal.getStyleClass().add("primary-button");
         addDeal.setOnAction(e -> onNewDeal.run());
         HBox bar = new HBox(12, header, spacer, addFund, addDeal);
         bar.setAlignment(Pos.CENTER_LEFT);

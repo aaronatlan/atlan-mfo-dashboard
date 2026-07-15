@@ -1,7 +1,6 @@
 package com.atlan.mfo.ui.view;
 
 import com.atlan.mfo.model.PipelineItem;
-import com.atlan.mfo.model.enums.Category;
 import com.atlan.mfo.model.enums.DealStatus;
 import com.atlan.mfo.model.enums.Tier;
 import com.atlan.mfo.ui.util.Formatters;
@@ -37,7 +36,15 @@ import java.util.function.Function;
  */
 public final class PresentationView extends BorderPane {
 
-    private static final String ALL_STRATEGIES = "All strategies";
+    private static final String ALL_STRATEGIES = "All asset classes";
+
+    /** Libellé de classe d'actifs d'une opportunité (repli sur la stratégie legacy). */
+    private static String assetClassOf(PipelineItem i) {
+        String l = com.atlan.mfo.model.enums.Classification.label(
+                com.atlan.mfo.model.enums.Classification.AssetClass.class, i.assetClass(),
+                com.atlan.mfo.model.enums.Classification.AssetClass::label);
+        return l != null ? l : i.strategy();
+    }
 
     private final BiConsumer<PipelineItem, DealStatus> onStatusChange;
     private final Consumer<PipelineItem> onOpen;
@@ -383,14 +390,12 @@ public final class PresentationView extends BorderPane {
                 ? "OPPORTUNITIES — STATUS DECISIONS" : "OPPORTUNITIES");
         title.getStyleClass().add("pres-section-title");
 
-        // Filtre par stratégie (catégorie)
+        // Filtre par classe d'actifs
         ComboBox<String> filter = new ComboBox<>();
         filter.getItems().add(ALL_STRATEGIES);
-        filter.getItems().addAll(
-                Category.BUYOUT_GROWTH_VC.label(),
-                Category.SECONDARIES.label(),
-                Category.PRIVATE_CREDIT.label(),
-                PipelineItem.DEALS_STRATEGY);
+        for (var ac : com.atlan.mfo.model.enums.Classification.AssetClass.values()) {
+            filter.getItems().add(ac.label());
+        }
         filter.setValue(ALL_STRATEGIES);
         filter.getStyleClass().add("pres-status-combo");
 
@@ -404,7 +409,7 @@ public final class PresentationView extends BorderPane {
             rows.getChildren().clear();
             String f = filter.getValue();
             for (PipelineItem i : sorted) {
-                if (ALL_STRATEGIES.equals(f) || i.strategy().equals(f)) {
+                if (ALL_STRATEGIES.equals(f) || assetClassOf(i).equals(f)) {
                     rows.getChildren().add(decisionRow(i));
                 }
             }
@@ -427,7 +432,7 @@ public final class PresentationView extends BorderPane {
         nameBox.setCursor(javafx.scene.Cursor.HAND);
         nameBox.setOnMouseClicked(e -> onOpen.accept(i));
 
-        Label strat = new Label(i.strategy());
+        Label strat = new Label(assetClassOf(i));
         strat.getStyleClass().add("pres-priority-strategy");
         strat.setMinWidth(180);
 
