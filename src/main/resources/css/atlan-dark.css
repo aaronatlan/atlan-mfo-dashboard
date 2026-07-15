@@ -961,7 +961,8 @@
 
 /* Carte du monde (exposition géographique) */
 .map-legend-bar {
-    -fx-background-color: linear-gradient(to right, #2E5A62, #6E6A44, #9A6E3A, #C0796A);
+    -fx-background-color: linear-gradient(to right,
+        rgba(110,106,68,0.55), rgba(154,110,58,0.78), #C0796A);
     -fx-background-radius: 3;
 }
 .map-legend-cap {

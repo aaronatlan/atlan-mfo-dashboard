@@ -84,11 +84,23 @@ public final class WorldHeatMap extends Pane {
         prefHeightProperty().bind(widthProperty().multiply(VH / VW));
     }
 
-    /** Interpolation sur la rampe pour {@code count} dans (0, max]. */
+    /**
+     * Couleur de chaleur pour {@code count} dans (0, max] : la <b>teinte</b> (pétrole →
+     * bronze → terracotta) <b>et l'intensité</b> (opacité) croissent avec le nombre. Un
+     * plancher garantit qu'un seul opportunité reste bien visible (pas confondu avec le
+     * fond « sans donnée »).
+     */
     private static Color heat(long count, long max) {
-        double t = max > 1 ? (count - 1.0) / (max - 1.0) : 1.0;
-        t = Math.max(0, Math.min(1, t));
-        double scaled = t * (RAMP.length - 1);
+        double frac = max > 1 ? (count - 1.0) / (max - 1.0) : 1.0;
+        frac = Math.max(0, Math.min(1, frac));
+        double t = 0.35 + 0.65 * frac;          // plancher : 1 opp = déjà bronze visible
+        double alpha = 0.55 + 0.45 * frac;      // intensité : plus d'opps = plus opaque
+        return rampAt(t).deriveColor(0, 1, 1, alpha);
+    }
+
+    /** Interpolation d'une position {@code t} in [0,1] le long de la rampe de teinte. */
+    private static Color rampAt(double t) {
+        double scaled = Math.max(0, Math.min(1, t)) * (RAMP.length - 1);
         int i = (int) Math.floor(scaled);
         if (i >= RAMP.length - 1) {
             return RAMP[RAMP.length - 1];
