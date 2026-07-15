@@ -22,12 +22,16 @@ The application must:
 
 The scope covers four families of opportunities, split across two data structures:
 
-| Section | Data structure | Scoring grid |
+| Asset class | Data structure | Scoring grid |
 |---|---|---|
-| Buyout, growth, VC | Fund | A |
-| Secondaries | Fund (same schema as Buyout/growth/VC) | A |
+| Private equity | Fund | A |
 | Private credit | Fund (same schema) | B |
+| Venture capital | Fund (same schema) | D |
+| Real assets | Fund (same schema) | E |
+| Secondaries | Fund (same schema) | F |
 | Co-investment and direct | Deal (distinct schema) | C |
+
+The access route (§4.3) decides the data structure: a primary-fund or secondary commitment uses the fund template, a co-investment or direct investment uses the deal template. The asset class decides the fund grid.
 
 ---
 
@@ -89,7 +93,7 @@ atlan-mfo-dashboard/
     │   │   │   ├── ScoringEngine.java      # core: computes ScoreBreakdown
     │   │   │   ├── ScoringProfile.java     # weights and targets of the 3 grids
     │   │   │   ├── GeographyMatcher.java
-    │   │   │   ├── TimelineScorer.java
+    │   │   │   ├── Urgency.java
     │   │   │   └── MetricParser.java       # parses "0.10x", "13.7%", etc.
     │   │   ├── auth/
     │   │   │   ├── AuthService.java
@@ -157,7 +161,7 @@ CREATE TABLE fund_investment (
     next_steps     TEXT,
     status         deal_status NOT NULL DEFAULT 'INITIAL_REVIEW',
     vs_benchmark   benchmark_status DEFAULT 'NA',
-    geography      TEXT,                    -- canonical token: 'US','EUROPE','UK','DACH','GLOBAL','OTHER' (see §13.1)
+    geography      TEXT,                    -- country name; normalized to 'US','EUROPE','UK','OTHER' for scoring (see §13.1)
     asset_class    TEXT,
     commitment     NUMERIC,                 -- capital planned by Atlan (KPI "capital under review", §6.1)
 
@@ -268,40 +272,59 @@ Rules:
 - The score is **capped at 95**: no opportunity ever appears "perfect."
 - The score is displayed rounded to an integer.
 
-### 5.2 Grid A — Buyout, growth, VC (and Secondaries)
+### 5.2 The sub-score curve
 
-| Component | Max points | Target | Sub-score formula |
-|---|---|---|---|
-| DPI | 30 | 0.8x | `MIN(DPI / 0.8, 1) * 30` |
-| IRR | 25 | 0.30 | `MIN(IRR / 0.3, 1) * 25` |
-| MOIC | 20 | 2.5x | `MIN(MOIC / 2.5, 1) * 20` |
-| Geography | 15 | US / EU / UK / DACH | match = 15, other = 8, not reported = excluded |
-| Timeline | 10 | proximity to final close | ≤30d = 10, ≤60d = 6, ≤90d = 3, otherwise 0 |
+Every ratio metric scores on a **diminishing-returns curve**:
 
-### 5.3 Grid B — Private credit
+```
+sub_score = points × (1 − e^( −k × value / target ))       k = −ln(1 − a)
+```
 
-| Component | Max points | Target | Sub-score formula |
-|---|---|---|---|
-| DPI | 30 | 0.7x | `MIN(DPI / 0.7, 1) * 30` |
-| IRR | 25 | 0.20 | `MIN(IRR / 0.2, 1) * 25` |
-| MOIC | 20 | 1.8x | `MIN(MOIC / 1.8, 1) * 20` |
-| Geography | 15 | US / EU / UK / DACH | match = 15, other = 8, not reported = excluded |
-| Timeline | 10 | proximity to final close | ≤30d = 10, ≤60d = 6, ≤90d = 3, otherwise 0 |
+where `a` = **target attainment** (default 0.80), the fraction of the points earned exactly at target.
+With `a = 0.80`, `k = ln 5` and the curve reads simply: `points × (1 − 5^(−value/target))`.
+
+- The **target is a reference point, not a cap**. Reaching it earns 80% of the points; beating it keeps earning, ever more slowly, and never exceeds `points`.
+- **Why not a hard cap.** The former `MIN(value/target, 1)` made a fund at target and a fund three times better *identical* (both maxed every component and landed on the 95 cap). For a tool whose job is to rank a pipeline, being unable to separate the top is a defect, not a simplification.
+- **Floor at 0** (§5.1): a reported but negative metric is worth 0 points and never subtracts.
+
+### 5.3 Fund grids — one per asset class
+
+Grid selection follows the **asset class** (§4.3). All fund grids share the same shape; only the targets differ, because return profiles differ.
+
+| Grid | Asset class | DPI (30 pts) | TVPI (20 pts) | IRR (25 pts) | Geography (15 pts) |
+|---|---|---|---|---|---|
+| A | Private equity | 0.8x | 2.5x | 0.30 | match = 15, other = 8 |
+| B | Private credit | 0.7x | 1.8x | 0.20 | match = 15, other = 8 |
+| D | Venture capital | 0.6x | 3.0x | 0.25 | match = 15, other = 8 |
+| E | Real assets | 0.9x | 1.8x | 0.12 | match = 15, other = 8 |
+| F | Secondaries | 0.9x | 1.7x | 0.18 | match = 15, other = 8 |
+
+Geography: preferred = US / Europe / UK; not reported = excluded.
+
+> **Grids D, E and F carry targets pending ratification by the investment committee.** Their starting values are anchored on published quartile conventions for each class; they are discussion starting points, not investment recommendations. They are editable in the Methodology screen and flagged as pending there.
+
+**DPI and TVPI are one dimension, split by maturity.** `TVPI` uses the reported TVPI, falling back to MOIC when TVPI is absent — the two measure the same thing, so scoring both would double-count realized value. The 50 points of the pair are shared according to the track record's maturity (§5.5):
+
+```
+dpi_points  = 30 × maturity
+tvpi_points = 50 − dpi_points
+```
+
+Below the maturity threshold the DPI component is **not displayed at all**, rather than shown at 0/0 as if it were a penalty.
 
 ### 5.4 Grid C — Co-investment and direct
 
-| Component | Max points | Target | Sub-score formula |
-|---|---|---|---|
-| Revenue CAGR | 25 | 0.40 | `MIN(CAGR / 0.4, 1) * 25` |
-| EBITDA Margin | 20 | 0.35 | `MIN(Margin / 0.35, 1) * 20` |
-| FCF Conversion | 10 | 0.90 | `MIN(Conv / 0.9, 1) * 10` |
-| Expected IRR | 25 | 0.30 | `MIN(IRR / 0.3, 1) * 25` |
-| Geography | 10 | US / EU / UK | match = 10, other = 5, not reported = excluded |
-| Timeline | 10 | proximity to deadline | ≤30d = 10, ≤60d = 6, ≤90d = 3, otherwise 0 |
+| Component | Max points | Target |
+|---|---|---|
+| Revenue CAGR | 25 | 0.40 |
+| EBITDA Margin | 20 | 0.35 |
+| FCF Conversion | 10 | 0.90 |
+| Expected IRR | 25 | 0.30 |
+| Geography | 10 | match = 10, other = 5, not reported = excluded |
 
-### 5.5 Vintages taken into account for fund scoring
+### 5.5 Vintages and maturity
 
-Fund scoring (grids A and B) takes into account **all vintages** of the fund (`fund_vintage` table). For each metric m ∈ {DPI, IRR, MOIC}, a combined value **weighted by recency** of the vintage is computed, before applying the grid's formula:
+Fund scoring takes into account **all vintages** of the fund (`fund_vintage` table). For each metric m ∈ {DPI, TVPI, IRR}, a combined value **weighted by recency** is computed before applying the curve:
 
 ```
 age_v      = most_recent_vintage_year − vintage_year        (0 for the most recent)
@@ -309,15 +332,18 @@ weight_v   = 0.5 ^ (age_v / H)                                (H = half-life, de
 blended_m  = Σ(weight_v × m_v) / Σ(weight_v)   over vintages v where m_v is reported
 ```
 
-Principle:
+- **Recency**: the most recent vintage carries weight 1; a vintage H years older carries half the weight. `H` is centralized in `ScoringProfile` (adjustable).
+- **Intra-fund reference**: age is measured relative to the fund's own most recent vintage, so weights do not drift over time as long as no vintage is added.
+- **Missing data** (§5.1): a vintage not reporting m is excluded from `blended_m`; if **no** vintage reports m, the metric is excluded from `Earned`/`Possible`.
 
-- **Recency**: the most recent vintage carries weight 1; a vintage that is H years older carries half the weight, and so on. The half-life `H` is centralized in `ScoringProfile` (adjustable).
-- **Intra-fund reference**: age is measured relative to the fund's own most recent vintage (not the calendar year), so weights do not drift over time as long as no vintage is added.
-- **Missing data** (consistent with §5.1): a vintage whose metric m is not reported is excluded from the `blended_m` calculation (its weight and value are ignored); if **no** vintage reports m, the metric is excluded from `Earned`/`Possible`.
+**Maturity** governs the DPI/TVPI split. It is computed from the vintages' **recency-weighted mean age** — the same weighting as `blended_m`, so both speak about the same track record:
 
-The `sub_dpi`, `sub_irr`, `sub_moic` columns store the final sub-score (computed on the combined value). In grids A and B (§5.2, §5.3), "DPI / IRR / MOIC" refer to these combined values.
+```
+age       = Σ(weight_v × (reference_year − vintage_year)) / Σ(weight_v)
+maturity  = CLAMP( (age − young) / (mature − young), 0, 1 )     young = 3, mature = 8 (years)
+```
 
-> **Deliberate trade-off**: recency weighting gives weight to young vintages, whose DPI is structurally low (J-curve effect). This is an intentional choice (to reflect the GP's current strategy); increasing the half-life `H` dampens the effect if needed.
+> **Why.** A recent-vintage fund has mechanically not distributed yet (J-curve): its DPI measures its *age*, not its quality. Judging it against a mature fund's DPI target compares different things. Below `young`, the judgment rests entirely on total value; above `mature`, entirely on what was actually returned; in between it slides continuously. This replaces the previous "deliberate trade-off", which knowingly penalized young vintages.
 
 ### 5.6 Tiers and governance
 
@@ -331,54 +357,56 @@ Governance reminder to display in the app (taken from the methodology): **the sc
 
 ### 5.7 Interpretation decisions — confirmed
 
-- **Geography / timeline not provided**: treated as "not reported" and therefore **excluded** from the denominator (consistent with the "missing data excluded" principle), rather than scored as 0. Interpretation **confirmed**. Geography is additionally normalized to a canonical vocabulary to avoid silent non-matches (see §13.1).
-- **Timeline and the passage of time**: the timeline sub-score depends on today's date relative to `final_close` / `deal_deadline`. The displayed score is therefore **always recalculated on open** (it can change from one day to the next without the record being edited). The `score_snapshot` in the database is just a snapshot updated on each save, used for fast sorting in lists.
+- **Geography not provided**: treated as "not reported" and therefore **excluded** from the denominator (consistent with the "missing data excluded" principle), rather than scored as 0. Interpretation **confirmed**. Geography is additionally normalized to a canonical vocabulary to avoid silent non-matches (see §13.1).
+- **The deadline is not scored.** `final_close` / `deal_deadline` proximity is a **calendar fact, not a quality measure**. Scoring it made the same record lose points from one day to the next with no new information — which made `score_snapshot` and any historical comparison unreliable — and inflated the tier of a mediocre but urgent file. The score is now **stationary**: it moves only when the data moves. The deadline is surfaced as an **urgency** attribute next to the score (`Urgency`, shown on the detail card), never inside it.
 - **Text entries** (e.g. `20-40x`, `20-30%`): excluded from automatic scoring. Input must be decimal (period as separator). `peers_mult` remains a purely informational text field.
 
 ### 5.8 Calculation example (grid A, single vintage)
 
-Fund with a **single vintage** (combined values = that vintage's values): DPI = 0.65 / IRR = 0.24 / MOIC = 2.1 / geography = US (match) / no final close provided.
+Fund with a **single vintage**, 2021, scored as of 2026: DPI = 0.65 / IRR = 0.24 / MOIC = 2.1 (no TVPI reported) / geography = US (match).
 
 ```
-sub_dpi  = MIN(0.65/0.8, 1) * 30 = 24.4
-sub_irr  = MIN(0.24/0.3, 1) * 25 = 20.0
-sub_moic = MIN(2.1/2.5, 1) * 20  = 16.8
-sub_geo  = 15  (match)
-sub_time = excluded (no date)
+age      = 5 → maturity = (5 − 3) / 5 = 0.4
+           dpi_points = 30 × 0.4 = 12 ; tvpi_points = 50 − 12 = 38
 
-Earned   = 24.4 + 20.0 + 16.8 + 15 = 76.2
-Possible = 30 + 25 + 20 + 15 = 90
-Score    = MIN( 76.2 / MAX(90, 80) * 100, 95 ) = MIN(84.7, 95) = 85  → Strong tier
+sub_dpi  = (1 − 5^(−0.65/0.8)) × 12 =  8.75
+sub_tvpi = (1 − 5^(−2.1/2.5))  × 38 = 28.17     (TVPI absent → MOIC used)
+sub_irr  = (1 − 5^(−0.24/0.3)) × 25 = 18.10
+sub_geo  = 15  (match)
+
+Earned   = 8.75 + 28.17 + 18.10 + 15 = 70.02
+Possible = 12 + 38 + 25 + 15 = 90
+Score    = MIN( 70.02 / MAX(90, 80) * 100, 95 ) = 77.8 → 78  → Strong tier
 ```
 
 ### 5.9 Calculation example (grid A, two vintages, recency weighting)
 
-Fund with two vintages (H = 4 years), geography = US (match), no final close.
+Fund with two vintages (H = 4 years), scored as of 2026, geography = US (match).
 
-| Vintage | Age | Weight `0.5^(age/4)` | DPI | IRR | MOIC |
+| Vintage | Age vs newest | Weight `0.5^(age/4)` | DPI | IRR | MOIC |
 |---|---|---|---|---|---|
 | 2022 (recent) | 0 | 1.000 | 0.30 | 0.26 | 1.9 |
 | 2018 | 4 | 0.500 | 1.10 | 0.20 | 2.2 |
 
-Combined values (Σ weights = 1.500):
-
 ```
 blended_dpi  = (1.000×0.30 + 0.500×1.10) / 1.500 = 0.567
 blended_irr  = (1.000×0.26 + 0.500×0.20) / 1.500 = 0.240
-blended_moic = (1.000×1.9  + 0.500×2.2 ) / 1.500 = 2.00
+blended_tvpi = (1.000×1.9  + 0.500×2.2 ) / 1.500 = 2.00
 
-sub_dpi  = MIN(0.567/0.8, 1) * 30 = 21.3
-sub_irr  = MIN(0.240/0.3, 1) * 25 = 20.0
-sub_moic = MIN(2.00/2.5, 1) * 20  = 16.0
+age       = (1.000×4 + 0.500×8) / 1.500 = 5.33
+maturity  = (5.33 − 3) / 5 = 0.467 → dpi_points = 14.0 ; tvpi_points = 36.0
+
+sub_dpi  = (1 − 5^(−0.567/0.8)) × 14 =  9.52
+sub_tvpi = (1 − 5^(−2.00/2.5))  × 36 = 26.07
+sub_irr  = (1 − 5^(−0.240/0.3)) × 25 = 18.10
 sub_geo  = 15  (match)
-sub_time = excluded (no date)
 
-Earned   = 21.3 + 20.0 + 16.0 + 15 = 72.3
-Possible = 30 + 25 + 20 + 15 = 90
-Score    = MIN( 72.3 / MAX(90, 80) * 100, 95 ) = MIN(80.3, 95) = 80  → Strong tier
+Earned   = 9.52 + 26.07 + 18.10 + 15 = 68.69
+Possible = 14 + 36 + 25 + 15 = 90
+Score    = MIN( 68.69 / MAX(90, 80) * 100, 95 ) = 76.3 → 76  → Strong tier
 ```
 
-Both examples (§5.8 and §5.9) must appear as-is in the `ScoringEngine` unit tests.
+Both examples (§5.8 and §5.9) must appear as-is in the `ScoringEngine` unit tests, with the expected values **computed by hand from this specification** — never copied from the engine's output.
 
 ---
 

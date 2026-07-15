@@ -6,6 +6,7 @@ import com.atlan.mfo.model.FundVintage;
 import com.atlan.mfo.model.PipelineItem;
 import com.atlan.mfo.model.ScoreBreakdown;
 import com.atlan.mfo.model.ScoreComponent;
+import com.atlan.mfo.scoring.Urgency;
 import com.atlan.mfo.ui.util.Formatters;
 import javafx.geometry.HPos;
 import javafx.geometry.Pos;
@@ -69,6 +70,7 @@ public final class DetailView extends BorderPane {
         GridPane g4 = grid();
         addRow(g4, "First close", Formatters.date(f.firstClose()));
         addRow(g4, "Final close", Formatters.date(f.finalClose()));
+        addRow(g4, "Urgency", urgency(f.finalClose()));
 
         GridPane layout = twoColumns();
         layout.add(card("Score breakdown", scoreBars(breakdown)), 0, 0);
@@ -124,6 +126,7 @@ public final class DetailView extends BorderPane {
 
         GridPane g4 = grid();
         addRow(g4, "Deadline", Formatters.date(d.dealDeadline()));
+        addRow(g4, "Urgency", urgency(d.dealDeadline()));
         addRow(g4, "Target exit", Formatters.date(d.targetExit()));
 
         GridPane layout = twoColumns();
@@ -141,6 +144,15 @@ public final class DetailView extends BorderPane {
 
         v.setCenter(scroll(layout));
         return v;
+    }
+
+    /**
+     * Urgence : volontairement hors du score (une échéance n'est pas une mesure de
+     * qualité), donc affichée ici pour rester sous les yeux du comité.
+     */
+    private static String urgency(java.time.LocalDate deadline) {
+        String label = Urgency.label(deadline, java.time.LocalDate.now());
+        return label != null ? label : "—";
     }
 
     /* ---- En-tête ---- */

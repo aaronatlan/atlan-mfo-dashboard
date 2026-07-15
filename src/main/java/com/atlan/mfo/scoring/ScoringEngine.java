@@ -11,12 +11,15 @@ import com.atlan.mfo.model.enums.Tier;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.OptionalDouble;
 import java.util.function.Function;
 
 /**
  * Moteur de scoring — module pur (aucune dépendance UI ni base). Calcule un
  * {@link ScoreBreakdown} pour un fonds ou un deal selon la méthodologie §5.
+ *
+ * <p>Le score mesure <b>la qualité seule</b> : il ne bouge que si les données bougent.
+ * La proximité d'échéance est une donnée d'ordonnancement, pas de qualité — elle est
+ * affichée à part (voir {@link Urgency}) et n'entre pas dans le calcul.
  */
 public final class ScoringEngine {
 
@@ -30,27 +33,44 @@ public final class ScoringEngine {
         this.profile = profile;
     }
 
-    /* ---- Fonds (grilles A / B) ---- */
+    /* ---- Fonds (grilles A / B / D / E / F) ---- */
 
     public ScoreBreakdown score(FundInvestment fund) {
         return score(fund, LocalDate.now());
     }
 
     public ScoreBreakdown score(FundInvestment fund, LocalDate reference) {
-        // Grille pilotée par la classe d'actifs (private credit → grille B) ; repli sur la
-        // catégorie legacy tant qu'un fonds n'est pas classé (§5, structure Patrimium).
-        boolean privateCredit = "PRIVATE_CREDIT".equals(fund.assetClass())
-                || (fund.assetClass() == null && fund.category() == Category.PRIVATE_CREDIT);
-        ScoringProfile.FundGrid g = profile.fundGrid(privateCredit);
+        ScoringProfile.FundGrid g = profile.fundGrid(assetClassOf(fund));
+        double k = profile.curveK();
         List<ScoreComponent> comps = new ArrayList<>();
 
-        comps.add(ratio("DPI", g.dpi(), blended(fund.vintages(), FundVintage::dpi)));
-        comps.add(ratio("IRR", g.irr(), blended(fund.vintages(), FundVintage::irr)));
-        comps.add(ratio("MOIC", g.moic(), blended(fund.vintages(), FundVintage::moic)));
+        // Partage des points entre capital distribué (DPI) et valeur totale (TVPI/MOIC)
+        // selon la maturité : la somme reste constante, seul le curseur bouge.
+        double mat = maturity(fund.vintages(), reference);
+        double dpiPoints = g.dpi().points() * mat;
+        double tvPoints = g.multiplePoints() - dpiPoints;
+
+        Double dpi = blended(fund.vintages(), FundVintage::dpi);
+        Double tv = blended(fund.vintages(), v -> v.tvpi() != null ? v.tvpi() : v.moic());
+
+        // Sous le seuil de maturité, le DPI ne pèse rien : on ne l'affiche pas plutôt que
+        // de montrer un composant à 0/0 qui laisserait croire à une pénalité.
+        if (dpiPoints >= 0.05) {
+            comps.add(ratio("DPI", new ScoringProfile.Ratio(dpiPoints, g.dpi().target()), dpi, k));
+        }
+        comps.add(ratio("TVPI", new ScoringProfile.Ratio(tvPoints, g.tv().target()), tv, k));
+        comps.add(ratio("IRR", g.irr(), blended(fund.vintages(), FundVintage::irr), k));
         comps.add(geo("Geography", g.geo(), fund.geography()));
-        comps.add(timeline("Timeline", g.timelinePoints(), fund.finalClose(), reference));
 
         return assemble(comps);
+    }
+
+    /** Classe d'actifs pilotant la grille ; repli legacy tant qu'un fonds n'est pas classé. */
+    private static String assetClassOf(FundInvestment fund) {
+        if (fund.assetClass() != null) {
+            return fund.assetClass();
+        }
+        return fund.category() == Category.PRIVATE_CREDIT ? "PRIVATE_CREDIT" : null;
     }
 
     /* ---- Deals directs (grille C) ---- */
@@ -61,25 +81,25 @@ public final class ScoringEngine {
 
     public ScoreBreakdown score(DirectDeal deal, LocalDate reference) {
         ScoringProfile.DealGrid g = profile.gridC;
+        double k = profile.curveK();
         List<ScoreComponent> comps = new ArrayList<>();
 
-        comps.add(ratio("Revenue CAGR", g.cagr(), deal.cagrPct()));
-        comps.add(ratio("EBITDA Margin", g.margin(), deal.ebitdaMgnPct()));
-        comps.add(ratio("FCF Conversion", g.fcf(), deal.fcfConvPct()));
-        comps.add(ratio("Expected IRR", g.irr(), deal.expIrrPct()));
+        comps.add(ratio("Revenue CAGR", g.cagr(), deal.cagrPct(), k));
+        comps.add(ratio("EBITDA Margin", g.margin(), deal.ebitdaMgnPct(), k));
+        comps.add(ratio("FCF Conversion", g.fcf(), deal.fcfConvPct(), k));
+        comps.add(ratio("Expected IRR", g.irr(), deal.expIrrPct(), k));
         comps.add(geo("Geography", g.geo(), deal.geography()));
-        comps.add(timeline("Timeline", g.timelinePoints(), deal.dealDeadline(), reference));
 
         return assemble(comps);
     }
 
     /* ---- Composants ---- */
 
-    private ScoreComponent ratio(String label, ScoringProfile.Ratio spec, Double value) {
+    private ScoreComponent ratio(String label, ScoringProfile.Ratio spec, Double value, double k) {
         if (value == null) {
             return ScoreComponent.excluded(label, spec.points());
         }
-        return ScoreComponent.scored(label, spec.points(), spec.subScore(value));
+        return ScoreComponent.scored(label, spec.points(), spec.subScore(value, k));
     }
 
     private ScoreComponent geo(String label, ScoringProfile.Geo spec, String rawGeography) {
@@ -92,13 +112,38 @@ public final class ScoringEngine {
         return ScoreComponent.scored(label, spec.matchPoints(), pts);
     }
 
-    private ScoreComponent timeline(String label, double points, LocalDate target, LocalDate reference) {
-        OptionalDouble frac = TimelineScorer.fraction(
-                target, reference, profile.timelineDays, profile.timelineFraction);
-        if (frac.isEmpty()) {
-            return ScoreComponent.excluded(label, points);
+    /* ---- Maturité du track record (§5.5) ---- */
+
+    /**
+     * Maturité dans [0..1] : 0 = track record trop jeune pour que le DPI ait un sens
+     * (courbe en J — un fonds de millésime récent n'a mécaniquement pas distribué),
+     * 1 = assez mûr pour être jugé dessus.
+     *
+     * <p>L'âge est la moyenne des millésimes <b>pondérée par récence</b>, avec la même
+     * pondération que {@link #blended} : les deux mesures parlent ainsi du même track
+     * record, et un fonds au track record ancien n'est pas rajeuni par un millésime
+     * récent isolé.
+     */
+    private double maturity(List<FundVintage> vintages, LocalDate reference) {
+        if (vintages == null || vintages.isEmpty()) {
+            return 1.0;   // sans millésime, DPI et TVPI sont exclus de toute façon
         }
-        return ScoreComponent.scored(label, points, frac.getAsDouble() * points);
+        int newest = vintages.stream().mapToInt(FundVintage::vintageYear).max().orElseThrow();
+        double num = 0, den = 0;
+        for (FundVintage v : vintages) {
+            double weight = Math.pow(0.5, (newest - v.vintageYear()) / profile.vintageHalfLife);
+            num += weight * (reference.getYear() - v.vintageYear());
+            den += weight;
+        }
+        if (den == 0) {
+            return 1.0;
+        }
+        double age = num / den;
+        double span = profile.maturityMature - profile.maturityYoung;
+        if (span <= 0) {
+            return age >= profile.maturityMature ? 1.0 : 0.0;
+        }
+        return Math.max(0.0, Math.min((age - profile.maturityYoung) / span, 1.0));
     }
 
     /* ---- Agrégation multi-millésimes, pondérée par récence (§5.5) ---- */

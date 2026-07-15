@@ -42,8 +42,15 @@ public final class MethodologyView extends ScrollPane {
 
         body.getChildren().addAll(
                 title("Scoring methodology"),
-                fundGridCard("Grid A — Fund commitments (PE, VC, Real assets, Secondaries)", "gridA"),
+                note("The score measures quality only — it moves when the data moves, never with the "
+                        + "calendar. Deadlines are shown as urgency on each opportunity, not scored here. "
+                        + "Targets are reference points, not caps: reaching one earns the target "
+                        + "attainment below, and beating it keeps earning, with diminishing returns."),
+                fundGridCard("Grid A — Private equity funds", "gridA"),
                 fundGridCard("Grid B — Private credit funds", "gridB"),
+                fundGridCard("Grid D — Venture capital funds  ·  targets pending IC ratification", "gridD"),
+                fundGridCard("Grid E — Real assets funds  ·  targets pending IC ratification", "gridE"),
+                fundGridCard("Grid F — Secondaries funds  ·  targets pending IC ratification", "gridF"),
                 dealGridCard(),
                 globalCard(),
                 actions());
@@ -56,12 +63,15 @@ public final class MethodologyView extends ScrollPane {
     private VBox fundGridCard(String heading, String p) {
         GridPane g = table();
         int r = header(g);
-        r = ratioRow(g, r, "DPI", p + ".dpi");
+        r = ratioRow(g, r, "DPI — capital returned", p + ".dpi");
+        r = ratioRow(g, r, "TVPI — total value", p + ".tv");
         r = ratioRow(g, r, "IRR", p + ".irr");
-        r = ratioRow(g, r, "MOIC", p + ".moic");
-        r = geoRow(g, r, p + ".geo");
-        timelineRow(g, r, p + ".timeline");
-        return card(heading, g);
+        geoRow(g, r, p + ".geo");
+        VBox box = card(heading, g);
+        box.getChildren().add(hint("DPI and TVPI points shown at full maturity. A young track record "
+                + "has not distributed yet, so its DPI points shift onto TVPI — the pair always "
+                + "totals the same weight."));
+        return box;
     }
 
     private VBox dealGridCard() {
@@ -71,8 +81,7 @@ public final class MethodologyView extends ScrollPane {
         r = ratioRow(g, r, "EBITDA Margin", "gridC.margin");
         r = ratioRow(g, r, "FCF Conversion", "gridC.fcf");
         r = ratioRow(g, r, "Expected IRR", "gridC.irr");
-        r = geoRow(g, r, "gridC.geo");
-        timelineRow(g, r, "gridC.timeline");
+        geoRow(g, r, "gridC.geo");
         return card("Grid C — Direct & co-investment deals", g);
     }
 
@@ -82,7 +91,10 @@ public final class MethodologyView extends ScrollPane {
         g.setHgap(18);
         g.setVgap(10);
         int r = 0;
+        r = globalRow(g, r, "Target attainment (0–1)", "global.targetAttainment");
         r = globalRow(g, r, "Vintage half-life (years)", "global.vintageHalfLife");
+        r = globalRow(g, r, "DPI counts from (years)", "global.maturityYoung");
+        r = globalRow(g, r, "DPI fully counts at (years)", "global.maturityMature");
         r = globalRow(g, r, "Denominator floor", "global.possibleFloor");
         globalRow(g, r, "Score cap", "global.scoreCap");
         return card("Global parameters", g);
@@ -111,12 +123,6 @@ public final class MethodologyView extends ScrollPane {
         g.add(cell("Geography (match · other)"), 0, r);
         g.add(field(base + ".points"), 1, r);
         g.add(field(base + ".other"), 2, r);
-        return r + 1;
-    }
-
-    private int timelineRow(GridPane g, int r, String base) {
-        g.add(cell("Timeline (fixed ≤30/60/90 days)"), 0, r);
-        g.add(field(base + ".points"), 1, r);
         return r + 1;
     }
 
@@ -206,6 +212,24 @@ public final class MethodologyView extends ScrollPane {
     private static Label title(String t) {
         Label l = new Label(t);
         l.getStyleClass().add("detail-title");
+        return l;
+    }
+
+    /** Chapeau explicatif en tête de page. */
+    private static Label note(String t) {
+        Label l = new Label(t);
+        l.getStyleClass().add("detail-key");
+        l.setWrapText(true);
+        l.setMaxWidth(760);
+        return l;
+    }
+
+    /** Précision en pied de carte. */
+    private static Label hint(String t) {
+        Label l = new Label(t);
+        l.getStyleClass().add("detail-key");
+        l.setWrapText(true);
+        l.setMaxWidth(700);
         return l;
     }
 
