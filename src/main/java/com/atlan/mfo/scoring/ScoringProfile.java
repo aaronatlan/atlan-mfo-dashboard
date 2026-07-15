@@ -58,9 +58,9 @@ public final class ScoringProfile {
         this.gridC = gridC;
     }
 
-    /** Grille appliquée à un fonds selon sa catégorie. */
-    public FundGrid fundGrid(Category category) {
-        return category == Category.PRIVATE_CREDIT ? gridB : gridA;
+    /** Grille appliquée à un fonds : B pour le private credit, A sinon (§5). */
+    public FundGrid fundGrid(boolean privateCredit) {
+        return privateCredit ? gridB : gridA;
     }
 
     /** Configuration par défaut (méthodologie §5). */

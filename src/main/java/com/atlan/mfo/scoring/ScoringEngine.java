@@ -5,6 +5,7 @@ import com.atlan.mfo.model.FundInvestment;
 import com.atlan.mfo.model.FundVintage;
 import com.atlan.mfo.model.ScoreBreakdown;
 import com.atlan.mfo.model.ScoreComponent;
+import com.atlan.mfo.model.enums.Category;
 import com.atlan.mfo.model.enums.Tier;
 
 import java.time.LocalDate;
@@ -36,7 +37,11 @@ public final class ScoringEngine {
     }
 
     public ScoreBreakdown score(FundInvestment fund, LocalDate reference) {
-        ScoringProfile.FundGrid g = profile.fundGrid(fund.category());
+        // Grille pilotée par la classe d'actifs (private credit → grille B) ; repli sur la
+        // catégorie legacy tant qu'un fonds n'est pas classé (§5, structure Patrimium).
+        boolean privateCredit = "PRIVATE_CREDIT".equals(fund.assetClass())
+                || (fund.assetClass() == null && fund.category() == Category.PRIVATE_CREDIT);
+        ScoringProfile.FundGrid g = profile.fundGrid(privateCredit);
         List<ScoreComponent> comps = new ArrayList<>();
 
         comps.add(ratio("DPI", g.dpi(), blended(fund.vintages(), FundVintage::dpi)));

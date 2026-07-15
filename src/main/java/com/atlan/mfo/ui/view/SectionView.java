@@ -48,4 +48,32 @@ public final class SectionView extends VBox {
 
         getChildren().addAll(bar, table);
     }
+
+    /**
+     * Variante « section par classe d'actifs » : liste mixte fonds + deals, avec deux
+     * boutons de création (le template — fonds vs direct — dépend de la route d'accès).
+     */
+    public SectionView(String title, List<PipelineItem> items, Consumer<PipelineItem> onOpen,
+                       Runnable onNewFund, Runnable onNewDeal) {
+        getStyleClass().add("view-root");
+        setSpacing(22);
+
+        Label header = new Label(title);
+        header.getStyleClass().add("view-title");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        Button addFund = new Button("+ Fund");
+        addFund.getStyleClass().add("ghost-button");
+        addFund.setOnAction(e -> onNewFund.run());
+        Button addDeal = new Button("+ Deal");
+        addDeal.getStyleClass().add("primary-button");
+        addDeal.setOnAction(e -> onNewDeal.run());
+        HBox bar = new HBox(12, header, spacer, addFund, addDeal);
+        bar.setAlignment(Pos.CENTER_LEFT);
+
+        OpportunityTable table = new OpportunityTable(items, onOpen, true);
+        VBox.setVgrow(table, Priority.ALWAYS);
+
+        getChildren().addAll(bar, table);
+    }
 }

@@ -63,6 +63,13 @@ public final class FundFormView extends BorderPane {
 
     public FundFormView(FundInvestment existing, Category defaultCategory, ScoringEngine engine,
                         BiConsumer<FundInvestment, ScoreBreakdown> onSave, Runnable onCancel) {
+        this(existing, defaultCategory, null, engine, onSave, onCancel);
+    }
+
+    public FundFormView(FundInvestment existing, Category defaultCategory,
+                        com.atlan.mfo.model.enums.Classification.AssetClass presetAssetClass,
+                        ScoringEngine engine,
+                        BiConsumer<FundInvestment, ScoreBreakdown> onSave, Runnable onCancel) {
         this.existing = existing;
         this.engine = engine;
         this.onSave = onSave;
@@ -71,6 +78,9 @@ public final class FundFormView extends BorderPane {
         setTop(header(existing == null ? "New fund" : "Edit — " + existing.name(), onCancel));
         setCenter(buildBody());
         populate(defaultCategory);
+        if (existing == null) {
+            classification.preselect(presetAssetClass);
+        }
         wireLiveScoring();
         recompute();
     }

@@ -161,14 +161,13 @@ public class MainShellController {
         addSectionLabel("NAVIGATION");
         addNav("Pipeline summary",
                 () -> new PipelineView(allItems, this::openDetail), true);
-        addNav(Category.BUYOUT_GROWTH_VC.label(),
-                () -> section(Category.BUYOUT_GROWTH_VC), false);
-        addNav(Category.SECONDARIES.label(),
-                () -> section(Category.SECONDARIES), false);
-        addNav(Category.PRIVATE_CREDIT.label(),
-                () -> section(Category.PRIVATE_CREDIT), false);
-        addNav(PipelineItem.DEALS_STRATEGY,
-                this::dealsSection, false);
+        // Une section par classe d'actifs (fonds + deals mélangés).
+        for (com.atlan.mfo.model.enums.Classification.AssetClass ac
+                : com.atlan.mfo.model.enums.Classification.AssetClass.values()) {
+            addNav(ac.label(), () -> section(ac), false);
+        }
+
+        addSectionLabel("VIEWS");
         addNav("Decisions", this::decisionsSection, false);
         addNav("Compare", () -> new ComparisonView(allItems, this::scoreOf), false);
 
@@ -309,18 +308,22 @@ public class MainShellController {
         sidebar.getChildren().add(btn);
     }
 
-    private Node section(Category category) {
+    /** Section d'une classe d'actifs : fonds + deals de cette classe (§ structure Patrimium). */
+    private Node section(com.atlan.mfo.model.enums.Classification.AssetClass ac) {
         List<PipelineItem> items = allItems.stream()
-                .filter(i -> i.category() == category)
+                .filter(i -> ac.name().equals(i.assetClass()))
                 .toList();
-        return new SectionView(category.label(), items, this::openDetail, () -> newFund(category));
+        return new SectionView(ac.label(), items, this::openDetail,
+                () -> newFund(categoryFor(ac), ac), () -> newDeal(ac));
     }
 
-    private Node dealsSection() {
-        List<PipelineItem> items = allItems.stream()
-                .filter(i -> i.type() == PipelineItem.Type.DEAL)
-                .toList();
-        return new SectionView(PipelineItem.DEALS_STRATEGY, items, this::openDetail, this::newDeal);
+    /** Catégorie legacy par défaut d'un nouveau fonds selon sa classe (grille B pour le credit). */
+    private static Category categoryFor(com.atlan.mfo.model.enums.Classification.AssetClass ac) {
+        return switch (ac) {
+            case PRIVATE_CREDIT -> Category.PRIVATE_CREDIT;
+            case SECONDARIES -> Category.SECONDARIES;
+            default -> Category.BUYOUT_GROWTH_VC;   // PE, VC, Real assets
+        };
     }
 
     /** Journal des décisions : opportunités approuvées ou déclinées, conservées (§6.1). */
@@ -414,16 +417,16 @@ public class MainShellController {
 
     /* ---- Saisie / édition (Phase 3) ---- */
 
-    private void newFund(Category category) {
-        setContent(new FundFormView(null, category, engine, this::saveFund, this::backToList));
+    private void newFund(Category category, com.atlan.mfo.model.enums.Classification.AssetClass preset) {
+        setContent(new FundFormView(null, category, preset, engine, this::saveFund, this::backToList));
     }
 
     private void editFund(FundInvestment fund) {
         setContent(new FundFormView(fund, fund.category(), engine, this::saveFund, this::backToList));
     }
 
-    private void newDeal() {
-        setContent(new DealFormView(null, engine, this::saveDeal, this::backToList));
+    private void newDeal(com.atlan.mfo.model.enums.Classification.AssetClass preset) {
+        setContent(new DealFormView(null, preset, engine, this::saveDeal, this::backToList));
     }
 
     private void editDeal(DirectDeal deal) {

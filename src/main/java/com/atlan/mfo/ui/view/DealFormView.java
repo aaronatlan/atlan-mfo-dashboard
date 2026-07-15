@@ -77,6 +77,13 @@ public final class DealFormView extends BorderPane {
 
     public DealFormView(DirectDeal existing, ScoringEngine engine,
                         BiConsumer<DirectDeal, ScoreBreakdown> onSave, Runnable onCancel) {
+        this(existing, null, engine, onSave, onCancel);
+    }
+
+    public DealFormView(DirectDeal existing,
+                        com.atlan.mfo.model.enums.Classification.AssetClass presetAssetClass,
+                        ScoringEngine engine,
+                        BiConsumer<DirectDeal, ScoreBreakdown> onSave, Runnable onCancel) {
         this.existing = existing;
         this.engine = engine;
         this.onSave = onSave;
@@ -85,6 +92,9 @@ public final class DealFormView extends BorderPane {
         setTop(header(existing == null ? "New deal" : "Edit — " + existing.name(), onCancel));
         setCenter(buildBody());
         populate();
+        if (existing == null) {
+            classification.preselect(presetAssetClass);
+        }
         wireLiveScoring();
         recompute();
     }

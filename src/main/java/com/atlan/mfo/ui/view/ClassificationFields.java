@@ -162,4 +162,11 @@ public final class ClassificationFields extends VBox {
             e.getValue().setSelected(on.contains(e.getKey()));
         }
     }
+
+    /** Pré-sélectionne une classe d'actifs (création depuis une section), si vide. */
+    public void preselect(AssetClass ac) {
+        if (ac != null && assetClassCombo.getValue() == null) {
+            assetClassCombo.setValue(ac);
+        }
+    }
 }
