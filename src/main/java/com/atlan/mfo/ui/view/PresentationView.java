@@ -432,9 +432,19 @@ public final class PresentationView extends BorderPane {
         nameBox.setCursor(javafx.scene.Cursor.HAND);
         nameBox.setOnMouseClicked(e -> onOpen.accept(i));
 
+        // Classe d'actifs + ligne secondaire « sous-stratégie · secteur » (si renseignés).
         Label strat = new Label(assetClassOf(i));
         strat.getStyleClass().add("pres-priority-strategy");
-        strat.setMinWidth(180);
+        VBox stratBox = new VBox(3, strat);
+        stratBox.setMinWidth(200);
+        String detail = java.util.stream.Stream.of(i.subStrategy(), i.industry())
+                .filter(s -> s != null && !s.isBlank())
+                .collect(java.util.stream.Collectors.joining("  ·  "));
+        if (!detail.isEmpty()) {
+            Label d = new Label(detail);
+            d.getStyleClass().add("pres-priority-metrics");
+            stratBox.getChildren().add(d);
+        }
 
         Node statusNode;
         if (onStatusChange != null) {
@@ -460,7 +470,7 @@ public final class PresentationView extends BorderPane {
         Label score = new Label(Formatters.score(i.score()));
         score.getStyleClass().add("pres-priority-score");
 
-        HBox row = new HBox(16, nameBox, strat, spacer, statusNode, score, OpportunityTable.tierNode(i.tier()));
+        HBox row = new HBox(16, nameBox, stratBox, spacer, statusNode, score, OpportunityTable.tierNode(i.tier()));
         row.setAlignment(Pos.CENTER_LEFT);
         row.getStyleClass().add("pres-priority-row");
         return row;

@@ -33,7 +33,7 @@ public final class BackupScheduler {
     // fund_investment avant fund_vintage.
     private static final List<String> TABLES = List.of(
             "app_user", "fund_investment", "fund_vintage", "direct_deal",
-            "scoring_param", "fx_rate", "opportunity_outcome");
+            "scoring_param", "fx_rate");
 
     private static final long INTERVAL_HOURS = 4;   // < fenêtre PITR Neon (6h) : chevauchement de sécurité
     private static final int KEEP = 60;             // ~10 jours d'historique au rythme ci-dessus

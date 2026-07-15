@@ -185,7 +185,7 @@ SQL backup (`BackupScheduler`, self-contained — no `pg_dump` required) to
 `~/.atlan-mfo/backups/` on every machine it runs on: immediately at startup,
 then every 4 hours while the app stays open. It dumps every data table
 (`app_user`, `fund_investment`, `fund_vintage`, `direct_deal`,
-`scoring_param`, `fx_rate`, `opportunity_outcome`) as `INSERT` statements
+`scoring_param`, `fx_rate`) as `INSERT` statements
 inside a single transaction, and keeps only the 60 most recent files
 (~10 days of history at that interval), deleting older ones automatically.
 A failed backup (disk full, network hiccup) is logged to stderr and never
@@ -237,9 +237,6 @@ restore, run `psql <connection> -f pipeline-backup-<timestamp>.sql`. This is
 self-contained (no `pg_dump` required). For a full database backup (including
 accounts), a `pg_dump` (see §6) remains the reference.
 
-> The reset **does not** touch the `opportunity_outcome` table (predicted vs.
-> realized calibration): that dataset is meant to accumulate across cycles.
-
 ---
 
 ## 8. Updating the application
@@ -253,9 +250,10 @@ accounts), a `pg_dump` (see §6) remains the reference.
    ```bash
    psql <connection as owner> -f src/main/resources/db/schema.sql
    ```
-   Recent additions requiring this: `scoring_param` (editable methodology) and
-   `opportunity_outcome` (predicted vs. realized calibration). Until applied,
-   those features degrade gracefully (defaults / empty view) instead of failing.
+   Recent additions requiring this: `scoring_param` (editable methodology),
+   `fx_rate` (exchange rates) and the classification columns (asset class,
+   sub-strategy, access route). Until applied, those features degrade
+   gracefully (defaults / empty values) instead of failing.
 
 ---
 

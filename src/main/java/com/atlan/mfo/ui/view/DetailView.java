@@ -36,22 +36,22 @@ public final class DetailView extends BorderPane {
 
     /** Fiche fonds en lecture seule (sans éditer/supprimer), pour le mode présentation. */
     public static DetailView ofFundReadOnly(FundInvestment f, ScoreBreakdown breakdown, Runnable onBack) {
-        return ofFund(f, breakdown, onBack, null, null, null);
+        return ofFund(f, breakdown, onBack, null, null);
     }
 
     /** Fiche deal en lecture seule (sans éditer/supprimer), pour le mode présentation. */
     public static DetailView ofDealReadOnly(DirectDeal d, ScoreBreakdown breakdown, Runnable onBack) {
-        return ofDeal(d, breakdown, onBack, null, null, null);
+        return ofDeal(d, breakdown, onBack, null, null);
     }
 
     public static DetailView ofFund(FundInvestment f, ScoreBreakdown breakdown,
-                                    Runnable onBack, Runnable onEdit, Runnable onDelete, Runnable onOutcome) {
+                                    Runnable onBack, Runnable onEdit, Runnable onDelete) {
         DetailView v = new DetailView();
         String fCls = com.atlan.mfo.model.enums.Classification.label(
                 com.atlan.mfo.model.enums.Classification.AssetClass.class, f.assetClass(),
                 com.atlan.mfo.model.enums.Classification.AssetClass::label);
         v.setTop(v.header(f.name(), (fCls != null ? fCls : f.category().label()) + "  ·  " + f.status().label(),
-                breakdown, onBack, onEdit, onDelete, onOutcome));
+                breakdown, onBack, onEdit, onDelete));
 
         GridPane g1 = grid();
         addRow(g1, "Asset class", assetClassLabel(f.assetClass()));
@@ -85,13 +85,13 @@ public final class DetailView extends BorderPane {
     }
 
     public static DetailView ofDeal(DirectDeal d, ScoreBreakdown breakdown,
-                                    Runnable onBack, Runnable onEdit, Runnable onDelete, Runnable onOutcome) {
+                                    Runnable onBack, Runnable onEdit, Runnable onDelete) {
         DetailView v = new DetailView();
         String dCls = com.atlan.mfo.model.enums.Classification.label(
                 com.atlan.mfo.model.enums.Classification.AssetClass.class, d.assetClass(),
                 com.atlan.mfo.model.enums.Classification.AssetClass::label);
         v.setTop(v.header(d.name(), (dCls != null ? dCls : PipelineItem.DEALS_STRATEGY) + "  ·  " + d.status().label(),
-                breakdown, onBack, onEdit, onDelete, onOutcome));
+                breakdown, onBack, onEdit, onDelete));
 
         GridPane g1 = grid();
         addRow(g1, "Asset class", assetClassLabel(d.assetClass()));
@@ -146,7 +146,7 @@ public final class DetailView extends BorderPane {
     /* ---- En-tête ---- */
 
     private HBox header(String name, String subtitle, ScoreBreakdown breakdown,
-                        Runnable onBack, Runnable onEdit, Runnable onDelete, Runnable onOutcome) {
+                        Runnable onBack, Runnable onEdit, Runnable onDelete) {
         Button back = new Button("← Back");
         back.getStyleClass().add("ghost-button");
         back.setOnAction(e -> onBack.run());
@@ -168,12 +168,6 @@ public final class DetailView extends BorderPane {
 
         HBox bar = new HBox(16, back, titles, spacer);
         // Boutons d'action optionnels : absents en lecture seule (mode présentation).
-        if (onOutcome != null) {
-            Button outcome = new Button("Outcome");
-            outcome.getStyleClass().add("ghost-button");
-            outcome.setOnAction(e -> onOutcome.run());
-            bar.getChildren().add(outcome);
-        }
         if (onDelete != null) {
             Button delete = new Button("Delete");
             delete.getStyleClass().add("danger-button");

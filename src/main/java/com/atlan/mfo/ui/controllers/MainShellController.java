@@ -4,12 +4,10 @@ import com.atlan.mfo.Main;
 import com.atlan.mfo.auth.Session;
 import com.atlan.mfo.dao.DirectDealDao;
 import com.atlan.mfo.dao.FundInvestmentDao;
-import com.atlan.mfo.dao.OutcomeDao;
 import com.atlan.mfo.dao.StaleDataException;
 import com.atlan.mfo.model.AppUser;
 import com.atlan.mfo.model.DirectDeal;
 import com.atlan.mfo.model.FundInvestment;
-import com.atlan.mfo.model.Outcome;
 import com.atlan.mfo.model.PipelineItem;
 import com.atlan.mfo.model.ScoreBreakdown;
 import com.atlan.mfo.dao.ScoringConfig;
@@ -19,11 +17,9 @@ import com.atlan.mfo.scoring.ScoringEngine;
 import com.atlan.mfo.scoring.ScoringProfile;
 import com.atlan.mfo.ui.util.Async;
 import com.atlan.mfo.ui.util.ErrorDialog;
-import com.atlan.mfo.ui.view.CalibrationView;
 import com.atlan.mfo.ui.view.ComparisonView;
 import com.atlan.mfo.ui.view.DealFormView;
 import com.atlan.mfo.ui.view.DetailView;
-import com.atlan.mfo.ui.view.OutcomeView;
 import com.atlan.mfo.ui.view.FundFormView;
 import com.atlan.mfo.ui.view.FxRatesView;
 import com.atlan.mfo.ui.view.MethodologyView;
@@ -57,7 +53,6 @@ public class MainShellController {
 
     private final FundInvestmentDao fundDao = new FundInvestmentDao();
     private final DirectDealDao dealDao = new DirectDealDao();
-    private final OutcomeDao outcomeDao = new OutcomeDao();
     private final ScoringConfig scoringConfig = new ScoringConfig();
     private ScoringEngine engine = scoringConfig.currentEngine();
 
@@ -173,7 +168,6 @@ public class MainShellController {
 
         addSectionLabel("REFERENCE");
         // Ces deux vues lisent la base : on charge en tâche de fond (sinon gel au clic).
-        addNavAsync("Calibration", outcomeDao::findAll, CalibrationView::new);
         addNavAsync("Methodology", scoringConfig::currentProfile,
                 p -> new MethodologyView(p, this::saveMethodology));
         addNavAsync("Exchange rates", () -> new com.atlan.mfo.dao.FxRateDao().load(),
@@ -355,64 +349,15 @@ public class MainShellController {
 
     private void openDetail(PipelineItem item) {
         Runnable onBack = () -> setContent(currentView.get());
-        // Le bouton « Outcome » (saisie du réalisé) n'apparaît que pour les décidés.
-        Runnable onOutcome = item.isDecided() ? () -> openOutcome(item) : null;
         if (item.type() == PipelineItem.Type.FUND) {
             funds.stream().filter(f -> f.id() == item.id()).findFirst()
                     .ifPresent(f -> setContent(DetailView.ofFund(
-                            f, engine.score(f), onBack, () -> editFund(f), () -> deleteFund(f), onOutcome)));
+                            f, engine.score(f), onBack, () -> editFund(f), () -> deleteFund(f))));
         } else {
             deals.stream().filter(d -> d.id() == item.id()).findFirst()
                     .ifPresent(d -> setContent(DetailView.ofDeal(
-                            d, engine.score(d), onBack, () -> editDeal(d), () -> deleteDeal(d), onOutcome)));
+                            d, engine.score(d), onBack, () -> editDeal(d), () -> deleteDeal(d))));
         }
-    }
-
-    /* ---- Boucle prédit → réalisé (calibration) ---- */
-
-    /** Ouvre l'éditeur d'outcome : charge l'existant + fige le prédit courant. */
-    private void openOutcome(PipelineItem item) {
-        setBusy(true);
-        Async.run(
-                () -> outcomeDao.find(item.type().name(), item.id()),
-                existing -> {
-                    setBusy(false);
-                    Double expIrr = null;
-                    Double expMoic = null;
-                    if (item.type() == PipelineItem.Type.DEAL) {
-                        DirectDeal d = deals.stream().filter(x -> x.id() == item.id())
-                                .findFirst().orElse(null);
-                        if (d != null) {
-                            expIrr = d.expIrrPct();
-                            expMoic = d.expMoic();
-                        }
-                    }
-                    setContent(new OutcomeView(item, item.score(), expIrr, expMoic, existing,
-                            this::saveOutcome, () -> openDetail(item)));
-                },
-                ex -> {
-                    setBusy(false);
-                    ErrorDialog.show(ex);
-                });
-    }
-
-    private void saveOutcome(Outcome outcome) {
-        long uid = Session.currentUser().id();
-        setBusy(true);
-        Async.run(
-                () -> outcomeDao.upsert(outcome, uid),
-                () -> {
-                    setBusy(false);
-                    allItems.stream()
-                            .filter(i -> i.id() == outcome.opportunityId()
-                                    && i.type().name().equals(outcome.kind()))
-                            .findFirst()
-                            .ifPresentOrElse(this::openDetail, () -> setContent(currentView.get()));
-                },
-                ex -> {
-                    setBusy(false);
-                    ErrorDialog.show(ex);
-                });
     }
 
     /* ---- Saisie / édition (Phase 3) ---- */
