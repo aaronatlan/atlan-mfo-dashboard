@@ -42,8 +42,10 @@ public final class FundFormView extends BorderPane {
     private final ComboBox<BenchmarkStatus> benchCombo =
             FormControls.enumCombo(BenchmarkStatus.values(), BenchmarkStatus::label, true);
     private final ComboBox<String> geoCombo = FormControls.geographyCombo();
+    private final ClassificationFields classification = new ClassificationFields(java.util.List.of(
+            com.atlan.mfo.model.enums.Classification.AccessRoute.PRIMARY_FUND,
+            com.atlan.mfo.model.enums.Classification.AccessRoute.SECONDARY));
     private final TextField nameField = FormControls.field("fund name");
-    private final TextField assetClassField = FormControls.field("asset class");
     private final TextField commitmentField = FormControls.field("e.g. 25m or 25000000");
     private final ComboBox<String> currencyCombo = FormControls.currencyCombo();
     private final DatePicker firstClosePicker = new DatePicker();
@@ -103,11 +105,17 @@ public final class FundFormView extends BorderPane {
         r = row(g, r, "Status", statusCombo);
         r = row(g, r, "Vs. benchmark", benchCombo);
         r = row(g, r, "Geography", geoCombo);
-        r = row(g, r, "Asset class", assetClassField);
         r = row(g, r, "Planned commitment", commitmentField);
         r = row(g, r, "Currency", currencyCombo);
         r = row(g, r, "First close", firstClosePicker);
         r = row(g, r, "Final close", finalClosePicker);
+
+        Label classSection = new Label("CLASSIFICATION");
+        classSection.getStyleClass().add("form-section");
+        g.add(classSection, 0, r, 2, 1);
+        r++;
+        g.add(classification, 0, r, 2, 1);
+        r++;
 
         Label contactSection = new Label("CONTACT");
         contactSection.getStyleClass().add("form-section");
@@ -245,7 +253,8 @@ public final class FundFormView extends BorderPane {
             statusCombo.setValue(existing.status());
             benchCombo.setValue(existing.vsBenchmark());
             geoCombo.setValue(existing.geography());
-            assetClassField.setText(existing.assetClass());
+            classification.populate(existing.assetClass(), existing.subStrategy(), existing.accessRoute(),
+                    existing.secondaryMandate(), existing.underlyingStrategy());
             commitmentField.setText(str(existing.commitment()));
             currencyCombo.setValue(com.atlan.mfo.model.enums.Currency.fromCode(existing.currency()).code());
             firstClosePicker.setValue(existing.firstClose());
@@ -287,7 +296,7 @@ public final class FundFormView extends BorderPane {
                 statusCombo.getValue(),
                 benchCombo.getValue(),
                 geoCombo.getValue(),
-                tn(assetClassField.getText()),
+                classification.assetClass(),
                 FormControls.parse(commitmentField.getText()),
                 vs,
                 firstClosePicker.getValue(),
@@ -298,7 +307,11 @@ public final class FundFormView extends BorderPane {
                 tn(contactNameField.getText()),
                 tn(contactEmailField.getText()),
                 tn(contactPhoneField.getText()),
-                currencyCombo.getValue());
+                currencyCombo.getValue(),
+                classification.subStrategy(),
+                classification.accessRoute(),
+                classification.secondaryMandate(),
+                classification.underlyingStrategy());
     }
 
     private void save() {

@@ -23,6 +23,7 @@ public final class DirectDealDao {
                    entry_mult, peers_mult, exit_val, exp_irr_pct, exp_moic,
                    deal_deadline, target_exit, comments,
                    contact_name, contact_email, contact_phone, currency,
+                   asset_class, sub_strategy, access_route, secondary_mandate, underlying_strategy,
                    score_snapshot, sub_cagr, sub_ebitda_mgn, sub_fcf, sub_irr, sub_geo, sub_time,
                    version, updated_at, updated_by
               FROM direct_deal
@@ -51,8 +52,10 @@ public final class DirectDealDao {
                entry_mult, peers_mult, exit_val, exp_irr_pct, exp_moic,
                deal_deadline, target_exit, comments,
                score_snapshot, sub_cagr, sub_ebitda_mgn, sub_fcf, sub_irr, sub_geo, sub_time,
-               contact_name, contact_email, contact_phone, currency, updated_by)
-            VALUES (?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               contact_name, contact_email, contact_phone, currency,
+               asset_class, sub_strategy, access_route, secondary_mandate, underlying_strategy, updated_by)
+            VALUES (?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?)
             RETURNING id
             """;
 
@@ -65,6 +68,7 @@ public final class DirectDealDao {
                deal_deadline=?, target_exit=?, comments=?,
                score_snapshot=?, sub_cagr=?, sub_ebitda_mgn=?, sub_fcf=?, sub_irr=?, sub_geo=?, sub_time=?,
                contact_name=?, contact_email=?, contact_phone=?, currency=?,
+               asset_class=?, sub_strategy=?, access_route=?, secondary_mandate=?, underlying_strategy=?,
                version=version+1, updated_at=now(), updated_by=?
              WHERE id=? AND version=?
             """;
@@ -74,7 +78,7 @@ public final class DirectDealDao {
         try (Connection conn = Database.dataSource().getConnection();
              PreparedStatement ps = conn.prepareStatement(INSERT)) {
             setDealParams(ps, d, score);
-            ps.setLong(37, userId);
+            ps.setLong(42, userId);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 return rs.getLong(1);
@@ -122,9 +126,9 @@ public final class DirectDealDao {
         try (Connection conn = Database.dataSource().getConnection();
              PreparedStatement ps = conn.prepareStatement(UPDATE)) {
             setDealParams(ps, d, score);
-            ps.setLong(37, userId);
-            ps.setLong(38, d.id());
-            ps.setLong(39, d.version());
+            ps.setLong(42, userId);
+            ps.setLong(43, d.id());
+            ps.setLong(44, d.version());
             if (ps.executeUpdate() == 0) {
                 throw new StaleDataException(
                         "The deal has been modified by another user since it was opened.");
@@ -172,6 +176,11 @@ public final class DirectDealDao {
         JdbcSupport.setString(ps, 34, d.contactEmail());
         JdbcSupport.setString(ps, 35, d.contactPhone());
         ps.setString(36, d.currency() == null ? "USD" : d.currency());
+        JdbcSupport.setString(ps, 37, d.assetClass());
+        JdbcSupport.setString(ps, 38, d.subStrategy());
+        JdbcSupport.setString(ps, 39, d.accessRoute());
+        JdbcSupport.setString(ps, 40, d.secondaryMandate());
+        JdbcSupport.setString(ps, 41, d.underlyingStrategy());
     }
 
     private DirectDeal map(ResultSet rs) throws SQLException {
@@ -224,6 +233,12 @@ public final class DirectDealDao {
                 rs.getString("contact_email"),
                 rs.getString("contact_phone"),
 
-                rs.getString("currency"));
+                rs.getString("currency"),
+
+                rs.getString("asset_class"),
+                rs.getString("sub_strategy"),
+                rs.getString("access_route"),
+                rs.getString("secondary_mandate"),
+                rs.getString("underlying_strategy"));
     }
 }

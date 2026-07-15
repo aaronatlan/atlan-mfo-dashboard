@@ -37,6 +37,9 @@ public final class DealFormView extends BorderPane {
     private final ComboBox<BenchmarkStatus> benchCombo =
             FormControls.enumCombo(BenchmarkStatus.values(), BenchmarkStatus::label, true);
     private final ComboBox<String> geoCombo = FormControls.geographyCombo();
+    private final ClassificationFields classification = new ClassificationFields(java.util.List.of(
+            com.atlan.mfo.model.enums.Classification.AccessRoute.CO_INVESTMENT,
+            com.atlan.mfo.model.enums.Classification.AccessRoute.DIRECT_INVESTMENT));
 
     private final TextField nameField = FormControls.field("deal name");
     private final ComboBox<String> industryCombo = FormControls.editableCombo("industry",
@@ -140,6 +143,9 @@ public final class DealFormView extends BorderPane {
         r = row(g, r, "Contact name", contactNameField);
         r = row(g, r, "Contact email", contactEmailField);
         r = row(g, r, "Contact phone", contactPhoneField);
+        r = section(g, r, "CLASSIFICATION");
+        g.add(classification, 0, r, 2, 1);
+        r++;
 
         nextStepsArea.setPromptText("next steps");
         nextStepsArea.setPrefRowCount(2);
@@ -218,6 +224,8 @@ public final class DealFormView extends BorderPane {
             contactNameField.setText(existing.contactName());
             contactEmailField.setText(existing.contactEmail());
             contactPhoneField.setText(existing.contactPhone());
+            classification.populate(existing.assetClass(), existing.subStrategy(), existing.accessRoute(),
+                    existing.secondaryMandate(), existing.underlyingStrategy());
             nextStepsArea.setText(existing.nextSteps());
             commentsArea.setText(existing.comments());
         }
@@ -271,7 +279,12 @@ public final class DealFormView extends BorderPane {
                 tn(contactNameField.getText()),
                 tn(contactEmailField.getText()),
                 tn(contactPhoneField.getText()),
-                currencyCombo.getValue());
+                currencyCombo.getValue(),
+                classification.assetClass(),
+                classification.subStrategy(),
+                classification.accessRoute(),
+                classification.secondaryMandate(),
+                classification.underlyingStrategy());
     }
 
     private void save() {

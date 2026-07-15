@@ -62,5 +62,13 @@ public record DirectDeal(
         String contactPhone,
 
         // Devise native du commitment (code ISO ; défaut USD). Agrégats convertis en USD.
-        String currency) {
+        String currency,
+
+        // Classification marchés privés (structure Patrimium). Le template direct découle
+        // de accessRoute ∈ {CO_INVESTMENT, DIRECT_INVESTMENT}.
+        String assetClass,          // Classification.AssetClass (code) — axe organisateur
+        String subStrategy,         // libellé de sous-stratégie (enfant de assetClass)
+        String accessRoute,         // Classification.AccessRoute (code, single)
+        String secondaryMandate,    // Classification.SecondaryMandate — CSV (rare pour un deal)
+        String underlyingStrategy) {// Classification.UnderlyingStrategy — CSV
 }

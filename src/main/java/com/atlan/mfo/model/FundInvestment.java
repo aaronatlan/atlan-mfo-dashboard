@@ -23,7 +23,8 @@ public record FundInvestment(
         DealStatus status,
         BenchmarkStatus vsBenchmark,
         String geography,
-        String assetClass,
+        String assetClass,   // Classification.AssetClass (code) — axe organisateur ; la
+                             // sous-stratégie détaillée est portée par subStrategy ci-dessous
         Double commitment,
 
         List<FundVintage> vintages,
@@ -50,5 +51,12 @@ public record FundInvestment(
         String contactPhone,
 
         // Devise native du commitment (code ISO ; défaut USD). Agrégats convertis en USD.
-        String currency) {
+        String currency,
+
+        // Classification marchés privés (structure Patrimium). Le template fonds découle
+        // de accessRoute ∈ {PRIMARY_FUND, SECONDARY}.
+        String subStrategy,         // libellé de sous-stratégie (enfant de assetClass)
+        String accessRoute,         // Classification.AccessRoute (code, single)
+        String secondaryMandate,    // Classification.SecondaryMandate — CSV (secondaires)
+        String underlyingStrategy) {// Classification.UnderlyingStrategy — CSV (secondaires)
 }

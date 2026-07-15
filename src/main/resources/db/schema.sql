@@ -152,6 +152,21 @@ ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS contact_phone TEXT;
 ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'USD';
 ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'USD';
 
+-- Classification marchés privés (structure Patrimium). Sur fund_investment, la colonne
+-- asset_class (existante) porte désormais le code de classe (PRIVATE_EQUITY, VENTURE_CAPITAL,
+-- PRIVATE_CREDIT, REAL_ASSETS, SECONDARIES) ; la sous-stratégie détaillée passe dans
+-- sub_strategy. Sur direct_deal, asset_class est ajoutée. access_route (single) détermine
+-- le template de fiche. secondary_mandate / underlying_strategy = CSV (secondaires).
+ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS sub_strategy        TEXT;
+ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS access_route        TEXT;
+ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS secondary_mandate   TEXT;
+ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS underlying_strategy TEXT;
+ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS asset_class         TEXT;
+ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS sub_strategy        TEXT;
+ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS access_route        TEXT;
+ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS secondary_mandate   TEXT;
+ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS underlying_strategy TEXT;
+
 -- Paramètres de scoring modifiables (méthodologie éditable, §5). Clé → valeur ;
 -- si une clé est absente, le moteur utilise sa valeur par défaut.
 CREATE TABLE IF NOT EXISTS scoring_param (

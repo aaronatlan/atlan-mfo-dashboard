@@ -51,10 +51,16 @@ public final class DetailView extends BorderPane {
                 breakdown, onBack, onEdit, onDelete, onOutcome));
 
         GridPane g1 = grid();
+        addRow(g1, "Asset class", assetClassLabel(f.assetClass()));
+        addRow(g1, "Sub-strategy", Formatters.text(f.subStrategy()));
+        addRow(g1, "Access route", accessRouteLabel(f.accessRoute()));
         addRow(g1, "Geography", Formatters.text(f.geography()));
-        addRow(g1, "Asset class", Formatters.text(f.assetClass()));
         addRow(g1, "Vs. benchmark", f.vsBenchmark() == null ? "—" : f.vsBenchmark().label());
         addRow(g1, "Planned commitment", Formatters.money(f.commitment(), f.currency()));
+        if (f.secondaryMandate() != null || f.underlyingStrategy() != null) {
+            addRow(g1, "Secondary mandate", secondaryMandateLabel(f.secondaryMandate()));
+            addRow(g1, "Underlying", underlyingLabel(f.underlyingStrategy()));
+        }
         addRow(g1, "Next steps", Formatters.text(f.nextSteps()));
 
         GridPane g4 = grid();
@@ -82,6 +88,9 @@ public final class DetailView extends BorderPane {
                 breakdown, onBack, onEdit, onDelete, onOutcome));
 
         GridPane g1 = grid();
+        addRow(g1, "Asset class", assetClassLabel(d.assetClass()));
+        addRow(g1, "Sub-strategy", Formatters.text(d.subStrategy()));
+        addRow(g1, "Access route", accessRouteLabel(d.accessRoute()));
         addRow(g1, "Industry", Formatters.text(d.industry()));
         addRow(g1, "GP / sponsor", Formatters.text(d.gp()));
         addRow(g1, "Geography", Formatters.text(d.geography()));
@@ -287,6 +296,32 @@ public final class DetailView extends BorderPane {
         addRow(g, "Email", Formatters.text(email));
         addRow(g, "Phone", Formatters.text(phone));
         return g;
+    }
+
+    /* ---- Libellés de classification (code → affichage) ---- */
+
+    private static String assetClassLabel(String code) {
+        return Formatters.text(com.atlan.mfo.model.enums.Classification.label(
+                com.atlan.mfo.model.enums.Classification.AssetClass.class, code,
+                com.atlan.mfo.model.enums.Classification.AssetClass::label));
+    }
+
+    private static String accessRouteLabel(String code) {
+        return Formatters.text(com.atlan.mfo.model.enums.Classification.label(
+                com.atlan.mfo.model.enums.Classification.AccessRoute.class, code,
+                com.atlan.mfo.model.enums.Classification.AccessRoute::label));
+    }
+
+    private static String secondaryMandateLabel(String csv) {
+        return Formatters.text(com.atlan.mfo.model.enums.Classification.labelsFromCsv(
+                com.atlan.mfo.model.enums.Classification.SecondaryMandate.class, csv,
+                com.atlan.mfo.model.enums.Classification.SecondaryMandate::label));
+    }
+
+    private static String underlyingLabel(String csv) {
+        return Formatters.text(com.atlan.mfo.model.enums.Classification.labelsFromCsv(
+                com.atlan.mfo.model.enums.Classification.UnderlyingStrategy.class, csv,
+                com.atlan.mfo.model.enums.Classification.UnderlyingStrategy::label));
     }
 
     private static void addRow(GridPane g, String key, String value) {
