@@ -144,7 +144,7 @@ public final class PresentationView extends BorderPane {
     /* ---- Panneaux graphiques (allocation + pipeline) côte à côte ---- */
 
     private HBox panelsRow(List<PipelineItem> active, List<PipelineItem> all) {
-        VBox allocation = panel("ALLOCATION BY STRATEGY", allocationChart(active));
+        VBox allocation = panel("ALLOCATION BY ASSET CLASS", allocationChart(active));
         VBox pipeline = panel("PIPELINE BY STAGE", statusFunnel(all));
         allocation.setMaxWidth(Double.MAX_VALUE);
         pipeline.setMaxWidth(Double.MAX_VALUE);
@@ -163,20 +163,21 @@ public final class PresentationView extends BorderPane {
         return box;
     }
 
-    /* ---- Allocation par stratégie : donut (Arc natif) + légende ---- */
+    /* ---- Allocation par classe d'actifs : donut (Arc natif) + légende ---- */
 
-    private static final String[] SEG_LABELS = {
-            Category.BUYOUT_GROWTH_VC.label(), Category.SECONDARIES.label(),
-            Category.PRIVATE_CREDIT.label(), PipelineItem.DEALS_STRATEGY};
+    private static final com.atlan.mfo.model.enums.Classification.AssetClass[] SEG =
+            com.atlan.mfo.model.enums.Classification.AssetClass.values();
+    private static final String[] SEG_LABELS = java.util.Arrays.stream(SEG)
+            .map(com.atlan.mfo.model.enums.Classification.AssetClass::label).toArray(String[]::new);
 
     private HBox allocationChart(List<PipelineItem> active) {
-        double[] values = new double[SEG_LABELS.length];
+        double[] values = new double[SEG.length];
         for (PipelineItem i : active) {
             if (i.commitmentUsd() == null) {
                 continue;
             }
-            for (int k = 0; k < SEG_LABELS.length; k++) {
-                if (SEG_LABELS[k].equals(i.strategy())) {
+            for (int k = 0; k < SEG.length; k++) {
+                if (SEG[k].name().equals(i.assetClass())) {
                     values[k] += i.commitmentUsd();
                     break;
                 }

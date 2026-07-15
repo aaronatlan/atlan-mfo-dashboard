@@ -1,7 +1,8 @@
 package com.atlan.mfo.ui.view;
 
 import com.atlan.mfo.model.PipelineItem;
-import com.atlan.mfo.model.enums.Category;
+import com.atlan.mfo.model.enums.Classification;
+import com.atlan.mfo.model.enums.Classification.AccessRoute;
 import com.atlan.mfo.model.enums.DealStatus;
 import com.atlan.mfo.model.enums.Tier;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -25,20 +26,27 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** Tableau d'opportunités : filtres (stratégie, statut, tier, actifs), recherche et tri (voir §6.1). */
+/**
+ * Tableau d'opportunités : filtres par route d'accès, sous-stratégie, statut, tier,
+ * secteur, actifs, plus recherche et tri (§6.1, structure Patrimium). Les filtres de
+ * classification n'apparaissent que si des valeurs sont présentes dans la liste.
+ */
 public final class OpportunityTable extends VBox {
 
-    private static final String ALL_STRATEGIES = "All strategies";
+    private static final String ALL_ROUTES = "All access routes";
+    private static final String ALL_SUBSTRATS = "All sub-strategies";
     private static final String ALL_STATUSES = "All statuses";
     private static final String ALL_TIERS = "All tiers";
     private static final String ALL_INDUSTRIES = "All industries";
 
     private final int total;
-    private final boolean showStrategyFilter;
+    private final boolean hasRoute;
+    private final boolean hasSubStrat;
     private final boolean hasIndustry;
     private final FilteredList<PipelineItem> filtered;
 
-    private final ComboBox<String> strategyFilter = new ComboBox<>();
+    private final ComboBox<String> routeFilter = new ComboBox<>();
+    private final ComboBox<String> subStratFilter = new ComboBox<>();
     private final ComboBox<String> statusFilter = new ComboBox<>();
     private final ComboBox<String> tierFilter = new ComboBox<>();
     private final ComboBox<String> industryFilter = new ComboBox<>();
@@ -47,13 +55,22 @@ public final class OpportunityTable extends VBox {
     private final Label countLabel = new Label();
     private final Label reset = new Label("Reset");
 
-    public OpportunityTable(List<PipelineItem> items, Consumer<PipelineItem> onOpen, boolean showStrategyFilter) {
+    public OpportunityTable(List<PipelineItem> items, Consumer<PipelineItem> onOpen) {
         getStyleClass().add("table-block");
         setSpacing(12);
         this.total = items.size();
-        this.showStrategyFilter = showStrategyFilter;
 
-        // Secteur : colonne + filtre affichés seulement s'il y a des deals renseignés.
+        List<String> routes = items.stream()
+                .map(i -> routeLabel(i.accessRoute()))
+                .filter(s -> s != null).distinct().sorted().toList();
+        this.hasRoute = !routes.isEmpty();
+
+        List<String> subStrats = items.stream()
+                .map(PipelineItem::subStrategy)
+                .filter(s -> s != null && !s.isBlank())
+                .distinct().sorted().toList();
+        this.hasSubStrat = !subStrats.isEmpty();
+
         List<String> industries = items.stream()
                 .map(PipelineItem::industry)
                 .filter(s -> s != null && !s.isBlank())
@@ -62,12 +79,16 @@ public final class OpportunityTable extends VBox {
 
         filtered = new FilteredList<>(FXCollections.observableArrayList(items), p -> true);
 
-        buildFilters(industries);
+        buildFilters(routes, subStrats, industries);
         TableView<PipelineItem> table = buildTable(onOpen);
 
         VBox.setVgrow(table, Priority.ALWAYS);
         getChildren().addAll(buildFilterRow(), table);
         updateCount();
+    }
+
+    static String routeLabel(String code) {
+        return Classification.label(AccessRoute.class, code, AccessRoute::label);
     }
 
     private HBox buildFilterRow() {
@@ -84,11 +105,14 @@ public final class OpportunityTable extends VBox {
 
         reset.getStyleClass().add("link-label");
         reset.setOnMouseClicked(e -> resetFilters());
-        reset.setVisible(false);   // n'apparaît que lorsqu'un filtre est actif
+        reset.setVisible(false);
         reset.setManaged(false);
 
-        if (showStrategyFilter) {
-            row.getChildren().add(strategyFilter);
+        if (hasRoute) {
+            row.getChildren().add(routeFilter);
+        }
+        if (hasSubStrat) {
+            row.getChildren().add(subStratFilter);
         }
         row.getChildren().addAll(statusFilter, tierFilter);
         if (hasIndustry) {
@@ -98,14 +122,19 @@ public final class OpportunityTable extends VBox {
         return row;
     }
 
-    private void buildFilters(List<String> industries) {
-        strategyFilter.getItems().add(ALL_STRATEGIES);
-        strategyFilter.getItems().addAll(
-                Category.BUYOUT_GROWTH_VC.label(),
-                Category.SECONDARIES.label(),
-                Category.PRIVATE_CREDIT.label(),
-                PipelineItem.DEALS_STRATEGY);
-        strategyFilter.setValue(ALL_STRATEGIES);
+    private void buildFilters(List<String> routes, List<String> subStrats, List<String> industries) {
+        if (hasRoute) {
+            routeFilter.getItems().add(ALL_ROUTES);
+            routeFilter.getItems().addAll(routes);
+            routeFilter.setValue(ALL_ROUTES);
+            routeFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
+        }
+        if (hasSubStrat) {
+            subStratFilter.getItems().add(ALL_SUBSTRATS);
+            subStratFilter.getItems().addAll(subStrats);
+            subStratFilter.setValue(ALL_SUBSTRATS);
+            subStratFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
+        }
 
         statusFilter.getItems().add(ALL_STATUSES);
         for (DealStatus s : DealStatus.values()) {
@@ -126,7 +155,6 @@ public final class OpportunityTable extends VBox {
             industryFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
         }
 
-        strategyFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
         statusFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
         tierFilter.valueProperty().addListener((o, a, b) -> applyPredicate());
         activeOnly.selectedProperty().addListener((o, a, b) -> applyPredicate());
@@ -134,7 +162,8 @@ public final class OpportunityTable extends VBox {
     }
 
     private void applyPredicate() {
-        String strat = strategyFilter.getValue();
+        String route = hasRoute ? routeFilter.getValue() : null;
+        String sub = hasSubStrat ? subStratFilter.getValue() : null;
         String status = statusFilter.getValue();
         String tier = tierFilter.getValue();
         String industry = hasIndustry ? industryFilter.getValue() : null;
@@ -142,7 +171,10 @@ public final class OpportunityTable extends VBox {
         String q = search.getText() == null ? "" : search.getText().trim().toLowerCase();
 
         filtered.setPredicate(item -> {
-            if (strat != null && !ALL_STRATEGIES.equals(strat) && !item.strategy().equals(strat)) {
+            if (route != null && !ALL_ROUTES.equals(route) && !route.equals(routeLabel(item.accessRoute()))) {
+                return false;
+            }
+            if (sub != null && !ALL_SUBSTRATS.equals(sub) && !sub.equals(item.subStrategy())) {
                 return false;
             }
             if (status != null && !ALL_STATUSES.equals(status) && !item.status().label().equals(status)) {
@@ -162,9 +194,10 @@ public final class OpportunityTable extends VBox {
         });
         updateCount();
 
-        // Le lien « Réinitialiser » n'apparaît que si au moins un filtre est actif
-        boolean anyActive = !ALL_STRATEGIES.equals(strat) || !ALL_STATUSES.equals(status)
-                || !ALL_TIERS.equals(tier) || (industry != null && !ALL_INDUSTRIES.equals(industry))
+        boolean anyActive = (route != null && !ALL_ROUTES.equals(route))
+                || (sub != null && !ALL_SUBSTRATS.equals(sub))
+                || !ALL_STATUSES.equals(status) || !ALL_TIERS.equals(tier)
+                || (industry != null && !ALL_INDUSTRIES.equals(industry))
                 || active || !q.isEmpty();
         reset.setVisible(anyActive);
         reset.setManaged(anyActive);
@@ -176,7 +209,12 @@ public final class OpportunityTable extends VBox {
     }
 
     private void resetFilters() {
-        strategyFilter.setValue(ALL_STRATEGIES);
+        if (hasRoute) {
+            routeFilter.setValue(ALL_ROUTES);
+        }
+        if (hasSubStrat) {
+            subStratFilter.setValue(ALL_SUBSTRATS);
+        }
         statusFilter.setValue(ALL_STATUSES);
         tierFilter.setValue(ALL_TIERS);
         if (hasIndustry) {
@@ -195,18 +233,18 @@ public final class OpportunityTable extends VBox {
         TableColumn<PipelineItem, String> nameCol = new TableColumn<>("Name");
         nameCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().name()));
         nameCol.setMaxWidth(3000);
-        nameCol.getStyleClass().add("col-primary");     // nom en avant (blanc, semi-gras)
+        nameCol.getStyleClass().add("col-primary");
 
-        TableColumn<PipelineItem, String> stratCol = new TableColumn<>("Strategy");
-        stratCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().strategy()));
-        stratCol.getStyleClass().add("col-secondary");  // texte en retrait
+        TableColumn<PipelineItem, String> subCol = new TableColumn<>("Sub-strategy");
+        subCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(
+                c.getValue().subStrategy() == null ? "" : c.getValue().subStrategy()));
+        subCol.getStyleClass().add("col-secondary");
 
         TableColumn<PipelineItem, String> industryCol = new TableColumn<>("Industry");
         industryCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(
                 c.getValue().industry() == null ? "" : c.getValue().industry()));
         industryCol.getStyleClass().add("col-secondary");
 
-        // Statut + puce « Decided » pour les opportunités décidées (conservées au tableau).
         TableColumn<PipelineItem, PipelineItem> statusCol = new TableColumn<>("Status");
         statusCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
         statusCol.setComparator(Comparator.comparing(i -> i.status().label()));
@@ -219,22 +257,15 @@ public final class OpportunityTable extends VBox {
             }
         });
 
-        // Cellule par défaut : une cellule custom + classe CSS de colonne décale le
-        // texte verticalement (travers du skin JavaFX vérifié par mesure). Le score
-        // n'est jamais null en pratique (recalcul systématique par le moteur, §13.4).
         TableColumn<PipelineItem, Integer> scoreCol = new TableColumn<>("Score");
         scoreCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().score()));
         scoreCol.setComparator(Comparator.nullsFirst(Comparator.naturalOrder()));
-        scoreCol.getStyleClass().add("col-score");   // centré + gras (CSS)
+        scoreCol.getStyleClass().add("col-score");
 
-        // Complétude des données de scoring (ex. « 4/6 ») : signale un score fondé
-        // sur peu de critères renseignés (§5.1 : les manquants sont exclus, pas pénalisés).
         TableColumn<PipelineItem, PipelineItem> dataCol = new TableColumn<>("Data");
         dataCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue()));
         dataCol.setComparator(Comparator.comparingDouble(
                 (PipelineItem i) -> i.criteria() == 0 ? 0 : (double) i.reported() / i.criteria()));
-        // Contenu via setGraphic (comme Status/Tier) plutôt que setText : évite le
-        // décalage vertical du skin sur le texte de cellule (cf. col-score).
         dataCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(PipelineItem item, boolean empty) {
@@ -246,9 +277,8 @@ public final class OpportunityTable extends VBox {
                 Label l = new Label(item.completeness());
                 l.getStyleClass().add("completeness");
                 if (item.reported() < item.criteria()) {
-                    l.getStyleClass().add("completeness-low");   // score fondé sur données incomplètes
+                    l.getStyleClass().add("completeness-low");
                 }
-                // Enveloppé dans un HBox (comme Status/Tier) pour un centrage vertical correct.
                 HBox box = new HBox(l);
                 box.setAlignment(Pos.CENTER_LEFT);
                 setGraphic(box);
@@ -268,7 +298,7 @@ public final class OpportunityTable extends VBox {
         });
 
         table.getColumns().add(nameCol);
-        table.getColumns().add(stratCol);
+        table.getColumns().add(subCol);
         if (hasIndustry) {
             table.getColumns().add(industryCol);
         }
@@ -281,13 +311,11 @@ public final class OpportunityTable extends VBox {
         sorted.comparatorProperty().bind(table.comparatorProperty());
         table.setItems(sorted);
 
-        // Tri par défaut : score décroissant (§6.1)
         scoreCol.setSortType(TableColumn.SortType.DESCENDING);
         table.getSortOrder().add(scoreCol);
 
         table.setRowFactory(tv -> {
             var r = new javafx.scene.control.TableRow<PipelineItem>();
-            // Ligne colorée selon la décision : vert = approuvé, rouge = décliné.
             r.itemProperty().addListener((o, a, b) -> {
                 r.getStyleClass().removeAll("row-approved", "row-declined");
                 if (b != null) {
@@ -335,7 +363,7 @@ public final class OpportunityTable extends VBox {
         Region dot = new Region();
         dot.getStyleClass().addAll("tier-dot", "tier-" + tier.name().toLowerCase());
         Label label = new Label(tier.label());
-        label.getStyleClass().add("tier-name");   // sinon le texte reste sombre dans les cellules
+        label.getStyleClass().add("tier-name");
         box.getChildren().addAll(dot, label);
         return box;
     }

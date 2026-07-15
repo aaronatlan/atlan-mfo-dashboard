@@ -23,7 +23,7 @@ public final class SectionView extends VBox {
         Label header = new Label(title);
         header.getStyleClass().add("view-title");
 
-        OpportunityTable table = new OpportunityTable(items, onOpen, true);
+        OpportunityTable table = new OpportunityTable(items, onOpen);
         VBox.setVgrow(table, Priority.ALWAYS);
 
         getChildren().addAll(header, table);
@@ -43,7 +43,7 @@ public final class SectionView extends VBox {
         HBox bar = new HBox(12, header, spacer, add);
         bar.setAlignment(Pos.CENTER_LEFT);
 
-        OpportunityTable table = new OpportunityTable(items, onOpen, false);
+        OpportunityTable table = new OpportunityTable(items, onOpen);
         VBox.setVgrow(table, Priority.ALWAYS);
 
         getChildren().addAll(bar, table);
@@ -71,7 +71,7 @@ public final class SectionView extends VBox {
         HBox bar = new HBox(12, header, spacer, addFund, addDeal);
         bar.setAlignment(Pos.CENTER_LEFT);
 
-        OpportunityTable table = new OpportunityTable(items, onOpen, true);
+        OpportunityTable table = new OpportunityTable(items, onOpen);
         VBox.setVgrow(table, Priority.ALWAYS);
 
         getChildren().addAll(bar, table);

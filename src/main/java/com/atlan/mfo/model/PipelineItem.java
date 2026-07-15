@@ -36,7 +36,9 @@ public record PipelineItem(
         String industry,      // secteur (deals directs uniquement), null pour les fonds
         String currency,      // devise native du commitment (code ISO ; défaut USD)
         Double commitmentUsd, // commitment converti en USD (agrégats), null si non renseigné
-        String assetClass) {  // Classification.AssetClass (code) — axe organisateur des sections
+        String assetClass,    // Classification.AssetClass (code) — axe organisateur des sections
+        String subStrategy,   // libellé de sous-stratégie (filtre)
+        String accessRoute) { // Classification.AccessRoute (code) — filtre
 
     public enum Type {
         FUND, DEAL
@@ -78,7 +80,7 @@ public record PipelineItem(
                 f.geography(),
                 null, null, null, null, null,
                 f.currency(), fx.toUsd(f.commitment(), f.currency()),
-                f.assetClass());
+                f.assetClass(), f.subStrategy(), f.accessRoute());
     }
 
     public static PipelineItem ofDeal(DirectDeal d, ScoreBreakdown b, FxRates fx) {
@@ -89,6 +91,6 @@ public record PipelineItem(
                 null, null, d.expIrrPct(), d.expMoic(), d.geography(),
                 d.cagrPct(), d.ebitdaMgnPct(), d.entryMult(), d.targetExit(), d.industry(),
                 d.currency(), fx.toUsd(d.commitment(), d.currency()),
-                d.assetClass());
+                d.assetClass(), d.subStrategy(), d.accessRoute());
     }
 }

@@ -41,7 +41,7 @@ public final class PipelineView extends VBox {
         bar.setAlignment(Pos.CENTER_LEFT);
 
         KpiBar kpi = new KpiBar(items);
-        OpportunityTable table = new OpportunityTable(items, onOpen, true);
+        OpportunityTable table = new OpportunityTable(items, onOpen);
         VBox.setVgrow(table, Priority.ALWAYS);
 
         getChildren().addAll(bar, kpi, table);

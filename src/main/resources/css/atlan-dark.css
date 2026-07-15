@@ -887,12 +887,13 @@
     -fx-padding: 22 26 26 26;
 }
 
-/* Donut d'allocation : secteurs pleins, couleurs alignées sur les stratégies */
+/* Donut d'allocation : secteurs pleins, une couleur par classe d'actifs */
 .donut-seg { -fx-stroke: transparent; }
-.donut-seg-0 { -fx-fill: -atlan-strong; }    /* Buyout, growth, VC */
-.donut-seg-1 { -fx-fill: -atlan-moderate; }  /* Secondaries */
+.donut-seg-0 { -fx-fill: -atlan-strong; }    /* Private equity */
+.donut-seg-1 { -fx-fill: -atlan-moderate; }  /* Venture capital */
 .donut-seg-2 { -fx-fill: -atlan-accent; }    /* Private credit */
-.donut-seg-3 { -fx-fill: -atlan-caution; }   /* Co-investment & direct */
+.donut-seg-3 { -fx-fill: -atlan-caution; }   /* Real assets */
+.donut-seg-4 { -fx-fill: #B8974A; }          /* Secondaries */
 .donut-hole { -fx-fill: -atlan-card; }       /* perce le trou (couleur du panneau) */
 
 .donut-total-value {
@@ -917,6 +918,7 @@
 .swatch-1 { -fx-background-color: -atlan-moderate; }
 .swatch-2 { -fx-background-color: -atlan-accent; }
 .swatch-3 { -fx-background-color: -atlan-caution; }
+.swatch-4 { -fx-background-color: #B8974A; }
 
 .donut-legend-name {
     -fx-text-fill: -atlan-text-2;
