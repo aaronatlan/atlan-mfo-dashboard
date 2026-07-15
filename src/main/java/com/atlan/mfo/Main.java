@@ -7,6 +7,7 @@ import com.atlan.mfo.dao.DirectDealDao;
 import com.atlan.mfo.dao.FundInvestmentDao;
 import com.atlan.mfo.dao.ScoringConfig;
 import com.atlan.mfo.dao.UserDao;
+import com.atlan.mfo.db.BackupScheduler;
 import com.atlan.mfo.db.Database;
 import com.atlan.mfo.db.Migrations;
 import com.atlan.mfo.model.AppUser;
@@ -57,6 +58,9 @@ public class Main extends Application {
             Migrations.run(config.seedProfile());
         }
         this.authService = new AuthService(new UserDao());
+        // Filet de sécurité local : la fenêtre de restauration Neon (plan gratuit) n'est
+        // que de 6h. Sauvegarde immédiate puis toutes les 4h, en tâche de fond (§6 DEPLOYMENT.md).
+        BackupScheduler.start();
     }
 
     @Override
@@ -71,6 +75,7 @@ public class Main extends Application {
 
     @Override
     public void stop() {
+        BackupScheduler.stop();
         com.atlan.mfo.ui.util.Async.shutdown();
         Database.close();
     }

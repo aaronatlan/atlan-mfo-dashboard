@@ -2,6 +2,7 @@ package com.atlan.mfo.tools;
 
 import com.atlan.mfo.config.AppConfig;
 import com.atlan.mfo.db.Database;
+import com.atlan.mfo.db.SqlDump;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -10,10 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Types;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -93,58 +92,12 @@ public final class PipelineResetTool {
             w.write("-- Patrimium MFO — sauvegarde du pipeline avant réinitialisation (" + ts + ")\n");
             w.write("-- Restauration : psql <connexion> -f " + file.getFileName() + "\n");
             w.write("BEGIN;\n");
-            dumpTable(conn, "fund_investment", w);   // avant fund_vintage (clé étrangère)
-            dumpTable(conn, "fund_vintage", w);
-            dumpTable(conn, "direct_deal", w);
+            SqlDump.dumpTable(conn, "fund_investment", w);   // avant fund_vintage (clé étrangère)
+            SqlDump.dumpTable(conn, "fund_vintage", w);
+            SqlDump.dumpTable(conn, "direct_deal", w);
             w.write("COMMIT;\n");
         }
         return file;
-    }
-
-    private static void dumpTable(Connection conn, String table, BufferedWriter w)
-            throws SQLException, IOException {
-        try (Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery("SELECT * FROM " + table + " ORDER BY id")) {
-            ResultSetMetaData md = rs.getMetaData();
-            int n = md.getColumnCount();
-            StringBuilder cols = new StringBuilder();
-            for (int i = 1; i <= n; i++) {
-                if (i > 1) {
-                    cols.append(", ");
-                }
-                cols.append(md.getColumnName(i));
-            }
-            int rows = 0;
-            while (rs.next()) {
-                StringBuilder vals = new StringBuilder();
-                for (int i = 1; i <= n; i++) {
-                    if (i > 1) {
-                        vals.append(", ");
-                    }
-                    vals.append(sqlLiteral(rs, md, i));
-                }
-                w.write("INSERT INTO " + table + " (" + cols + ") VALUES (" + vals + ");\n");
-                rows++;
-            }
-            w.write("-- " + table + ": " + rows + " ligne(s)\n");
-        }
-    }
-
-    /** Littéral SQL d'une valeur, selon son type (nombres nus, booléens, sinon quoté). */
-    private static String sqlLiteral(ResultSet rs, ResultSetMetaData md, int i) throws SQLException {
-        if (rs.getObject(i) == null) {
-            return "NULL";
-        }
-        switch (md.getColumnType(i)) {
-            case Types.BIGINT, Types.INTEGER, Types.SMALLINT, Types.TINYINT,
-                    Types.NUMERIC, Types.DECIMAL, Types.DOUBLE, Types.REAL, Types.FLOAT:
-                return rs.getString(i);
-            case Types.BOOLEAN, Types.BIT:
-                return rs.getBoolean(i) ? "TRUE" : "FALSE";
-            default:
-                // chaînes, dates, timestamps, enums : quoté (cast implicite à l'insertion)
-                return "'" + rs.getString(i).replace("'", "''") + "'";
-        }
     }
 
     private static void printCounts(Connection conn, String label) throws SQLException {

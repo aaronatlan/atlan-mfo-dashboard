@@ -180,8 +180,33 @@ password, and the application **immediately enforces** a password change
 
 ## 6. Backups
 
-- **Managed**: enable the provider's automatic backups (point-in-time
-  recovery if available).
+**Built-in automatic local backup.** The app itself writes a full, restorable
+SQL backup (`BackupScheduler`, self-contained — no `pg_dump` required) to
+`~/.atlan-mfo/backups/` on every machine it runs on: immediately at startup,
+then every 4 hours while the app stays open. It dumps every data table
+(`app_user`, `fund_investment`, `fund_vintage`, `direct_deal`,
+`scoring_param`, `fx_rate`, `opportunity_outcome`) as `INSERT` statements
+inside a single transaction, and keeps only the 60 most recent files
+(~10 days of history at that interval), deleting older ones automatically.
+A failed backup (disk full, network hiccup) is logged to stderr and never
+interrupts normal use of the app.
+
+To restore a snapshot:
+```bash
+psql <connection> -f ~/.atlan-mfo/backups/backup-<timestamp>.sql
+```
+
+This exists specifically because **Neon's free plan only keeps 6 hours of
+point-in-time restore history** (vs. 7 days on the paid Launch tier) — the
+4-hour interval keeps at least one automatic snapshot inside that window at
+all times, and the 60-file retention extends real recoverability far beyond
+it. Treat these files as sensitive: they contain bcrypt password hashes and
+all pipeline data; they never leave the local machine.
+
+**Provider-level backup (defense in depth).**
+- **Managed (Neon or similar)**: enable the provider's own automatic backups
+  / point-in-time recovery if the plan offers a longer window than the
+  built-in local backup above.
 - **On-premise**: schedule a regular `pg_dump`, e.g. daily:
   ```bash
   pg_dump -Fc atlan_mfo > /backups/atlan_mfo_$(date +%F).dump
