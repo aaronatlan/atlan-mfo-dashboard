@@ -169,4 +169,9 @@ public final class ClassificationFields extends VBox {
             assetClassCombo.setValue(ac);
         }
     }
+
+    /** Notifie tout changement de classe d'actifs — la grille de scoring en dépend. */
+    public void setOnAssetClassChanged(Runnable r) {
+        assetClassCombo.valueProperty().addListener((o, a, b) -> r.run());
+    }
 }

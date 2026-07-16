@@ -32,11 +32,10 @@ import java.util.function.BiConsumer;
 public final class FundFormView extends BorderPane {
 
     private final FundInvestment existing;
+    private final Category defaultCategory;
     private final ScoringEngine engine;
     private final BiConsumer<FundInvestment, ScoreBreakdown> onSave;
 
-    private final ComboBox<Category> categoryCombo =
-            FormControls.enumCombo(Category.values(), Category::label, false);
     private final ComboBox<DealStatus> statusCombo =
             FormControls.enumCombo(DealStatus.values(), DealStatus::label, false);
     private final ComboBox<BenchmarkStatus> benchCombo =
@@ -71,13 +70,14 @@ public final class FundFormView extends BorderPane {
                         ScoringEngine engine,
                         BiConsumer<FundInvestment, ScoreBreakdown> onSave, Runnable onCancel) {
         this.existing = existing;
+        this.defaultCategory = defaultCategory != null ? defaultCategory : Category.BUYOUT_GROWTH_VC;
         this.engine = engine;
         this.onSave = onSave;
         getStyleClass().add("form-view");
 
         setTop(header(existing == null ? "New fund" : "Edit — " + existing.name(), onCancel));
         setCenter(buildBody());
-        populate(defaultCategory);
+        populate();
         if (existing == null) {
             classification.preselect(presetAssetClass);
         }
@@ -110,7 +110,6 @@ public final class FundFormView extends BorderPane {
         g.setHgap(16);
         g.setVgap(10);
         int r = 0;
-        r = row(g, r, "Category", categoryCombo);
         r = row(g, r, "Name", nameField);
         r = row(g, r, "Status", statusCombo);
         r = row(g, r, "Vs. benchmark", benchCombo);
@@ -254,11 +253,9 @@ public final class FundFormView extends BorderPane {
 
     /* ---- Données ---- */
 
-    private void populate(Category defaultCategory) {
+    private void populate() {
         statusCombo.setValue(DealStatus.INITIAL_REVIEW);
-        categoryCombo.setValue(defaultCategory != null ? defaultCategory : Category.BUYOUT_GROWTH_VC);
         if (existing != null) {
-            categoryCombo.setValue(existing.category());
             nameField.setText(existing.name());
             statusCombo.setValue(existing.status());
             benchCombo.setValue(existing.vsBenchmark());
@@ -279,9 +276,8 @@ public final class FundFormView extends BorderPane {
     }
 
     private void wireLiveScoring() {
-        categoryCombo.valueProperty().addListener((o, a, b) -> recompute());
         geoCombo.valueProperty().addListener((o, a, b) -> recompute());
-        finalClosePicker.valueProperty().addListener((o, a, b) -> recompute());
+        classification.setOnAssetClassChanged(this::recompute);
     }
 
     private void recompute() {
@@ -300,7 +296,7 @@ public final class FundFormView extends BorderPane {
         long version = existing != null ? existing.version() : 0;
         return new FundInvestment(
                 id,
-                categoryCombo.getValue(),
+                deriveCategory(),
                 tn(nameField.getText()),
                 tn(nextStepsArea.getText()),
                 statusCombo.getValue(),
@@ -322,6 +318,24 @@ public final class FundFormView extends BorderPane {
                 classification.accessRoute(),
                 classification.secondaryMandate(),
                 classification.underlyingStrategy());
+    }
+
+    /**
+     * Catégorie legacy — colonne DB encore NOT NULL, plus jamais montrée à l'utilisateur
+     * depuis que l'asset class (Classification) est l'axe organisateur réel. Dérivée
+     * silencieusement de la classe choisie ; repli sur {@link #defaultCategory} tant
+     * qu'aucune classe n'est sélectionnée.
+     */
+    private Category deriveCategory() {
+        String ac = classification.assetClass();
+        if (ac == null) {
+            return existing != null ? existing.category() : defaultCategory;
+        }
+        return switch (ac) {
+            case "PRIVATE_CREDIT" -> Category.PRIVATE_CREDIT;
+            case "SECONDARIES" -> Category.SECONDARIES;
+            default -> Category.BUYOUT_GROWTH_VC;
+        };
     }
 
     private void save() {

@@ -22,10 +22,10 @@ public final class Classification {
 
     /** Classe d'actifs (single-select) — axe organisateur de la navigation. */
     public enum AssetClass {
-        PRIVATE_EQUITY("Private equity"),
-        VENTURE_CAPITAL("Venture capital"),
-        PRIVATE_CREDIT("Private credit"),
-        REAL_ASSETS("Real assets"),
+        PRIVATE_EQUITY("Private Equity"),
+        VENTURE_CAPITAL("Venture Capital"),
+        PRIVATE_CREDIT("Private Credit"),
+        REAL_ASSETS("Real Assets"),
         SECONDARIES("Secondaries");
 
         private final String label;
