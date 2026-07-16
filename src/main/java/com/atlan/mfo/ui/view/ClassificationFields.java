@@ -30,6 +30,7 @@ public final class ClassificationFields extends VBox {
 
     private final ComboBox<AssetClass> assetClassCombo =
             FormControls.enumCombo(AssetClass.values(), AssetClass::label, true);
+    private final Label subStrategyLabel = new Label("Sub-strategy");
     private final ComboBox<String> subStrategyCombo = new ComboBox<>();
     private final ComboBox<AccessRoute> accessRouteCombo;
     private final Map<SecondaryMandate, CheckBox> mandates = new LinkedHashMap<>();
@@ -50,6 +51,7 @@ public final class ClassificationFields extends VBox {
             String kept = subStrategyCombo.getEditor().getText();
             subStrategyCombo.getItems().setAll(b == null ? List.of() : b.subStrategies());
             subStrategyCombo.getEditor().setText(kept);
+            refreshSubStrategy();
             refreshSecondary();
         });
         accessRouteCombo.valueProperty().addListener((o, a, b) -> refreshSecondary());
@@ -60,8 +62,14 @@ public final class ClassificationFields extends VBox {
         g.setVgap(10);
         int r = 0;
         r = row(g, r, "Asset class", assetClassCombo);
-        r = row(g, r, "Sub-strategy", subStrategyCombo);
+        subStrategyLabel.getStyleClass().add("detail-key");
+        subStrategyLabel.setMinWidth(150);
+        g.add(subStrategyLabel, 0, r);
+        g.add(subStrategyCombo, 1, r);
+        GridPane.setHgrow(subStrategyCombo, Priority.ALWAYS);
+        r++;
         row(g, r, "Access route", accessRouteCombo);
+        refreshSubStrategy();   // classe non sélectionnée à la construction → masqué
 
         Label secTitle = new Label("SECONDARY");
         secTitle.getStyleClass().add("form-section");
@@ -88,6 +96,19 @@ public final class ClassificationFields extends VBox {
             fp.getChildren().add(cb);
         }
         return fp;
+    }
+
+    /** Masque la ligne Sub-strategy pour les classes qui n'en proposent pas (Secondaries). */
+    private void refreshSubStrategy() {
+        boolean has = assetClassCombo.getValue() != null
+                && !assetClassCombo.getValue().subStrategies().isEmpty();
+        if (!has) {
+            subStrategyCombo.getEditor().clear();   // pas de sous-stratégie cachée à sauvegarder
+        }
+        subStrategyLabel.setVisible(has);
+        subStrategyLabel.setManaged(has);
+        subStrategyCombo.setVisible(has);
+        subStrategyCombo.setManaged(has);
     }
 
     private void refreshSecondary() {

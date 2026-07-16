@@ -42,11 +42,11 @@ public final class Classification {
         public List<String> subStrategies() {
             return switch (this) {
                 case PRIVATE_EQUITY -> List.of(
-                        "Buyout", "Growth equity", "Turnaround / special situations", "Fund of funds");
+                        "Buyout", "Growth equity", "Turnaround / Special situations", "Fund of funds");
                 case VENTURE_CAPITAL -> List.of(
                         "Pre-seed / seed", "Early-stage", "Late-stage", "Sector-specific", "Fund of funds");
                 case PRIVATE_CREDIT -> List.of(
-                        "Direct lending", "Mezzanine", "Distressed / special situations", "Venture debt",
+                        "Direct lending", "Mezzanine", "Distressed / Special situations", "Venture debt",
                         "Structured credit / asset-based lending", "Real estate debt", "NAV financing", "Royalties");
                 case REAL_ASSETS -> List.of(
                         "Real estate", "Infrastructure", "Natural resources");
