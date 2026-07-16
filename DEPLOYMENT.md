@@ -297,7 +297,7 @@ data never leave the premises.
 
 ---
 
-## 11. Building Windows installers
+## 11. Building installers
 
 `jpackage` only produces a package **for the OS it runs on**: you cannot
 build a Windows `.msi` from a Mac. Two options:
