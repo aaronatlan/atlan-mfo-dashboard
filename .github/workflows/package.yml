@@ -1,13 +1,19 @@
 name: Package installers
 
-# Construit les installeurs natifs (.msi Windows, .dmg macOS) via jpackage. Déclenché
-# sur un tag de version (vX.Y.Z) ou manuellement. Sur un tag, chaque installeur est
-# attaché à une Release GitHub (page de téléchargement permanente) en plus des
-# artefacts du run.
+# Construit les installeurs natifs (.msi Windows, .dmg macOS) via jpackage, plus un
+# paquet portable Windows (app-image zippé, sans installation). Déclenché sur un tag
+# de version (vX.Y.Z) ou manuellement. Sur un tag, chaque artefact est attaché à une
+# Release GitHub (page de téléchargement permanente) en plus des artefacts du run.
 #
 # NB : le runner macOS coûte 10× les minutes CI du plan gratuit (vs Linux/Windows) —
 # accepté à partir de v1.4.0 pour distribuer un .dmg en plus du .msi (postes cibles
 # principaux = Windows, mais usage/tests aussi sur Mac).
+#
+# Le paquet portable Windows (type=app-image) existe en secours : si un antivirus
+# d'entreprise ou une politique de contrôle d'application (AppLocker, EDR) bloque
+# l'exécutable natif non signé de l'installeur, run.bat lance l'app via le runtime
+# Java signé par Eclipse Adoptium, sans installation ni droits admin — voir
+# packaging/run.bat et DEPLOYMENT.md.
 
 on:
   push:
@@ -25,6 +31,8 @@ jobs:
         include:
           - os: windows-latest
             type: msi
+          - os: windows-latest
+            type: app-image
           - os: macos-latest
             type: dmg
     runs-on: ${{ matrix.os }}
@@ -39,17 +47,26 @@ jobs:
           cache: maven
 
       - name: Installer WiX (Windows, requis par jpackage pour le .msi)
-        if: runner.os == 'Windows'
+        if: matrix.type == 'msi'
         run: choco install wixtoolset --no-progress -y
 
       - name: Construire l'installeur
         shell: bash
         run: ./scripts/package.sh ${{ matrix.type }}
 
+      - name: Préparer le paquet portable (app-image Windows → zip + run.bat)
+        if: matrix.type == 'app-image'
+        shell: pwsh
+        run: |
+          Copy-Item packaging/run.bat "target/installer/Patrimium MFO Dashboard/run.bat"
+          Compress-Archive -Path "target/installer/Patrimium MFO Dashboard" `
+            -DestinationPath "target/installer/Patrimium-MFO-Dashboard-portable-windows.zip"
+          Remove-Item -Recurse -Force "target/installer/Patrimium MFO Dashboard"
+
       - name: Publier l'artefact
         uses: actions/upload-artifact@v4
         with:
-          name: atlan-mfo-${{ matrix.os }}
+          name: atlan-mfo-${{ matrix.os }}-${{ matrix.type }}
           path: target/installer/*
           if-no-files-found: error
 
@@ -64,6 +81,6 @@ jobs:
         run: |
           tag="${GITHUB_REF_NAME}"
           gh release create "$tag" --title "Patrimium MFO Dashboard $tag" \
-            --notes "Installeurs natifs (.msi Windows, .dmg macOS). Voir DEPLOYMENT.md." \
+            --notes "Installeurs natifs (.msi Windows, .dmg macOS) + paquet portable Windows sans installation (.zip). Voir DEPLOYMENT.md." \
             2>/dev/null || true
           gh release upload "$tag" target/installer/* --clobber

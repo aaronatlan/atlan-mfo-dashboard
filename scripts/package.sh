@@ -48,9 +48,12 @@ fi
 
 # Windows : raccourcis menu Démarrer (groupe « Patrimium ») + bureau. Sans ça, l'app
 # installée n'a aucune icône de lancement (l'exe reste enfoui dans Program Files).
+# Réservé aux installeurs (msi/exe) : jpackage rejette ces indicateurs pour app-image.
 case "$(uname)" in
   MINGW*|MSYS*|CYGWIN*)
-    EXTRA_ARGS+=(--win-menu --win-menu-group "Patrimium" --win-shortcut)
+    if [ "$TYPE" = "msi" ] || [ "$TYPE" = "exe" ]; then
+      EXTRA_ARGS+=(--win-menu --win-menu-group "Patrimium" --win-shortcut)
+    fi
     ;;
 esac
 
