@@ -44,8 +44,6 @@ public record DirectDeal(
 
         String comments,
 
-        Integer scoreSnapshot,
-
         long version,
         OffsetDateTime updatedAt,
         Long updatedBy,

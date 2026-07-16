@@ -2,7 +2,6 @@ package com.atlan.mfo.ui.view;
 
 import com.atlan.mfo.model.FundInvestment;
 import com.atlan.mfo.model.FundVintage;
-import com.atlan.mfo.model.ScoreBreakdown;
 import com.atlan.mfo.model.enums.BenchmarkStatus;
 import com.atlan.mfo.model.enums.Category;
 import com.atlan.mfo.model.enums.DealStatus;
@@ -26,7 +25,7 @@ import javafx.scene.layout.VBox;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /** Fiche fonds éditable avec scoring en direct (voir §6.2). Édition ou création. */
 public final class FundFormView extends BorderPane {
@@ -34,7 +33,7 @@ public final class FundFormView extends BorderPane {
     private final FundInvestment existing;
     private final Category defaultCategory;
     private final ScoringEngine engine;
-    private final BiConsumer<FundInvestment, ScoreBreakdown> onSave;
+    private final Consumer<FundInvestment> onSave;
 
     private final ComboBox<DealStatus> statusCombo =
             FormControls.enumCombo(DealStatus.values(), DealStatus::label, false);
@@ -61,14 +60,14 @@ public final class FundFormView extends BorderPane {
     private final Label errorLabel = new Label();
 
     public FundFormView(FundInvestment existing, Category defaultCategory, ScoringEngine engine,
-                        BiConsumer<FundInvestment, ScoreBreakdown> onSave, Runnable onCancel) {
+                        Consumer<FundInvestment> onSave, Runnable onCancel) {
         this(existing, defaultCategory, null, engine, onSave, onCancel);
     }
 
     public FundFormView(FundInvestment existing, Category defaultCategory,
                         com.atlan.mfo.model.enums.Classification.AssetClass presetAssetClass,
                         ScoringEngine engine,
-                        BiConsumer<FundInvestment, ScoreBreakdown> onSave, Runnable onCancel) {
+                        Consumer<FundInvestment> onSave, Runnable onCancel) {
         this.existing = existing;
         this.defaultCategory = defaultCategory != null ? defaultCategory : Category.BUYOUT_GROWTH_VC;
         this.engine = engine;
@@ -308,7 +307,6 @@ public final class FundFormView extends BorderPane {
                 firstClosePicker.getValue(),
                 finalClosePicker.getValue(),
                 tn(commentsArea.getText()),
-                null,
                 version, null, null,
                 tn(contactNameField.getText()),
                 tn(contactEmailField.getText()),
@@ -344,7 +342,7 @@ public final class FundFormView extends BorderPane {
             return;
         }
         FundInvestment f = currentFund();
-        onSave.accept(f, engine.score(f, LocalDate.now()));
+        onSave.accept(f);
     }
 
     private void showError(String message) {

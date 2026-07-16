@@ -3,7 +3,6 @@ package com.atlan.mfo.dao;
 import com.atlan.mfo.db.Database;
 import com.atlan.mfo.model.FundInvestment;
 import com.atlan.mfo.model.FundVintage;
-import com.atlan.mfo.model.ScoreBreakdown;
 import com.atlan.mfo.model.enums.BenchmarkStatus;
 import com.atlan.mfo.model.enums.Category;
 import com.atlan.mfo.model.enums.DealStatus;
@@ -27,7 +26,6 @@ public final class FundInvestmentDao {
                    first_close, final_close, comments,
                    contact_name, contact_email, contact_phone, currency,
                    sub_strategy, access_route, secondary_mandate, underlying_strategy,
-                   score_snapshot,
                    version, updated_at, updated_by
               FROM fund_investment
             """;
@@ -59,10 +57,9 @@ public final class FundInvestmentDao {
             INSERT INTO fund_investment
               (category, name, next_steps, status, vs_benchmark, geography, asset_class, commitment,
                first_close, final_close, comments,
-               score_snapshot,
                contact_name, contact_email, contact_phone, currency,
                sub_strategy, access_route, secondary_mandate, underlying_strategy, updated_by)
-            VALUES (?::category, ?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?,
+            VALUES (?::category, ?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?,
                     ?, ?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING id
             """;
@@ -71,7 +68,6 @@ public final class FundInvestmentDao {
             UPDATE fund_investment SET
                category=?::category, name=?, next_steps=?, status=?::deal_status, vs_benchmark=?::benchmark_status,
                geography=?, asset_class=?, commitment=?, first_close=?, final_close=?, comments=?,
-               score_snapshot=?,
                contact_name=?, contact_email=?, contact_phone=?, currency=?,
                sub_strategy=?, access_route=?, secondary_mandate=?, underlying_strategy=?,
                version=version+1, updated_at=now(), updated_by=?
@@ -79,14 +75,14 @@ public final class FundInvestmentDao {
             """;
 
     /** Crée un fonds et ses millésimes (transaction). Renvoie l'id généré. */
-    public long insert(FundInvestment f, ScoreBreakdown score, long userId) {
+    public long insert(FundInvestment f, long userId) {
         try (Connection conn = Database.dataSource().getConnection()) {
             conn.setAutoCommit(false);
             try {
                 long id;
                 try (PreparedStatement ps = conn.prepareStatement(INSERT)) {
-                    setFundParams(ps, f, score);
-                    ps.setLong(21, userId);
+                    setFundParams(ps, f);
+                    ps.setLong(20, userId);
                     try (ResultSet rs = ps.executeQuery()) {
                         rs.next();
                         id = rs.getLong(1);
@@ -140,16 +136,16 @@ public final class FundInvestmentDao {
      *
      * @throws StaleDataException si la fiche a été modifiée entre-temps.
      */
-    public void update(FundInvestment f, ScoreBreakdown score, long userId) {
+    public void update(FundInvestment f, long userId) {
         try (Connection conn = Database.dataSource().getConnection()) {
             conn.setAutoCommit(false);
             try {
                 int rows;
                 try (PreparedStatement ps = conn.prepareStatement(UPDATE)) {
-                    setFundParams(ps, f, score);
-                    ps.setLong(21, userId);
-                    ps.setLong(22, f.id());
-                    ps.setLong(23, f.version());
+                    setFundParams(ps, f);
+                    ps.setLong(20, userId);
+                    ps.setLong(21, f.id());
+                    ps.setLong(22, f.version());
                     rows = ps.executeUpdate();
                 }
                 if (rows == 0) {
@@ -171,8 +167,8 @@ public final class FundInvestmentDao {
         }
     }
 
-    /** Renseigne les 20 colonnes de données (1..20). L'appelant fixe updated_by / id / version. */
-    private void setFundParams(PreparedStatement ps, FundInvestment f, ScoreBreakdown s) throws SQLException {
+    /** Renseigne les 19 colonnes de données (1..19). L'appelant fixe updated_by / id / version. */
+    private void setFundParams(PreparedStatement ps, FundInvestment f) throws SQLException {
         ps.setString(1, f.category().name());
         ps.setString(2, f.name());
         JdbcSupport.setString(ps, 3, f.nextSteps());
@@ -184,15 +180,14 @@ public final class FundInvestmentDao {
         JdbcSupport.setDate(ps, 9, f.firstClose());
         JdbcSupport.setDate(ps, 10, f.finalClose());
         JdbcSupport.setString(ps, 11, f.comments());
-        JdbcSupport.setInteger(ps, 12, s.score());
-        JdbcSupport.setString(ps, 13, f.contactName());
-        JdbcSupport.setString(ps, 14, f.contactEmail());
-        JdbcSupport.setString(ps, 15, f.contactPhone());
-        ps.setString(16, f.currency() == null ? "USD" : f.currency());
-        JdbcSupport.setString(ps, 17, f.subStrategy());
-        JdbcSupport.setString(ps, 18, f.accessRoute());
-        JdbcSupport.setString(ps, 19, f.secondaryMandate());
-        JdbcSupport.setString(ps, 20, f.underlyingStrategy());
+        JdbcSupport.setString(ps, 12, f.contactName());
+        JdbcSupport.setString(ps, 13, f.contactEmail());
+        JdbcSupport.setString(ps, 14, f.contactPhone());
+        ps.setString(15, f.currency() == null ? "USD" : f.currency());
+        JdbcSupport.setString(ps, 16, f.subStrategy());
+        JdbcSupport.setString(ps, 17, f.accessRoute());
+        JdbcSupport.setString(ps, 18, f.secondaryMandate());
+        JdbcSupport.setString(ps, 19, f.underlyingStrategy());
     }
 
     private FundInvestment map(ResultSet rs, List<FundVintage> vintages) throws SQLException {
@@ -214,8 +209,6 @@ public final class FundInvestmentDao {
                 JdbcSupport.getLocalDate(rs, "final_close"),
 
                 rs.getString("comments"),
-
-                JdbcSupport.getInteger(rs, "score_snapshot"),
 
                 rs.getLong("version"),
                 JdbcSupport.getOffsetDateTime(rs, "updated_at"),

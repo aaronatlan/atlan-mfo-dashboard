@@ -1,7 +1,6 @@
 package com.atlan.mfo.ui.view;
 
 import com.atlan.mfo.model.DirectDeal;
-import com.atlan.mfo.model.ScoreBreakdown;
 import com.atlan.mfo.model.enums.BenchmarkStatus;
 import com.atlan.mfo.model.enums.DealStatus;
 import com.atlan.mfo.scoring.ScoringEngine;
@@ -23,14 +22,14 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import java.time.LocalDate;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /** Fiche deal direct éditable avec scoring en direct (grille C, voir §6.2). */
 public final class DealFormView extends BorderPane {
 
     private final DirectDeal existing;
     private final ScoringEngine engine;
-    private final BiConsumer<DirectDeal, ScoreBreakdown> onSave;
+    private final Consumer<DirectDeal> onSave;
 
     private final ComboBox<DealStatus> statusCombo =
             FormControls.enumCombo(DealStatus.values(), DealStatus::label, false);
@@ -76,14 +75,14 @@ public final class DealFormView extends BorderPane {
     private final Label errorLabel = new Label();
 
     public DealFormView(DirectDeal existing, ScoringEngine engine,
-                        BiConsumer<DirectDeal, ScoreBreakdown> onSave, Runnable onCancel) {
+                        Consumer<DirectDeal> onSave, Runnable onCancel) {
         this(existing, null, engine, onSave, onCancel);
     }
 
     public DealFormView(DirectDeal existing,
                         com.atlan.mfo.model.enums.Classification.AssetClass presetAssetClass,
                         ScoringEngine engine,
-                        BiConsumer<DirectDeal, ScoreBreakdown> onSave, Runnable onCancel) {
+                        Consumer<DirectDeal> onSave, Runnable onCancel) {
         this.existing = existing;
         this.engine = engine;
         this.onSave = onSave;
@@ -284,7 +283,6 @@ public final class DealFormView extends BorderPane {
                 deadlinePicker.getValue(),
                 targetExitPicker.getValue(),
                 tn(commentsArea.getText()),
-                null,
                 version, null, null,
                 tn(contactNameField.getText()),
                 tn(contactEmailField.getText()),
@@ -303,7 +301,7 @@ public final class DealFormView extends BorderPane {
             return;
         }
         DirectDeal d = currentDeal();
-        onSave.accept(d, engine.score(d, LocalDate.now()));
+        onSave.accept(d);
     }
 
     private void showError(String message) {

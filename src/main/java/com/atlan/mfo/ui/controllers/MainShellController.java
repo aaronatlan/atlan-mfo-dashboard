@@ -390,24 +390,24 @@ public class MainShellController {
         }
     }
 
-    private void saveFund(FundInvestment fund, ScoreBreakdown breakdown) {
+    private void saveFund(FundInvestment fund) {
         long uid = Session.currentUser().id();
         writeThenReturn(() -> {
             if (fund.id() == 0) {
-                fundDao.insert(fund, breakdown, uid);
+                fundDao.insert(fund, uid);
             } else {
-                fundDao.update(fund, breakdown, uid);
+                fundDao.update(fund, uid);
             }
         });
     }
 
-    private void saveDeal(DirectDeal deal, ScoreBreakdown breakdown) {
+    private void saveDeal(DirectDeal deal) {
         long uid = Session.currentUser().id();
         writeThenReturn(() -> {
             if (deal.id() == 0) {
-                dealDao.insert(deal, breakdown, uid);
+                dealDao.insert(deal, uid);
             } else {
-                dealDao.update(deal, breakdown, uid);
+                dealDao.update(deal, uid);
             }
         });
     }

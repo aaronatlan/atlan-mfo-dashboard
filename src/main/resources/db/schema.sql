@@ -56,8 +56,6 @@ CREATE TABLE IF NOT EXISTS fund_investment (
     contact_email  TEXT,
     contact_phone  TEXT,
 
-    -- snapshot du score au dernier enregistrement (affichage = recalcul live)
-    score_snapshot INT,
 
     version        BIGINT NOT NULL DEFAULT 0,   -- verrou optimiste (§13.2)
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -117,8 +115,6 @@ CREATE TABLE IF NOT EXISTS direct_deal (
     contact_name   TEXT,
     contact_email  TEXT,
     contact_phone  TEXT,
-
-    score_snapshot INT,
 
     version        BIGINT NOT NULL DEFAULT 0,   -- verrou optimiste (§13.2)
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),

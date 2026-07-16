@@ -2,7 +2,6 @@ package com.atlan.mfo.dao;
 
 import com.atlan.mfo.db.Database;
 import com.atlan.mfo.model.DirectDeal;
-import com.atlan.mfo.model.ScoreBreakdown;
 import com.atlan.mfo.model.enums.BenchmarkStatus;
 import com.atlan.mfo.model.enums.DealStatus;
 import com.atlan.mfo.util.JdbcSupport;
@@ -24,7 +23,6 @@ public final class DirectDealDao {
                    deal_deadline, target_exit, comments,
                    contact_name, contact_email, contact_phone, currency,
                    asset_class, sub_strategy, access_route, secondary_mandate, underlying_strategy,
-                   score_snapshot,
                    version, updated_at, updated_by
               FROM direct_deal
             """;
@@ -51,10 +49,9 @@ public final class DirectDealDao {
                revenue, cagr_pct, ebitda, ebitda_gr_pct, ebitda_mgn_pct, fcf, fcf_conv_pct, ev,
                entry_mult, peers_mult, exit_val, exp_irr_pct, exp_moic,
                deal_deadline, target_exit, comments,
-               score_snapshot,
                contact_name, contact_email, contact_phone, currency,
                asset_class, sub_strategy, access_route, secondary_mandate, underlying_strategy, updated_by)
-            VALUES (?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            VALUES (?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING id
             """;
@@ -66,7 +63,6 @@ public final class DirectDealDao {
                revenue=?, cagr_pct=?, ebitda=?, ebitda_gr_pct=?, ebitda_mgn_pct=?, fcf=?, fcf_conv_pct=?, ev=?,
                entry_mult=?, peers_mult=?, exit_val=?, exp_irr_pct=?, exp_moic=?,
                deal_deadline=?, target_exit=?, comments=?,
-               score_snapshot=?,
                contact_name=?, contact_email=?, contact_phone=?, currency=?,
                asset_class=?, sub_strategy=?, access_route=?, secondary_mandate=?, underlying_strategy=?,
                version=version+1, updated_at=now(), updated_by=?
@@ -74,11 +70,11 @@ public final class DirectDealDao {
             """;
 
     /** Crée un deal direct. Renvoie l'id généré. */
-    public long insert(DirectDeal d, ScoreBreakdown score, long userId) {
+    public long insert(DirectDeal d, long userId) {
         try (Connection conn = Database.dataSource().getConnection();
              PreparedStatement ps = conn.prepareStatement(INSERT)) {
-            setDealParams(ps, d, score);
-            ps.setLong(36, userId);
+            setDealParams(ps, d);
+            ps.setLong(35, userId);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 return rs.getLong(1);
@@ -122,13 +118,13 @@ public final class DirectDealDao {
      *
      * @throws StaleDataException si la fiche a été modifiée entre-temps.
      */
-    public void update(DirectDeal d, ScoreBreakdown score, long userId) {
+    public void update(DirectDeal d, long userId) {
         try (Connection conn = Database.dataSource().getConnection();
              PreparedStatement ps = conn.prepareStatement(UPDATE)) {
-            setDealParams(ps, d, score);
-            ps.setLong(36, userId);
-            ps.setLong(37, d.id());
-            ps.setLong(38, d.version());
+            setDealParams(ps, d);
+            ps.setLong(35, userId);
+            ps.setLong(36, d.id());
+            ps.setLong(37, d.version());
             if (ps.executeUpdate() == 0) {
                 throw new StaleDataException(
                         "The deal has been modified by another user since it was opened.");
@@ -138,8 +134,8 @@ public final class DirectDealDao {
         }
     }
 
-    /** Renseigne les 35 colonnes de données (1..35). L'appelant fixe updated_by / id / version. */
-    private void setDealParams(PreparedStatement ps, DirectDeal d, ScoreBreakdown s) throws SQLException {
+    /** Renseigne les 34 colonnes de données (1..34). L'appelant fixe updated_by / id / version. */
+    private void setDealParams(PreparedStatement ps, DirectDeal d) throws SQLException {
         ps.setString(1, d.name());
         JdbcSupport.setString(ps, 2, d.nextSteps());
         ps.setString(3, d.status().name());
@@ -165,16 +161,15 @@ public final class DirectDealDao {
         JdbcSupport.setDate(ps, 23, d.dealDeadline());
         JdbcSupport.setDate(ps, 24, d.targetExit());
         JdbcSupport.setString(ps, 25, d.comments());
-        JdbcSupport.setInteger(ps, 26, s.score());
-        JdbcSupport.setString(ps, 27, d.contactName());
-        JdbcSupport.setString(ps, 28, d.contactEmail());
-        JdbcSupport.setString(ps, 29, d.contactPhone());
-        ps.setString(30, d.currency() == null ? "USD" : d.currency());
-        JdbcSupport.setString(ps, 31, d.assetClass());
-        JdbcSupport.setString(ps, 32, d.subStrategy());
-        JdbcSupport.setString(ps, 33, d.accessRoute());
-        JdbcSupport.setString(ps, 34, d.secondaryMandate());
-        JdbcSupport.setString(ps, 35, d.underlyingStrategy());
+        JdbcSupport.setString(ps, 26, d.contactName());
+        JdbcSupport.setString(ps, 27, d.contactEmail());
+        JdbcSupport.setString(ps, 28, d.contactPhone());
+        ps.setString(29, d.currency() == null ? "USD" : d.currency());
+        JdbcSupport.setString(ps, 30, d.assetClass());
+        JdbcSupport.setString(ps, 31, d.subStrategy());
+        JdbcSupport.setString(ps, 32, d.accessRoute());
+        JdbcSupport.setString(ps, 33, d.secondaryMandate());
+        JdbcSupport.setString(ps, 34, d.underlyingStrategy());
     }
 
     private DirectDeal map(ResultSet rs) throws SQLException {
@@ -210,8 +205,6 @@ public final class DirectDealDao {
                 JdbcSupport.getLocalDate(rs, "target_exit"),
 
                 rs.getString("comments"),
-
-                JdbcSupport.getInteger(rs, "score_snapshot"),
 
                 rs.getLong("version"),
                 JdbcSupport.getOffsetDateTime(rs, "updated_at"),

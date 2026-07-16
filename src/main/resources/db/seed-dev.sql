@@ -28,20 +28,20 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM fund_investment) THEN
     INSERT INTO fund_investment
       (category, name, status, vs_benchmark, geography, asset_class, commitment,
-       first_close, final_close, score_snapshot)
+       first_close, final_close)
     VALUES
       ('BUYOUT_GROWTH_VC','Meridian Buyout Fund IV','DUE_DILIGENCE','ABOVE_THRESHOLD','US','Buyout',25000000,
-       DATE '2025-09-01', DATE '2025-12-15', 85),
+       DATE '2025-09-01', DATE '2025-12-15'),
       ('BUYOUT_GROWTH_VC','Northwind Growth Partners III','SCREENING','NA','EUROPE','Growth',15000000,
-       NULL, DATE '2026-03-01', 62),
+       NULL, DATE '2026-03-01'),
       ('BUYOUT_GROWTH_VC','Helix Ventures Fund II','INITIAL_REVIEW','BELOW_THRESHOLD','US','Venture',10000000,
-       NULL, NULL, 44),
+       NULL, NULL),
       ('SECONDARIES','Lattice Secondaries Fund','IC_VOTE','ABOVE_THRESHOLD','GLOBAL','Secondaries',20000000,
-       NULL, DATE '2025-08-01', 78),
+       NULL, DATE '2025-08-01'),
       ('PRIVATE_CREDIT','Anchor Direct Lending II','DUE_DILIGENCE','ABOVE_THRESHOLD','US','Private credit',30000000,
-       NULL, DATE '2026-01-20', 71),
+       NULL, DATE '2026-01-20'),
       ('PRIVATE_CREDIT','Sable Credit Opportunities','DECLINED_LOST','BELOW_THRESHOLD','UK','Private credit',12000000,
-       NULL, NULL, 33);
+       NULL, NULL);
   END IF;
 END $$;
 
@@ -83,19 +83,19 @@ DO $$ BEGIN
       (name, status, vs_benchmark, industry, gp, geography, inv_type, commitment,
        revenue, cagr_pct, ebitda, ebitda_gr_pct, ebitda_mgn_pct, fcf, fcf_conv_pct, ev,
        entry_mult, peers_mult, exit_val, exp_irr_pct, exp_moic,
-       deal_deadline, target_exit, score_snapshot)
+       deal_deadline, target_exit)
     VALUES
       ('Project Orion','DUE_DILIGENCE','ABOVE_THRESHOLD','Software','Vertex Capital','US','Direct/Growth Equity',40000000,
        120000000,0.47,30000000,0.50,0.25,20000000,0.70,800000000, 12,'20-40x',1600000000,0.32,2.4,
-       DATE '2025-10-01', DATE '2029-01-01', 80),
+       DATE '2025-10-01', DATE '2029-01-01'),
       ('Project Vega','SCREENING','NA','Healthcare','Cedar Partners','EUROPE','Co-investment',18000000,
        60000000,0.30,12000000,0.35,0.20,6000000,0.50,300000000, 10,NULL,550000000,0.22,1.9,
-       DATE '2026-02-15', NULL, 58),
+       DATE '2026-02-15', NULL),
       ('Project Atlas','INITIAL_REVIEW','BELOW_THRESHOLD','Industrials','Forge Equity','EUROPE','Direct',22000000,
        200000000,0.12,25000000,0.08,0.125,8000000,0.40,500000000, 9,NULL,NULL,0.15,1.5,
-       NULL, NULL, 41),
+       NULL, NULL),
       ('Project Lyra','IC_VOTE','ABOVE_THRESHOLD','Fintech','Quill Ventures','UK','Direct/Growth Equity',28000000,
        45000000,0.55,5000000,0.60,0.11,2000000,0.40,350000000, 15,NULL,980000000,0.35,2.8,
-       DATE '2025-11-10', DATE '2030-06-01', 76);
+       DATE '2025-11-10', DATE '2030-06-01');
   END IF;
 END $$;
