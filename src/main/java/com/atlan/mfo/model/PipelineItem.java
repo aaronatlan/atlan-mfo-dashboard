@@ -77,7 +77,7 @@ public record PipelineItem(
         return reported + "/" + criteria;
     }
 
-    /** Le score est recalculé en direct par le moteur (§13.4), pas lu depuis score_snapshot. */
+    /** Le score est recalculé en direct par le moteur (§13.4), jamais persisté. */
     public static PipelineItem ofFund(FundInvestment f, ScoreBreakdown b, FxRates fx) {
         FundVintage newest = f.vintages() == null ? null : f.vintages().stream()
                 .max(Comparator.comparingInt(FundVintage::vintageYear)).orElse(null);
