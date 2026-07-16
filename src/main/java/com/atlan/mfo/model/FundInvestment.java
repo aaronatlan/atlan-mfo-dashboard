@@ -9,7 +9,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
- * Fonds (Buyout/growth/VC, Secondaries, Private credit) — table {@code fund_investment}.
+ * Fonds — table {@code fund_investment}. La classe d'actifs (Private Equity, Venture
+ * Capital, Private Credit, Real Assets, Secondaries) est portée par {@code assetClass}.
  *
  * <p>Les métriques financières sont nullable : {@code null} = « non communiqué »,
  * exclu du scoring (voir §4, §5.1). Le track record est porté par la liste des
