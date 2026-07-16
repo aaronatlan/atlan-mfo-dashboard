@@ -35,11 +35,6 @@ public record FundInvestment(
         String comments,
 
         Integer scoreSnapshot,
-        Double subDpi,
-        Double subIrr,
-        Double subMoic,
-        Double subGeo,
-        Double subTime,
 
         long version,
         OffsetDateTime updatedAt,

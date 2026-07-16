@@ -15,15 +15,6 @@ public record ScoreBreakdown(
         int score,
         Tier tier) {
 
-    /** Sous-score d'un composant par libellé, ou {@code null} s'il est exclu (persistance sub_*). */
-    public Double subScoreOf(String label) {
-        return components.stream()
-                .filter(c -> c.label().equals(label) && c.communicated())
-                .map(ScoreComponent::subScore)
-                .findFirst()
-                .orElse(null);
-    }
-
     /** Nombre de critères effectivement renseignés (communiqués). */
     public int reportedCount() {
         return (int) components.stream().filter(ScoreComponent::communicated).count();

@@ -284,7 +284,7 @@ public final class DealFormView extends BorderPane {
                 deadlinePicker.getValue(),
                 targetExitPicker.getValue(),
                 tn(commentsArea.getText()),
-                null, null, null, null, null, null, null,
+                null,
                 version, null, null,
                 tn(contactNameField.getText()),
                 tn(contactEmailField.getText()),

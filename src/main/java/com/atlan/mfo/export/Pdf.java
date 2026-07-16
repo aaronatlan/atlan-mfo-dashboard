@@ -34,19 +34,6 @@ public final class Pdf {
     }
 
     /**
-     * Écrit un tableau paginé (une seule section).
-     *
-     * @param title    titre du rapport
-     * @param subtitle sous-titre (ex. date, contexte) — peut être {@code null}
-     * @param headers  libellés de colonnes
-     * @param rows     lignes (valeurs déjà formatées en texte)
-     */
-    public static void writeTable(Path file, String title, String subtitle, List<String> headers,
-                                  List<List<String>> rows, boolean landscape) throws IOException {
-        writeSections(file, title, subtitle, List.of(new Section(null, headers, rows)), landscape);
-    }
-
-    /**
      * Écrit un rapport à plusieurs sections (tables distinctes, ex. Fonds / Deals directs
      * — métriques non partagées, §5.2-5.4). Chaque section démarre une nouvelle page.
      *

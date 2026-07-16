@@ -6,60 +6,18 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 
 /**
- * Référentiel des pays (source unique, alignée sur l'asset carte Natural Earth) et
- * dérivation de la <b>région</b> d'un pays pour le scoring géographique (§13.1).
+ * Référentiel des pays proposables — source unique, alignée sur l'asset carte
+ * Natural Earth, partagée par la saisie ({@code FormControls}) et la carte de chaleur
+ * ({@code WorldHeatMap}).
  *
- * <p>La géographie d'une opportunité est désormais un <b>pays</b> ; le moteur en dérive
- * une région préférée (US / EUROPE / UK) ou {@code OTHER} (communiqué mais non préféré).
- * Il n'y a plus de token « GLOBAL ».
+ * <p>La géographie d'une opportunité est un <b>pays</b>. Elle n'entre pas dans le score
+ * (voir {@code ScoringProfile}) : c'est une donnée affichée, filtrable et cartographiée.
  */
 public final class Countries {
 
     private Countries() {
-    }
-
-    private static final String USA = "United States of America";
-    private static final String GBR = "United Kingdom";
-
-    /** Marchés européens « préférés » (aligné sur la carte ; le reste → OTHER). */
-    private static final Set<String> EUROPE = Set.of(
-            "Germany", "Austria", "Switzerland", "France", "Italy", "Spain", "Netherlands", "Belgium",
-            "Sweden", "Norway", "Denmark", "Finland", "Poland", "Ireland", "Portugal", "Czechia",
-            "Greece", "Hungary", "Romania", "Bulgaria", "Croatia", "Slovakia", "Slovenia", "Lithuania",
-            "Latvia", "Estonia", "Luxembourg", "Iceland");
-
-    /**
-     * Région de scoring d'une géographie (pays ou token hérité), ou {@code null} si
-     * l'entrée est vide (= non communiquée, exclue du scoring). Toute valeur non vide
-     * et non préférée → {@code OTHER}.
-     */
-    public static String regionOf(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return null;
-        }
-        String s = raw.trim();
-        switch (s.toUpperCase(Locale.ROOT)) {
-            case "US", "USA", "U.S.", "U.S.A.", "UNITED STATES", "UNITED STATES OF AMERICA",
-                 "ETATS-UNIS", "ÉTATS-UNIS" -> {
-                return "US";
-            }
-            case "UK", "GB", "GREAT BRITAIN", "UNITED KINGDOM", "ENGLAND", "BRITAIN" -> {
-                return "UK";
-            }
-            case "EUROPE", "EU", "EUROZONE", "EURO" -> {
-                return "EUROPE";
-            }
-            default -> {
-                if (EUROPE.contains(s)) {
-                    return "EUROPE";
-                }
-                return "OTHER";
-            }
-        }
     }
 
     private static volatile List<String> cachedNames;

@@ -24,7 +24,7 @@ public final class DirectDealDao {
                    deal_deadline, target_exit, comments,
                    contact_name, contact_email, contact_phone, currency,
                    asset_class, sub_strategy, access_route, secondary_mandate, underlying_strategy,
-                   score_snapshot, sub_cagr, sub_ebitda_mgn, sub_fcf, sub_irr, sub_geo, sub_time,
+                   score_snapshot,
                    version, updated_at, updated_by
               FROM direct_deal
             """;
@@ -51,11 +51,11 @@ public final class DirectDealDao {
                revenue, cagr_pct, ebitda, ebitda_gr_pct, ebitda_mgn_pct, fcf, fcf_conv_pct, ev,
                entry_mult, peers_mult, exit_val, exp_irr_pct, exp_moic,
                deal_deadline, target_exit, comments,
-               score_snapshot, sub_cagr, sub_ebitda_mgn, sub_fcf, sub_irr, sub_geo, sub_time,
+               score_snapshot,
                contact_name, contact_email, contact_phone, currency,
                asset_class, sub_strategy, access_route, secondary_mandate, underlying_strategy, updated_by)
-            VALUES (?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING id
             """;
 
@@ -66,7 +66,7 @@ public final class DirectDealDao {
                revenue=?, cagr_pct=?, ebitda=?, ebitda_gr_pct=?, ebitda_mgn_pct=?, fcf=?, fcf_conv_pct=?, ev=?,
                entry_mult=?, peers_mult=?, exit_val=?, exp_irr_pct=?, exp_moic=?,
                deal_deadline=?, target_exit=?, comments=?,
-               score_snapshot=?, sub_cagr=?, sub_ebitda_mgn=?, sub_fcf=?, sub_irr=?, sub_geo=?, sub_time=?,
+               score_snapshot=?,
                contact_name=?, contact_email=?, contact_phone=?, currency=?,
                asset_class=?, sub_strategy=?, access_route=?, secondary_mandate=?, underlying_strategy=?,
                version=version+1, updated_at=now(), updated_by=?
@@ -78,7 +78,7 @@ public final class DirectDealDao {
         try (Connection conn = Database.dataSource().getConnection();
              PreparedStatement ps = conn.prepareStatement(INSERT)) {
             setDealParams(ps, d, score);
-            ps.setLong(42, userId);
+            ps.setLong(36, userId);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 return rs.getLong(1);
@@ -126,9 +126,9 @@ public final class DirectDealDao {
         try (Connection conn = Database.dataSource().getConnection();
              PreparedStatement ps = conn.prepareStatement(UPDATE)) {
             setDealParams(ps, d, score);
-            ps.setLong(42, userId);
-            ps.setLong(43, d.id());
-            ps.setLong(44, d.version());
+            ps.setLong(36, userId);
+            ps.setLong(37, d.id());
+            ps.setLong(38, d.version());
             if (ps.executeUpdate() == 0) {
                 throw new StaleDataException(
                         "The deal has been modified by another user since it was opened.");
@@ -138,7 +138,7 @@ public final class DirectDealDao {
         }
     }
 
-    /** Renseigne les 32 colonnes de données (1..32). L'appelant fixe updated_by / id / version. */
+    /** Renseigne les 35 colonnes de données (1..35). L'appelant fixe updated_by / id / version. */
     private void setDealParams(PreparedStatement ps, DirectDeal d, ScoreBreakdown s) throws SQLException {
         ps.setString(1, d.name());
         JdbcSupport.setString(ps, 2, d.nextSteps());
@@ -166,21 +166,15 @@ public final class DirectDealDao {
         JdbcSupport.setDate(ps, 24, d.targetExit());
         JdbcSupport.setString(ps, 25, d.comments());
         JdbcSupport.setInteger(ps, 26, s.score());
-        JdbcSupport.setDouble(ps, 27, s.subScoreOf("Revenue CAGR"));
-        JdbcSupport.setDouble(ps, 28, s.subScoreOf("EBITDA Margin"));
-        JdbcSupport.setDouble(ps, 29, s.subScoreOf("FCF Conversion"));
-        JdbcSupport.setDouble(ps, 30, s.subScoreOf("Expected IRR"));
-        JdbcSupport.setDouble(ps, 31, s.subScoreOf("Geography"));
-        JdbcSupport.setDouble(ps, 32, s.subScoreOf("Timeline"));
-        JdbcSupport.setString(ps, 33, d.contactName());
-        JdbcSupport.setString(ps, 34, d.contactEmail());
-        JdbcSupport.setString(ps, 35, d.contactPhone());
-        ps.setString(36, d.currency() == null ? "USD" : d.currency());
-        JdbcSupport.setString(ps, 37, d.assetClass());
-        JdbcSupport.setString(ps, 38, d.subStrategy());
-        JdbcSupport.setString(ps, 39, d.accessRoute());
-        JdbcSupport.setString(ps, 40, d.secondaryMandate());
-        JdbcSupport.setString(ps, 41, d.underlyingStrategy());
+        JdbcSupport.setString(ps, 27, d.contactName());
+        JdbcSupport.setString(ps, 28, d.contactEmail());
+        JdbcSupport.setString(ps, 29, d.contactPhone());
+        ps.setString(30, d.currency() == null ? "USD" : d.currency());
+        JdbcSupport.setString(ps, 31, d.assetClass());
+        JdbcSupport.setString(ps, 32, d.subStrategy());
+        JdbcSupport.setString(ps, 33, d.accessRoute());
+        JdbcSupport.setString(ps, 34, d.secondaryMandate());
+        JdbcSupport.setString(ps, 35, d.underlyingStrategy());
     }
 
     private DirectDeal map(ResultSet rs) throws SQLException {
@@ -218,12 +212,6 @@ public final class DirectDealDao {
                 rs.getString("comments"),
 
                 JdbcSupport.getInteger(rs, "score_snapshot"),
-                JdbcSupport.getDouble(rs, "sub_cagr"),
-                JdbcSupport.getDouble(rs, "sub_ebitda_mgn"),
-                JdbcSupport.getDouble(rs, "sub_fcf"),
-                JdbcSupport.getDouble(rs, "sub_irr"),
-                JdbcSupport.getDouble(rs, "sub_geo"),
-                JdbcSupport.getDouble(rs, "sub_time"),
 
                 rs.getLong("version"),
                 JdbcSupport.getOffsetDateTime(rs, "updated_at"),

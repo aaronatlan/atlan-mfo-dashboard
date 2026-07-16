@@ -45,12 +45,6 @@ public record DirectDeal(
         String comments,
 
         Integer scoreSnapshot,
-        Double subCagr,
-        Double subEbitdaMgn,
-        Double subFcf,
-        Double subIrr,
-        Double subGeo,
-        Double subTime,
 
         long version,
         OffsetDateTime updatedAt,

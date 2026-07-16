@@ -146,21 +146,6 @@ public final class Classification {
         return out;
     }
 
-    /** Liste d'enums → codes joints par virgules, ou {@code null} si vide. */
-    public static <E extends Enum<E>> String toCsv(List<E> values) {
-        if (values == null || values.isEmpty()) {
-            return null;
-        }
-        StringBuilder sb = new StringBuilder();
-        for (E v : values) {
-            if (sb.length() > 0) {
-                sb.append(',');
-            }
-            sb.append(v.name());
-        }
-        return sb.toString();
-    }
-
     /** Libellés (affichage) d'une liste de codes CSV, joints par « · ». */
     public static <E extends Enum<E>> String labelsFromCsv(Class<E> type, String csv,
                                                            java.util.function.Function<E, String> labeler) {

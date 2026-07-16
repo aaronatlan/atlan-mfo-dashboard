@@ -22,11 +22,6 @@ public final class Migrations {
     private Migrations() {
     }
 
-    /** Exécute schema.sql puis le seed du profil « dev » (rétro-compatibilité). */
-    public static void run() {
-        run("dev");
-    }
-
     /**
      * Exécute schema.sql, puis le seed du profil demandé.
      *

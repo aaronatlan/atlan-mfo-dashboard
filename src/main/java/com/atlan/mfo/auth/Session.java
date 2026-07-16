@@ -21,10 +21,6 @@ public final class Session {
         return currentUser;
     }
 
-    public static boolean isAuthenticated() {
-        return currentUser != null;
-    }
-
     public static void clear() {
         currentUser = null;
     }

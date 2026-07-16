@@ -308,7 +308,7 @@ public final class FundFormView extends BorderPane {
                 firstClosePicker.getValue(),
                 finalClosePicker.getValue(),
                 tn(commentsArea.getText()),
-                null, null, null, null, null, null,
+                null,
                 version, null, null,
                 tn(contactNameField.getText()),
                 tn(contactEmailField.getText()),

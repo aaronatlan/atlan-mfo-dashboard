@@ -58,11 +58,6 @@ CREATE TABLE IF NOT EXISTS fund_investment (
 
     -- snapshot du score au dernier enregistrement (affichage = recalcul live)
     score_snapshot INT,
-    sub_dpi        NUMERIC,
-    sub_irr        NUMERIC,
-    sub_moic       NUMERIC,
-    sub_geo        NUMERIC,
-    sub_time       NUMERIC,
 
     version        BIGINT NOT NULL DEFAULT 0,   -- verrou optimiste (§13.2)
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -124,12 +119,6 @@ CREATE TABLE IF NOT EXISTS direct_deal (
     contact_phone  TEXT,
 
     score_snapshot INT,
-    sub_cagr       NUMERIC,
-    sub_ebitda_mgn NUMERIC,
-    sub_fcf        NUMERIC,
-    sub_irr        NUMERIC,
-    sub_geo        NUMERIC,
-    sub_time       NUMERIC,
 
     version        BIGINT NOT NULL DEFAULT 0,   -- verrou optimiste (§13.2)
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),

@@ -61,10 +61,6 @@ public final class Formatters {
         return score == null ? DASH : Integer.toString(score);
     }
 
-    public static String integer(Integer value) {
-        return value == null ? DASH : Integer.toString(value);
-    }
-
     public static String date(LocalDate date) {
         return date == null ? DASH : DATE.format(date);
     }

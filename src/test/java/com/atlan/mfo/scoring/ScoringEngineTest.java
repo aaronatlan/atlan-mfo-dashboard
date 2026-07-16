@@ -238,7 +238,7 @@ class ScoringEngineTest {
     private static FundInvestment fund(Category cat, String assetClass, String geo,
                                        List<FundVintage> vintages, LocalDate finalClose) {
         return new FundInvestment(1, cat, "Test", null, DealStatus.INITIAL_REVIEW, null, geo, assetClass, null,
-                vintages, null, finalClose, null, null, null, null, null, null, null, 0, null, null,
+                vintages, null, finalClose, null, null, 0, null, null,
                 null, null, null, "USD",
                 null, null, null, null);
     }
@@ -248,7 +248,7 @@ class ScoringEngineTest {
                 null, cagr, null, null, margin, null, fcfConv, null,
                 null, null, null, expIrr, null,
                 null, null, null,
-                null, null, null, null, null, null, null,
+                null,
                 0, null, null,
                 null, null, null, "USD",
                 null, null, null, null, null);

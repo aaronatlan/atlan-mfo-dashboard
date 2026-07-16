@@ -27,27 +27,20 @@ public final class FundInvestmentDao {
                    first_close, final_close, comments,
                    contact_name, contact_email, contact_phone, currency,
                    sub_strategy, access_route, secondary_mandate, underlying_strategy,
-                   score_snapshot, sub_dpi, sub_irr, sub_moic, sub_geo, sub_time,
+                   score_snapshot,
                    version, updated_at, updated_by
               FROM fund_investment
             """;
 
     public List<FundInvestment> findAll() {
-        return query(SELECT + " ORDER BY name", null);
+        return query(SELECT + " ORDER BY name");
     }
 
-    public List<FundInvestment> findByCategory(Category category) {
-        return query(SELECT + " WHERE category = ?::category ORDER BY name", category.name());
-    }
-
-    private List<FundInvestment> query(String sql, String categoryParam) {
+    private List<FundInvestment> query(String sql) {
         Map<Long, List<FundVintage>> vintagesByFund = vintageDao.findAllByFund();
         List<FundInvestment> result = new ArrayList<>();
         try (Connection conn = Database.dataSource().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            if (categoryParam != null) {
-                ps.setString(1, categoryParam);
-            }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     long id = rs.getLong("id");
@@ -66,11 +59,11 @@ public final class FundInvestmentDao {
             INSERT INTO fund_investment
               (category, name, next_steps, status, vs_benchmark, geography, asset_class, commitment,
                first_close, final_close, comments,
-               score_snapshot, sub_dpi, sub_irr, sub_moic, sub_geo, sub_time,
+               score_snapshot,
                contact_name, contact_email, contact_phone, currency,
                sub_strategy, access_route, secondary_mandate, underlying_strategy, updated_by)
-            VALUES (?::category, ?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?, ?)
+            VALUES (?::category, ?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING id
             """;
 
@@ -78,7 +71,7 @@ public final class FundInvestmentDao {
             UPDATE fund_investment SET
                category=?::category, name=?, next_steps=?, status=?::deal_status, vs_benchmark=?::benchmark_status,
                geography=?, asset_class=?, commitment=?, first_close=?, final_close=?, comments=?,
-               score_snapshot=?, sub_dpi=?, sub_irr=?, sub_moic=?, sub_geo=?, sub_time=?,
+               score_snapshot=?,
                contact_name=?, contact_email=?, contact_phone=?, currency=?,
                sub_strategy=?, access_route=?, secondary_mandate=?, underlying_strategy=?,
                version=version+1, updated_at=now(), updated_by=?
@@ -93,7 +86,7 @@ public final class FundInvestmentDao {
                 long id;
                 try (PreparedStatement ps = conn.prepareStatement(INSERT)) {
                     setFundParams(ps, f, score);
-                    ps.setLong(26, userId);
+                    ps.setLong(21, userId);
                     try (ResultSet rs = ps.executeQuery()) {
                         rs.next();
                         id = rs.getLong(1);
@@ -154,9 +147,9 @@ public final class FundInvestmentDao {
                 int rows;
                 try (PreparedStatement ps = conn.prepareStatement(UPDATE)) {
                     setFundParams(ps, f, score);
-                    ps.setLong(26, userId);
-                    ps.setLong(27, f.id());
-                    ps.setLong(28, f.version());
+                    ps.setLong(21, userId);
+                    ps.setLong(22, f.id());
+                    ps.setLong(23, f.version());
                     rows = ps.executeUpdate();
                 }
                 if (rows == 0) {
@@ -178,7 +171,7 @@ public final class FundInvestmentDao {
         }
     }
 
-    /** Renseigne les 17 colonnes de données (1..17). L'appelant fixe updated_by / id / version. */
+    /** Renseigne les 20 colonnes de données (1..20). L'appelant fixe updated_by / id / version. */
     private void setFundParams(PreparedStatement ps, FundInvestment f, ScoreBreakdown s) throws SQLException {
         ps.setString(1, f.category().name());
         ps.setString(2, f.name());
@@ -192,19 +185,14 @@ public final class FundInvestmentDao {
         JdbcSupport.setDate(ps, 10, f.finalClose());
         JdbcSupport.setString(ps, 11, f.comments());
         JdbcSupport.setInteger(ps, 12, s.score());
-        JdbcSupport.setDouble(ps, 13, s.subScoreOf("DPI"));
-        JdbcSupport.setDouble(ps, 14, s.subScoreOf("IRR"));
-        JdbcSupport.setDouble(ps, 15, s.subScoreOf("MOIC"));
-        JdbcSupport.setDouble(ps, 16, s.subScoreOf("Geography"));
-        JdbcSupport.setDouble(ps, 17, s.subScoreOf("Timeline"));
-        JdbcSupport.setString(ps, 18, f.contactName());
-        JdbcSupport.setString(ps, 19, f.contactEmail());
-        JdbcSupport.setString(ps, 20, f.contactPhone());
-        ps.setString(21, f.currency() == null ? "USD" : f.currency());
-        JdbcSupport.setString(ps, 22, f.subStrategy());
-        JdbcSupport.setString(ps, 23, f.accessRoute());
-        JdbcSupport.setString(ps, 24, f.secondaryMandate());
-        JdbcSupport.setString(ps, 25, f.underlyingStrategy());
+        JdbcSupport.setString(ps, 13, f.contactName());
+        JdbcSupport.setString(ps, 14, f.contactEmail());
+        JdbcSupport.setString(ps, 15, f.contactPhone());
+        ps.setString(16, f.currency() == null ? "USD" : f.currency());
+        JdbcSupport.setString(ps, 17, f.subStrategy());
+        JdbcSupport.setString(ps, 18, f.accessRoute());
+        JdbcSupport.setString(ps, 19, f.secondaryMandate());
+        JdbcSupport.setString(ps, 20, f.underlyingStrategy());
     }
 
     private FundInvestment map(ResultSet rs, List<FundVintage> vintages) throws SQLException {
@@ -228,11 +216,6 @@ public final class FundInvestmentDao {
                 rs.getString("comments"),
 
                 JdbcSupport.getInteger(rs, "score_snapshot"),
-                JdbcSupport.getDouble(rs, "sub_dpi"),
-                JdbcSupport.getDouble(rs, "sub_irr"),
-                JdbcSupport.getDouble(rs, "sub_moic"),
-                JdbcSupport.getDouble(rs, "sub_geo"),
-                JdbcSupport.getDouble(rs, "sub_time"),
 
                 rs.getLong("version"),
                 JdbcSupport.getOffsetDateTime(rs, "updated_at"),
