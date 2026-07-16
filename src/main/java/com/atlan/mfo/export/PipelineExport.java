@@ -20,7 +20,7 @@ import java.util.List;
  */
 public final class PipelineExport {
 
-    private static final List<String> COMMON = List.of("Name", "Strategy", "Status", "Score");
+    private static final List<String> COMMON = List.of("Name", "Asset class", "Status", "Score");
 
     // Fonds : millésime le plus récent (§5.5). Excel garde Tier ; PDF non.
     // Commitment = devise native ; Commitment (USD) = converti (devise de référence).
@@ -48,7 +48,7 @@ public final class PipelineExport {
         List<List<Object>> fundRows = new ArrayList<>();
         for (PipelineItem i : funds) {
             fundRows.add(Arrays.asList(
-                    i.name(), i.strategy(), i.status().label(), i.score(),
+                    i.name(), i.assetClassLabel(), i.status().label(), i.score(),
                     i.tier() == null ? null : i.tier().label(),
                     i.vintageYear(), i.dpi(), i.irr(), i.moic(), i.geography(),
                     i.commitment(), i.currency(), i.commitmentUsd()));
@@ -56,7 +56,7 @@ public final class PipelineExport {
         List<List<Object>> dealRows = new ArrayList<>();
         for (PipelineItem i : deals) {
             dealRows.add(Arrays.asList(
-                    i.name(), i.strategy(), i.status().label(), i.score(),
+                    i.name(), i.assetClassLabel(), i.status().label(), i.score(),
                     i.industry(),
                     i.tier() == null ? null : i.tier().label(),
                     i.irr(), i.moic(), i.dealCagr(), i.dealEbitdaMargin(), i.dealEntryMultiple(),
@@ -76,7 +76,7 @@ public final class PipelineExport {
         List<List<String>> fundRows = new ArrayList<>();
         for (PipelineItem i : funds) {
             fundRows.add(Arrays.asList(
-                    i.name(), i.strategy(), i.status().label(), Formatters.score(i.score()),
+                    i.name(), i.assetClassLabel(), i.status().label(), Formatters.score(i.score()),
                     i.vintageYear() == null ? "—" : Integer.toString(i.vintageYear()),
                     Formatters.multiple(i.dpi()), Formatters.percent(i.irr()), Formatters.multiple(i.moic()),
                     Formatters.text(i.geography()), Formatters.money(i.commitment()),
@@ -85,7 +85,7 @@ public final class PipelineExport {
         List<List<String>> dealRows = new ArrayList<>();
         for (PipelineItem i : deals) {
             dealRows.add(Arrays.asList(
-                    i.name(), i.strategy(), i.status().label(), Formatters.score(i.score()),
+                    i.name(), i.assetClassLabel(), i.status().label(), Formatters.score(i.score()),
                     Formatters.text(i.industry()),
                     Formatters.percent(i.irr()), Formatters.multiple(i.moic()),
                     Formatters.percent(i.dealCagr()), Formatters.percent(i.dealEbitdaMargin()),
@@ -95,10 +95,8 @@ public final class PipelineExport {
         }
         String subtitle = "Patrimium MFO — pipeline · " + LocalDate.now() + " · " + items.size() + " opportunities";
         Pdf.writeSections(file, "Investment pipeline", subtitle, List.of(
-                new Pdf.Section("Funds (Buyout, growth, VC · Secondaries · Private credit)",
-                        FUND_PDF_HEADERS, fundRows),
-                new Pdf.Section("Direct deals (Co-investment & direct)",
-                        DEAL_PDF_HEADERS, dealRows)), true);
+                new Pdf.Section("Fund commitments", FUND_PDF_HEADERS, fundRows),
+                new Pdf.Section("Direct & co-investment deals", DEAL_PDF_HEADERS, dealRows)), true);
     }
 
     private static List<String> concat(List<String> base, String... extra) {

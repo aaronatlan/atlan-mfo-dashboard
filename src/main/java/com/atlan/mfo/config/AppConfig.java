@@ -36,12 +36,17 @@ public final class AppConfig {
         String url = firstNonBlank(System.getenv("ATLAN_DB_URL"), props.getProperty("db.url"));
         String user = firstNonBlank(System.getenv("ATLAN_DB_USER"), props.getProperty("db.user"));
         String password = firstNonBlank(System.getenv("ATLAN_DB_PASSWORD"), props.getProperty("db.password"));
+        // Défauts volontairement conservateurs : une configuration incomplète ne doit
+        // JAMAIS toucher au schéma ni injecter de données. Un poste installé pointe sur
+        // la base de production ; si l'opérateur oublie ces deux clés, les anciens défauts
+        // (migrations=true, seed=dev) y auraient créé les comptes de démo admin/partner.
+        // Le développement active explicitement les deux (voir config.properties.example).
         boolean migrations = Boolean.parseBoolean(
                 firstNonBlank(System.getenv("ATLAN_DB_RUN_MIGRATIONS"),
-                        firstNonBlank(props.getProperty("db.runMigrations"), "true")));
-        // Profil de seed : dev (démo, défaut) | prod (admin seul) | none (aucun)
+                        firstNonBlank(props.getProperty("db.runMigrations"), "false")));
+        // Profil de seed : dev (démo) | prod (admin seul) | none (aucun, défaut)
         String seed = firstNonBlank(System.getenv("ATLAN_DB_SEED"),
-                firstNonBlank(props.getProperty("db.seed"), "dev")).toLowerCase();
+                firstNonBlank(props.getProperty("db.seed"), "none")).toLowerCase();
         if (!seed.equals("dev") && !seed.equals("prod") && !seed.equals("none")) {
             throw new IllegalStateException("db.seed doit valoir dev, prod ou none (reçu : " + seed + ")");
         }

@@ -1,6 +1,7 @@
 package com.atlan.mfo.model;
 
 import com.atlan.mfo.model.enums.Category;
+import com.atlan.mfo.model.enums.Classification;
 import com.atlan.mfo.model.enums.DealStatus;
 import com.atlan.mfo.model.enums.Tier;
 
@@ -49,6 +50,17 @@ public record PipelineItem(
 
     public Tier tier() {
         return score == null ? null : Tier.fromScore(score);
+    }
+
+    /**
+     * Libellé de la classe d'actifs — l'axe organisateur réel depuis la refonte de la
+     * classification. Repli sur {@link #strategy} (libellé legacy) tant qu'une
+     * opportunité n'est pas classée.
+     */
+    public String assetClassLabel() {
+        String l = Classification.label(
+                Classification.AssetClass.class, assetClass, Classification.AssetClass::label);
+        return l != null ? l : strategy;
     }
 
     public boolean isActive() {

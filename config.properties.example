@@ -6,9 +6,11 @@
 db.url=jdbc:postgresql://localhost:5432/atlan_mfo
 db.user=
 db.password=
-# Exécuter les migrations (schéma + seed) au démarrage
+# Exécuter les migrations (schéma + seed) au démarrage.
+# Défaut = false : un oubli ne doit jamais toucher au schéma d'une base de prod.
 db.runMigrations=true
-# Jeu de données : dev (démo) | prod (admin seul) | none (aucun)
+# Jeu de données : dev (démo) | prod (admin seul) | none (aucun).
+# Défaut = none : un oubli ne doit jamais injecter les comptes de démo en prod.
 db.seed=dev
 
 # --- PRODUCTION (base centralisée partagée) ----------------------------------

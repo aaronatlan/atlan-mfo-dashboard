@@ -38,14 +38,6 @@ public final class PresentationView extends BorderPane {
 
     private static final String ALL_STRATEGIES = "All asset classes";
 
-    /** Libellé de classe d'actifs d'une opportunité (repli sur la stratégie legacy). */
-    private static String assetClassOf(PipelineItem i) {
-        String l = com.atlan.mfo.model.enums.Classification.label(
-                com.atlan.mfo.model.enums.Classification.AssetClass.class, i.assetClass(),
-                com.atlan.mfo.model.enums.Classification.AssetClass::label);
-        return l != null ? l : i.strategy();
-    }
-
     private final BiConsumer<PipelineItem, DealStatus> onStatusChange;
     private final Consumer<PipelineItem> onOpen;
     private final Function<PipelineItem, String> headline;
@@ -409,7 +401,7 @@ public final class PresentationView extends BorderPane {
             rows.getChildren().clear();
             String f = filter.getValue();
             for (PipelineItem i : sorted) {
-                if (ALL_STRATEGIES.equals(f) || assetClassOf(i).equals(f)) {
+                if (ALL_STRATEGIES.equals(f) || i.assetClassLabel().equals(f)) {
                     rows.getChildren().add(decisionRow(i));
                 }
             }
@@ -433,7 +425,7 @@ public final class PresentationView extends BorderPane {
         nameBox.setOnMouseClicked(e -> onOpen.accept(i));
 
         // Classe d'actifs + ligne secondaire « sous-stratégie · secteur » (si renseignés).
-        Label strat = new Label(assetClassOf(i));
+        Label strat = new Label(i.assetClassLabel());
         strat.getStyleClass().add("pres-priority-strategy");
         VBox stratBox = new VBox(3, strat);
         stratBox.setMinWidth(200);

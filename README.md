@@ -35,6 +35,11 @@ On startup, if `db.runMigrations=true`, the application runs
 `db.seed` (`dev` = demo data, `prod` = admin only, `none` = none). All scripts
 are idempotent.
 
+Both keys default to the **safe** value (`db.runMigrations=false`, `db.seed=none`):
+an installed machine points at the production database, so an incomplete config
+must never alter the schema or inject the demo accounts. Development opts in
+explicitly — see `config.properties.example`.
+
 ## Run
 
 ```bash

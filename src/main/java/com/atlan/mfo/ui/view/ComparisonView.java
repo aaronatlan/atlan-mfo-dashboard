@@ -107,10 +107,7 @@ public final class ComparisonView extends VBox {
         Label name = new Label(item.name());
         name.getStyleClass().add("detail-card-title");
         name.setWrapText(true);
-        String cls = com.atlan.mfo.model.enums.Classification.label(
-                com.atlan.mfo.model.enums.Classification.AssetClass.class, item.assetClass(),
-                com.atlan.mfo.model.enums.Classification.AssetClass::label);
-        Label subtitle = new Label((cls != null ? cls : item.strategy()) + "  ·  " + item.status().label());
+        Label subtitle = new Label(item.assetClassLabel() + "  ·  " + item.status().label());
         subtitle.getStyleClass().add("detail-subtitle");
 
         Label score = new Label(Formatters.score(b.score()));
