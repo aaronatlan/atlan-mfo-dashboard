@@ -22,6 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Avec {@code targetAttainment = 0,8}, k = ln 5, donc la courbe se lit simplement :
  * {@code sous-score = points × (1 − 5^(−valeur ÷ cible))}.
+ *
+ * <p>La géographie n'entre plus dans le score : les points DPI/TVPI/IRR des grilles
+ * fonds ont été redistribués ×1,2 (36/24/30, total 90 inchangé) et ceux de la grille
+ * deals ×1,125 (28,125/22,5/11,25/28,125, total 90 inchangé).
  */
 class ScoringEngineTest {
 
@@ -32,44 +36,43 @@ class ScoringEngineTest {
 
     @Test
     void gridA_singleVintage() {
-        // Millésime 2021 → âge 5 ; maturité = (5−3)/5 = 0,4 → DPI 12 pts, TVPI 38 pts.
-        // DPI  0,65/0,8  → (1−5^−0,8125) × 12 = 8,75
-        // TVPI 2,1/2,5   → (1−5^−0,84)   × 38 = 28,17   (TVPI absent → repli sur MOIC)
-        // IRR  0,24/0,30 → (1−5^−0,8)    × 25 = 18,10
-        // Géo US = 15 ; earned 70,02 / possible 90 → 77,8 → 78
+        // Millésime 2021 → âge 5 ; maturité = (5−3)/5 = 0,4 → DPI 14,4 pts, TVPI 45,6 pts.
+        // DPI  0,65/0,8  → (1−5^−0,8125) × 14,4 = 10,51
+        // TVPI 2,1/2,5   → (1−5^−0,84)   × 45,6 = 33,80   (TVPI absent → repli sur MOIC)
+        // IRR  0,24/0,30 → (1−5^−0,8)    × 30   = 21,72
+        // earned 66,03 / possible 90 → 73,4 → 73
         FundInvestment f = fund(Category.BUYOUT_GROWTH_VC, null, "US", List.of(v(2021, 0.65, 0.24, 2.1)));
         ScoreBreakdown b = engine.score(f, REF);
-        assertEquals(78, b.score());
+        assertEquals(73, b.score());
         assertEquals(Tier.STRONG, b.tier());
     }
 
     @Test
     void gridA_twoVintages_recencyWeighted() {
         // 2022 (poids 1) + 2018 (poids 0,5) : DPI 0,567 ; IRR 0,24 ; MOIC 2,0
-        // âge pondéré = (4 + 0,5×8)/1,5 = 5,33 → maturité 0,467 → DPI 14 pts, TVPI 36 pts
-        // DPI (1−5^−0,7083) × 14 = 9,52 ; TVPI (1−5^−0,8) × 36 = 26,07
-        // IRR (1−5^−0,8) × 25 = 18,10 ; géo 15 → earned 68,69 / 90 → 76,3 → 76
+        // âge pondéré = (4 + 0,5×8)/1,5 = 5,33 → maturité 0,467 → DPI 16,8 pts, TVPI 43,2 pts
+        // earned 64,43 / possible 90 → 71,6 → 72
         FundInvestment f = fund(Category.BUYOUT_GROWTH_VC, null, "US",
                 List.of(v(2022, 0.30, 0.26, 1.9), v(2018, 1.10, 0.20, 2.2)));
-        assertEquals(76, engine.score(f, REF).score());
+        assertEquals(72, engine.score(f, REF).score());
     }
 
     @Test
     void gridB_privateCredit() {
-        // Cibles crédit : DPI 0,7 / TVPI 1,8 / IRR 0,20 ; maturité 0,4 → 12 et 38 pts
-        // 8,61 + 27,13 + 16,90 + 15 = 67,64 / 90 → 75,2 → 75
+        // Cibles crédit : DPI 0,7 / TVPI 1,8 / IRR 0,20 ; maturité 0,4 → 14,4 et 45,6 pts
+        // earned 63,17 / possible 90 → 70,2 → 70
         FundInvestment f = fund(Category.PRIVATE_CREDIT, "PRIVATE_CREDIT", "US",
                 List.of(v(2021, 0.55, 0.14, 1.4)));
-        assertEquals(75, engine.score(f, REF).score());
+        assertEquals(70, engine.score(f, REF).score());
     }
 
     @Test
     void gridC_deal() {
-        // CAGR (1−5^−1,175) × 25 = 21,23 ; marge (1−5^−0,7143) × 20 = 13,67
-        // FCF (1−5^−0,7778) × 10 = 7,14 ; IRR (1−5^−1,0667) × 25 = 20,51 ; géo 10
-        // earned 72,54 / possible 90 → 80,6 → 81
+        // CAGR (1−5^−1,175) × 28,125 ; marge (1−5^−0,7143) × 22,5
+        // FCF (1−5^−0,7778) × 11,25 ; IRR (1−5^−1,0667) × 28,125
+        // earned 70,36 / possible 90 → 78,2 → 78
         DirectDeal d = deal("US", 0.47, 0.25, 0.70, 0.32);
-        assertEquals(81, engine.score(d, REF).score());
+        assertEquals(78, engine.score(d, REF).score());
     }
 
     @Test
@@ -87,15 +90,15 @@ class ScoringEngineTest {
 
     @Test
     void curveSeparatesEliteFromMerelyOnTarget() {
-        // Millésime 2018 → âge 8 → maturité 1 → DPI 30 pts, TVPI 20 pts.
-        // Pile à la cible : chaque composant vaut 80 % → 24 + 16 + 20 + 15 = 75 / 90 → 83
+        // Millésime 2018 → âge 8 → maturité 1 → DPI 36 pts, TVPI 24 pts.
+        // Pile à la cible : chaque composant vaut 80 % → 28,8 + 19,2 + 24 = 72 / 90 → 80
         FundInvestment onTarget = fund(Category.BUYOUT_GROWTH_VC, "PRIVATE_EQUITY", "US",
                 List.of(v(2018, 0.8, 0.30, 2.5)));
-        // Trois fois la cible : 29,76 + 19,58 + 24,00 + 15 = 88,34 / 90 → 98,2 → plafond 95
+        // Trois fois la cible : 35,71 + 23,50 + 28,80 = 88,01 / 90 → 97,8 → plafond 95
         FundInvestment elite = fund(Category.BUYOUT_GROWTH_VC, "PRIVATE_EQUITY", "US",
                 List.of(v(2018, 2.4, 0.60, 6.0)));
 
-        assertEquals(83, engine.score(onTarget, REF).score());
+        assertEquals(80, engine.score(onTarget, REF).score());
         assertEquals(95, engine.score(elite, REF).score());
         // L'ancienne grille (plafond dur à la cible) les donnait tous deux à 95.
     }
@@ -110,7 +113,7 @@ class ScoringEngineTest {
         ScoreBreakdown b = engine.score(young, REF);
 
         assertFalse(has(b, "DPI"), "le DPI ne doit pas être affiché sous le seuil de maturité");
-        assertEquals(50.0, max(b, "TVPI"), 1e-9);   // 30 + 20 : la dimension multiple entière
+        assertEquals(60.0, max(b, "TVPI"), 1e-9);   // 36 + 24 : la dimension multiple entière
     }
 
     @Test
@@ -118,8 +121,8 @@ class ScoringEngineTest {
         FundInvestment mature = fund(Category.BUYOUT_GROWTH_VC, "PRIVATE_EQUITY", "US",
                 List.of(v(2018, 0.9, 0.20, 2.0)));
         ScoreBreakdown b = engine.score(mature, REF);
-        assertEquals(30.0, max(b, "DPI"), 1e-9);
-        assertEquals(20.0, max(b, "TVPI"), 1e-9);
+        assertEquals(36.0, max(b, "DPI"), 1e-9);
+        assertEquals(24.0, max(b, "TVPI"), 1e-9);
     }
 
     @Test
@@ -127,23 +130,23 @@ class ScoringEngineTest {
         // TVPI 1,0 (médiocre) vs MOIC 10,0 (mirobolant) : c'est la TVPI qui doit primer.
         FundInvestment f = fund(Category.BUYOUT_GROWTH_VC, "PRIVATE_EQUITY", "US",
                 List.of(vt(2018, 0.9, 1.0, 0.20, 10.0)));
-        // TVPI 1,0/2,5 = 0,4 → (1−5^−0,4) × 20 = 9,49 — très loin des 20 qu'aurait donné le MOIC
-        assertEquals(9.49, sub(engine.score(f, REF), "TVPI"), 0.01);
+        // TVPI 1,0/2,5 = 0,4 → (1−5^−0,4) × 24 = 11,39 — très loin des 24 qu'aurait donné le MOIC
+        assertEquals(11.39, sub(engine.score(f, REF), "TVPI"), 0.01);
     }
 
     /* ---------- Cas limites ---------- */
 
     @Test
     void missingMetricsExcluded_andFloorApplies() {
-        // Seul le DPI (à la cible) est communiqué : maturité 0,4 → 12 pts × 80 % = 9,6
-        // earned 9,6, possible 12, mais plancher 80 → 9,6/80 = 12
+        // Seul le DPI (à la cible) est communiqué : maturité 0,4 → 14,4 pts × 80 % = 11,52
+        // earned 11,52, possible 14,4, mais plancher 80 → 11,52/80×100 = 14,4 → 14
         FundInvestment f = fund(Category.BUYOUT_GROWTH_VC, null, null, List.of(v(2021, 0.8, null, null)));
         ScoreBreakdown b = engine.score(f, REF);
-        assertEquals(12, b.score());
+        assertEquals(14, b.score());
         assertEquals(Tier.CAUTION, b.tier());
         assertFalse(communicated(b, "TVPI"));
         assertFalse(communicated(b, "IRR"));
-        assertFalse(communicated(b, "Geography"));
+        assertFalse(has(b, "Geography"), "la géographie ne doit plus faire partie des composants notés");
     }
 
     @Test
@@ -156,12 +159,12 @@ class ScoringEngineTest {
     @Test
     void negativeMetricScoresZeroNotNegative() {
         // IRR négatif : sous-score 0, jamais négatif, et la métrique reste communiquée.
-        // 8,75 (DPI) + 28,17 (TVPI) + 0 (IRR) + 15 (géo) = 51,92 / 90 → 57,7 → 58
+        // 10,51 (DPI) + 33,80 (TVPI) + 0 (IRR) = 44,31 / 90 → 49,2 → 49
         FundInvestment f = fund(Category.BUYOUT_GROWTH_VC, null, "US", List.of(v(2021, 0.65, -0.10, 2.1)));
         ScoreBreakdown b = engine.score(f, REF);
         assertEquals(0.0, sub(b, "IRR"), 1e-9);
         assertTrue(communicated(b, "IRR"));
-        assertEquals(58, b.score());
+        assertEquals(49, b.score());
     }
 
     @Test
@@ -173,12 +176,18 @@ class ScoringEngineTest {
     }
 
     @Test
-    void geography_match_alias_other_excluded() {
-        assertEquals(15.0, geoSub(fund(Category.BUYOUT_GROWTH_VC, null, "US", one())), 1e-9);
-        assertEquals(15.0, geoSub(fund(Category.BUYOUT_GROWTH_VC, null, "USA", one())), 1e-9);
-        assertEquals(8.0, geoSub(fund(Category.BUYOUT_GROWTH_VC, null, "Brazil", one())), 1e-9);
-        assertFalse(communicated(engine.score(
-                fund(Category.BUYOUT_GROWTH_VC, null, "  ", one()), REF), "Geography"));
+    void geographyIsNotScored() {
+        // La géographie reste une donnée du fonds (affichée, filtrable, cartographiée en
+        // présentation) mais n'apparaît plus du tout parmi les composants du score : deux
+        // fonds identiques sauf la géographie doivent produire exactement le même score.
+        List<FundVintage> vs = List.of(v(2021, 0.65, 0.24, 2.1));
+        FundInvestment us = fund(Category.BUYOUT_GROWTH_VC, null, "US", vs);
+        FundInvestment brazil = fund(Category.BUYOUT_GROWTH_VC, null, "Brazil", vs);
+        FundInvestment blank = fund(Category.BUYOUT_GROWTH_VC, null, null, vs);
+
+        assertFalse(has(engine.score(us, REF), "Geography"));
+        assertEquals(engine.score(us, REF).score(), engine.score(brazil, REF).score());
+        assertEquals(engine.score(us, REF).score(), engine.score(blank, REF).score());
     }
 
     @Test
@@ -192,10 +201,6 @@ class ScoringEngineTest {
     }
 
     /* ---------- Helpers ---------- */
-
-    private double geoSub(FundInvestment f) {
-        return sub(engine.score(f, REF), "Geography");
-    }
 
     private static double sub(ScoreBreakdown b, String label) {
         return b.components().stream().filter(c -> c.label().equals(label))
@@ -214,10 +219,6 @@ class ScoringEngineTest {
 
     private static boolean has(ScoreBreakdown b, String label) {
         return b.components().stream().anyMatch(c -> c.label().equals(label));
-    }
-
-    private static List<FundVintage> one() {
-        return List.of(v(2021, 0.65, 0.24, 2.1));
     }
 
     /** Millésime sans TVPI (repli sur MOIC). */

@@ -18,8 +18,9 @@ import java.util.function.Consumer;
 /**
  * Méthodologie de scoring — <b>éditable</b> (voir §5). Permet d'ajuster les points
  * (poids) et cibles de chaque grille, plus les paramètres globaux. Enregistrer
- * recalcule tous les scores. Les régions géographiques préférées et les paliers de
- * timeline (en jours) restent fixes.
+ * recalcule tous les scores. La géographie n'entre plus dans le score (retirée à la
+ * demande du comité) — elle reste une donnée affichée, filtrable et cartographiée en
+ * présentation.
  */
 public final class MethodologyView extends ScrollPane {
 
@@ -44,8 +45,10 @@ public final class MethodologyView extends ScrollPane {
                 title("Scoring methodology"),
                 note("The score measures quality only — it moves when the data moves, never with the "
                         + "calendar. Deadlines are shown as urgency on each opportunity, not scored here. "
-                        + "Targets are reference points, not caps: reaching one earns the target "
-                        + "attainment below, and beating it keeps earning, with diminishing returns."),
+                        + "Geography is not scored either — it stays a filterable, mapped attribute in "
+                        + "presentation mode. Targets are reference points, not caps: reaching one earns "
+                        + "the target attainment below, and beating it keeps earning, with diminishing "
+                        + "returns."),
                 fundGridCard("Grid A — Private equity funds", "gridA"),
                 fundGridCard("Grid B — Private credit funds", "gridB"),
                 fundGridCard("Grid D — Venture capital funds  ·  targets pending IC ratification", "gridD"),
@@ -65,8 +68,7 @@ public final class MethodologyView extends ScrollPane {
         int r = header(g);
         r = ratioRow(g, r, "DPI — capital returned", p + ".dpi");
         r = ratioRow(g, r, "TVPI — total value", p + ".tv");
-        r = ratioRow(g, r, "IRR", p + ".irr");
-        geoRow(g, r, p + ".geo");
+        ratioRow(g, r, "IRR", p + ".irr");
         VBox box = card(heading, g);
         box.getChildren().add(hint("DPI and TVPI points shown at full maturity. A young track record "
                 + "has not distributed yet, so its DPI points shift onto TVPI — the pair always "
@@ -80,8 +82,7 @@ public final class MethodologyView extends ScrollPane {
         r = ratioRow(g, r, "Revenue CAGR", "gridC.cagr");
         r = ratioRow(g, r, "EBITDA Margin", "gridC.margin");
         r = ratioRow(g, r, "FCF Conversion", "gridC.fcf");
-        r = ratioRow(g, r, "Expected IRR", "gridC.irr");
-        geoRow(g, r, "gridC.geo");
+        ratioRow(g, r, "Expected IRR", "gridC.irr");
         return card("Grid C — Direct & co-investment deals", g);
     }
 
@@ -116,13 +117,6 @@ public final class MethodologyView extends ScrollPane {
         g.add(cell(label), 0, r);
         g.add(field(base + ".points"), 1, r);
         g.add(field(base + ".target"), 2, r);
-        return r + 1;
-    }
-
-    private int geoRow(GridPane g, int r, String base) {
-        g.add(cell("Geography (match · other)"), 0, r);
-        g.add(field(base + ".points"), 1, r);
-        g.add(field(base + ".other"), 2, r);
         return r + 1;
     }
 

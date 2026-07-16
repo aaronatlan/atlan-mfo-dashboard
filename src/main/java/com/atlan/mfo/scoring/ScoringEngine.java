@@ -60,7 +60,6 @@ public final class ScoringEngine {
         }
         comps.add(ratio("TVPI", new ScoringProfile.Ratio(tvPoints, g.tv().target()), tv, k));
         comps.add(ratio("IRR", g.irr(), blended(fund.vintages(), FundVintage::irr), k));
-        comps.add(geo("Geography", g.geo(), fund.geography()));
 
         return assemble(comps);
     }
@@ -88,7 +87,6 @@ public final class ScoringEngine {
         comps.add(ratio("EBITDA Margin", g.margin(), deal.ebitdaMgnPct(), k));
         comps.add(ratio("FCF Conversion", g.fcf(), deal.fcfConvPct(), k));
         comps.add(ratio("Expected IRR", g.irr(), deal.expIrrPct(), k));
-        comps.add(geo("Geography", g.geo(), deal.geography()));
 
         return assemble(comps);
     }
@@ -100,16 +98,6 @@ public final class ScoringEngine {
             return ScoreComponent.excluded(label, spec.points());
         }
         return ScoreComponent.scored(label, spec.points(), spec.subScore(value, k));
-    }
-
-    private ScoreComponent geo(String label, ScoringProfile.Geo spec, String rawGeography) {
-        String canonical = GeographyMatcher.normalize(rawGeography);
-        if (canonical == null) {
-            return ScoreComponent.excluded(label, spec.matchPoints());
-        }
-        double pts = GeographyMatcher.isMatch(canonical, spec.preferred())
-                ? spec.matchPoints() : spec.otherPoints();
-        return ScoreComponent.scored(label, spec.matchPoints(), pts);
     }
 
     /* ---- Maturité du track record (§5.5) ---- */

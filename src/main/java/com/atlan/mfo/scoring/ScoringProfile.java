@@ -1,7 +1,6 @@
 package com.atlan.mfo.scoring;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.LinkedHashMap;
 import java.util.function.Function;
 
@@ -12,6 +11,12 @@ import java.util.function.Function;
  * <p>Cinq grilles fonds — A (private equity), B (private credit), D (venture capital),
  * E (real assets), F (secondaires) — plus C (deals directs et co-investissements).
  * La grille appliquée découle de la classe d'actifs ({@link #fundGrid}).
+ *
+ * <p>La géographie n'entre plus dans le score (elle reste une donnée affichée, filtrable
+ * et cartographiée en présentation — voir {@link GeographyMatcher}, {@code Countries},
+ * {@code WorldHeatMap} — mais ne pèse plus sur la note). Ses points ont été redistribués
+ * proportionnellement aux composants restants pour que le total par grille (et donc
+ * {@link #possibleFloor}/{@link #scoreCap}) reste inchangé.
  */
 public final class ScoringProfile {
 
@@ -37,10 +42,6 @@ public final class ScoringProfile {
         }
     }
 
-    /** Géographie : plein score si région préférée, sinon « autre ». */
-    public record Geo(double matchPoints, double otherPoints, Set<String> preferred) {
-    }
-
     /**
      * Grille fonds. {@code dpi} = capital réellement distribué ; {@code tv} = valeur
      * totale (TVPI, à défaut MOIC).
@@ -51,14 +52,14 @@ public final class ScoringProfile {
      * qui porte le jugement. Les points affichés ici sont ceux <b>à pleine maturité</b> ;
      * leur somme ({@link #multiplePoints}) reste constante quelle que soit la maturité.
      */
-    public record FundGrid(Ratio dpi, Ratio tv, Ratio irr, Geo geo) {
+    public record FundGrid(Ratio dpi, Ratio tv, Ratio irr) {
         public double multiplePoints() {
             return dpi.points() + tv.points();
         }
     }
 
     /** Grille deals directs (C). */
-    public record DealGrid(Ratio cagr, Ratio margin, Ratio fcf, Ratio irr, Geo geo) {
+    public record DealGrid(Ratio cagr, Ratio margin, Ratio fcf, Ratio irr) {
     }
 
     // Normalisation (§5.1)
@@ -123,24 +124,23 @@ public final class ScoringProfile {
 
     /** Configuration par défaut (méthodologie §5). */
     public static ScoringProfile defaults() {
-        Set<String> pref = Set.of("US", "EUROPE", "UK");
-        Geo fundGeo = new Geo(15, 8, pref);
-
-        // Grilles A et B : cibles historiques du comité, inchangées.
-        FundGrid a = new FundGrid(new Ratio(30, 0.8), new Ratio(20, 2.5), new Ratio(25, 0.30), fundGeo);
-        FundGrid b = new FundGrid(new Ratio(30, 0.7), new Ratio(20, 1.8), new Ratio(25, 0.20), fundGeo);
+        // Grilles A et B : cibles historiques du comité, inchangées. Points DPI/TVPI/IRR
+        // redistribués ×1,2 (90/75) pour absorber les 15 pts retirés à la géographie tout
+        // en conservant un total de 90 par grille — le ratio 30:20:25 entre eux ne change pas.
+        FundGrid a = new FundGrid(new Ratio(36, 0.8), new Ratio(24, 2.5), new Ratio(30, 0.30));
+        FundGrid b = new FundGrid(new Ratio(36, 0.7), new Ratio(24, 1.8), new Ratio(30, 0.20));
 
         // Grilles D, E, F : cibles À RATIFIER PAR LE COMITÉ D'INVESTISSEMENT.
         // Valeurs de départ calées sur les conventions publiques de quartiles par classe
         // (Cambridge Associates / Preqin) — points de départ de discussion, pas des
         // recommandations d'investissement. Éditables dans Methodology.
-        FundGrid d = new FundGrid(new Ratio(30, 0.6), new Ratio(20, 3.0), new Ratio(25, 0.25), fundGeo);
-        FundGrid e = new FundGrid(new Ratio(30, 0.9), new Ratio(20, 1.8), new Ratio(25, 0.12), fundGeo);
-        FundGrid f = new FundGrid(new Ratio(30, 0.9), new Ratio(20, 1.7), new Ratio(25, 0.18), fundGeo);
+        FundGrid d = new FundGrid(new Ratio(36, 0.6), new Ratio(24, 3.0), new Ratio(30, 0.25));
+        FundGrid e = new FundGrid(new Ratio(36, 0.9), new Ratio(24, 1.8), new Ratio(30, 0.12));
+        FundGrid f = new FundGrid(new Ratio(36, 0.9), new Ratio(24, 1.7), new Ratio(30, 0.18));
 
+        // Grille C : redistribution ×1,125 (90/80) des 10 pts retirés à la géographie.
         DealGrid c = new DealGrid(
-                new Ratio(25, 0.4), new Ratio(20, 0.35), new Ratio(10, 0.9), new Ratio(25, 0.3),
-                new Geo(10, 5, pref));
+                new Ratio(28.125, 0.4), new Ratio(22.5, 0.35), new Ratio(11.25, 0.9), new Ratio(28.125, 0.3));
 
         return new ScoringProfile(80, 95, 0.80, 4, 3, 8, a, b, d, e, f, c);
     }
@@ -163,8 +163,6 @@ public final class ScoringProfile {
         m.put("gridC.fcf.target", gridC.fcf().target());
         m.put("gridC.irr.points", gridC.irr().points());
         m.put("gridC.irr.target", gridC.irr().target());
-        m.put("gridC.geo.points", gridC.geo().matchPoints());
-        m.put("gridC.geo.other", gridC.geo().otherPoints());
         m.put("global.possibleFloor", possibleFloor);
         m.put("global.scoreCap", scoreCap);
         m.put("global.targetAttainment", targetAttainment);
@@ -181,40 +179,35 @@ public final class ScoringProfile {
         m.put(p + ".tv.target", g.tv().target());
         m.put(p + ".irr.points", g.irr().points());
         m.put(p + ".irr.target", g.irr().target());
-        m.put(p + ".geo.points", g.geo().matchPoints());
-        m.put(p + ".geo.other", g.geo().otherPoints());
     }
 
     /**
      * Construit un profil depuis des surcharges clé→valeur ; toute clé absente prend sa
-     * valeur par défaut. Les ensembles géographiques restent fixes (non éditables).
+     * valeur par défaut.
      */
     public static ScoringProfile fromMap(Map<String, Double> overrides) {
         var d = defaults().toMap();
         Function<String, Double> g = k -> overrides.getOrDefault(k, d.get(k));
-        Set<String> pref = Set.of("US", "EUROPE", "UK");
 
         DealGrid c = new DealGrid(
                 new Ratio(g.apply("gridC.cagr.points"), g.apply("gridC.cagr.target")),
                 new Ratio(g.apply("gridC.margin.points"), g.apply("gridC.margin.target")),
                 new Ratio(g.apply("gridC.fcf.points"), g.apply("gridC.fcf.target")),
-                new Ratio(g.apply("gridC.irr.points"), g.apply("gridC.irr.target")),
-                new Geo(g.apply("gridC.geo.points"), g.apply("gridC.geo.other"), pref));
+                new Ratio(g.apply("gridC.irr.points"), g.apply("gridC.irr.target")));
 
         return new ScoringProfile(
                 g.apply("global.possibleFloor"), g.apply("global.scoreCap"),
                 g.apply("global.targetAttainment"), g.apply("global.vintageHalfLife"),
                 g.apply("global.maturityYoung"), g.apply("global.maturityMature"),
-                fundGridFrom(g, "gridA", pref), fundGridFrom(g, "gridB", pref),
-                fundGridFrom(g, "gridD", pref), fundGridFrom(g, "gridE", pref),
-                fundGridFrom(g, "gridF", pref), c);
+                fundGridFrom(g, "gridA"), fundGridFrom(g, "gridB"),
+                fundGridFrom(g, "gridD"), fundGridFrom(g, "gridE"),
+                fundGridFrom(g, "gridF"), c);
     }
 
-    private static FundGrid fundGridFrom(Function<String, Double> g, String p, Set<String> pref) {
+    private static FundGrid fundGridFrom(Function<String, Double> g, String p) {
         return new FundGrid(
                 new Ratio(g.apply(p + ".dpi.points"), g.apply(p + ".dpi.target")),
                 new Ratio(g.apply(p + ".tv.points"), g.apply(p + ".tv.target")),
-                new Ratio(g.apply(p + ".irr.points"), g.apply(p + ".irr.target")),
-                new Geo(g.apply(p + ".geo.points"), g.apply(p + ".geo.other"), pref));
+                new Ratio(g.apply(p + ".irr.points"), g.apply(p + ".irr.target")));
     }
 }
