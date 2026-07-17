@@ -116,6 +116,73 @@ Re-run the same command to **reset** an existing account's password.
 
 ---
 
+## 4bis. Bulk-importing an existing pipeline (one time only)
+
+If a spreadsheet of existing opportunities already exists (e.g. a legacy Excel
+tracker) and needs to be loaded into the database in one pass, use the import
+tool instead of re-entering every row by hand. This is meant for a **single
+initial load** — every entry made afterward should go through the application
+itself (the import tool is not a substitute for the "new fund" / "new deal"
+forms).
+
+1. Fill in `templates/pipeline-import-template.xlsx` (three sheets: `Funds`,
+   `Vintages`, `Deals`; see the `Instructions` sheet inside the file for the
+   exact rules — required columns, accepted values, how a vintage row links
+   back to its fund by name). This is the **only** file that should ever
+   contain real, confidential data — never send that data through anything
+   other than the channel your organization has approved for it.
+2. Run the import. Two ways to do this, depending on the machine:
+
+   **A — on a machine where the application is already installed, but with no
+   development tools (Java, Maven, git) — the common case on an office PC.**
+   Get `pipeline-import-tool.jar` and `packaging/import.bat` onto that machine
+   (same way an installer is normally handed over, e.g. §5.3), placed
+   together in the same folder, then double-click `import.bat` or run from a
+   command prompt:
+   ```bat
+   import.bat "C:\path\to\filled-in-pipeline.xlsx" <username>
+   ```
+   This reuses the Java runtime **already bundled with the installed app** —
+   no separate Java install, no repository clone. `import.bat` looks for that
+   installation automatically (Program Files, Desktop); if it can't find it,
+   pass the app's install folder as a 3rd argument (the error message prints
+   the exact paths it tried). The database connection is the one already
+   configured for that machine (`%USERPROFILE%\.atlan-mfo\config.properties`,
+   see §5.3) — nothing to reconfigure.
+
+   To (re)build `pipeline-import-tool.jar` (a single self-contained jar —
+   `PipelineImportTool` plus every dependency it needs, including the Excel
+   reader, Apache POI — that never affects the distributed application; see
+   the `import-tool` Maven profile in `pom.xml`):
+   ```bash
+   mvn -Pimport-tool -DskipTests clean package
+   # → target/pipeline-import-tool.jar
+   ```
+
+   **B — on a full development checkout (git + Maven + Java present)**, e.g.
+   your own machine:
+   ```bash
+   scripts/import-pipeline.sh /path/to/filled-in-pipeline.xlsx <username>
+   ```
+3. `<username>` is an existing account (see §4) — every imported row is
+   attributed to that user like a normal manual entry.
+4. The import is **all-or-nothing**: the whole file is validated first: if a
+   single row anywhere is invalid, nothing is written, and the tool prints
+   every error found (sheet, row, column) so the file can be corrected and
+   re-run. Only once the entire file passes validation are the funds, their
+   vintages, and the deals inserted.
+5. Delete the filled-in spreadsheet once the import has succeeded — its job
+   is done, and it may contain confidential data that shouldn't linger on
+   disk longer than necessary.
+
+To regenerate `templates/pipeline-import-template.xlsx` itself (only needed if
+the expected columns change), run
+`com.atlan.mfo.tools.PipelineImportTemplateTool` the same way `user-add.sh`
+runs `AdminTool` — it overwrites the template in place with fresh headers,
+dropdowns, and example rows.
+
+---
+
 ## 5. Installing the application on each machine
 
 ### 5.1 Building the installer (once per target platform)
