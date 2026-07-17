@@ -54,14 +54,17 @@ jobs:
         shell: bash
         run: ./scripts/package.sh ${{ matrix.type }}
 
-      - name: Préparer le paquet portable (app-image Windows → zip + run.bat)
+      # app-image Windows : injecter run.bat AVANT de publier l'artefact, sans le
+      # zipper nous-mêmes à ce stade. actions/upload-artifact zippe systématiquement
+      # tout artefact au téléchargement (via l'onglet Actions) — si le contenu est
+      # déjà notre propre .zip, on obtient un zip dans un zip. Un utilisateur qui
+      # n'extrait qu'un seul niveau se retrouve avec app\ et runtime\ introuvables
+      # (observé en conditions réelles). En publiant le dossier brut, le zip de
+      # GitHub reste le seul niveau à extraire.
+      - name: Injecter run.bat (app-image Windows)
         if: matrix.type == 'app-image'
         shell: pwsh
-        run: |
-          Copy-Item packaging/run.bat "target/installer/Patrimium MFO Dashboard/run.bat"
-          Compress-Archive -Path "target/installer/Patrimium MFO Dashboard" `
-            -DestinationPath "target/installer/Patrimium-MFO-Dashboard-portable-windows.zip"
-          Remove-Item -Recurse -Force "target/installer/Patrimium MFO Dashboard"
+        run: Copy-Item packaging/run.bat "target/installer/Patrimium MFO Dashboard/run.bat"
 
       - name: Publier l'artefact
         uses: actions/upload-artifact@v4
@@ -69,6 +72,18 @@ jobs:
           name: atlan-mfo-${{ matrix.os }}-${{ matrix.type }}
           path: target/installer/*
           if-no-files-found: error
+
+      # Zipper seulement maintenant, pour la Release GitHub : contrairement à un
+      # artefact de run, une Release exige un fichier (pas un dossier) en pièce
+      # jointe. Un asset de Release se télécharge directement, sans ré-emballage
+      # GitHub — donc un seul niveau de zip ici aussi.
+      - name: Zipper le paquet portable pour la Release (app-image Windows)
+        if: matrix.type == 'app-image'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "target/installer/Patrimium MFO Dashboard" `
+            -DestinationPath "target/installer/Patrimium-MFO-Dashboard-portable-windows.zip"
+          Remove-Item -Recurse -Force "target/installer/Patrimium MFO Dashboard"
 
       # Sur un tag : attacher l'installeur à la Release GitHub (via gh CLI, pré-installé).
       # Idempotent : chaque job (Windows/macOS) crée la release si absente puis y ajoute
