@@ -22,7 +22,6 @@
         <bcrypt.version>0.10.2</bcrypt.version>
         <slf4j.version>2.0.13</slf4j.version>
         <junit.version>5.10.2</junit.version>
-        <poi.version>5.3.0</poi.version>
 
         <main.class>com.atlan.mfo.Main</main.class>
         <launcher.class>com.atlan.mfo.Launcher</launcher.class>
@@ -65,17 +64,6 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>${slf4j.version}</version>
-        </dependency>
-
-        <!-- Lecture Excel (PipelineImportTool, import ponctuel). Scope compile (par défaut)
-             pour pouvoir être embarquée dans le jar autonome de cet outil (profil Maven
-             import-tool, maven-shade-plugin, qui ne shade que les scopes compile/runtime) ;
-             exclue explicitement (elle et ses transitives) de la copie runtime destinée à
-             jpackage ci-dessous, pour ne jamais gonfler l'application distribuée. -->
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
-            <version>${poi.version}</version>
         </dependency>
 
         <!-- Tests -->
@@ -142,68 +130,10 @@
                         <configuration>
                             <outputDirectory>${project.build.directory}/dist-input/lib</outputDirectory>
                             <includeScope>runtime</includeScope>
-                            <!-- Apache POI (lecture Excel) ne sert qu'à PipelineImportTool
-                                 (jar autonome séparé, profil import-tool) : exclue ici, elle
-                                 et toutes ses transitives, pour ne jamais gonfler l'app distribuée. -->
-                            <excludeArtifactIds>poi-ooxml,poi,poi-ooxml-lite,xmlbeans,commons-compress,commons-lang3,commons-io,curvesapi,log4j-api,commons-collections4,commons-codec,commons-math3,SparseBitSet</excludeArtifactIds>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <!-- mvn -Pimport-tool package : construit target/pipeline-import-tool.jar, un jar
-             unique et autonome (PipelineImportTool + toutes ses dépendances, y compris
-             Apache POI) destiné à être exécuté sur un poste où l'application est déjà
-             installée, via le runtime Java qu'elle embarque déjà (voir packaging/import.bat).
-             Profil séparé du build normal : le paquet distribué (jpackage) n'est jamais
-             affecté par cette construction. -->
-        <profile>
-            <id>import-tool</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-shade-plugin</artifactId>
-                        <version>3.5.3</version>
-                        <executions>
-                            <execution>
-                                <id>shade-import-tool</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>shade</goal>
-                                </goals>
-                                <configuration>
-                                    <finalName>pipeline-import-tool</finalName>
-                                    <artifactSet>
-                                        <excludes>
-                                            <exclude>org.openjfx:*</exclude>
-                                        </excludes>
-                                    </artifactSet>
-                                    <filters>
-                                        <filter>
-                                            <artifact>*:*</artifact>
-                                            <excludes>
-                                                <exclude>module-info.class</exclude>
-                                                <exclude>META-INF/*.SF</exclude>
-                                                <exclude>META-INF/*.DSA</exclude>
-                                                <exclude>META-INF/*.RSA</exclude>
-                                            </excludes>
-                                        </filter>
-                                    </filters>
-                                    <transformers>
-                                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                            <mainClass>com.atlan.mfo.tools.PipelineImportTool</mainClass>
-                                        </transformer>
-                                    </transformers>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

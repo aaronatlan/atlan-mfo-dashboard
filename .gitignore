@@ -1,7 +1,6 @@
 # Build
 target/
 *.log
-dependency-reduced-pom.xml
 
 # Sauvegardes locales (scripts/reset-pipeline.sh) — contiennent les données du pipeline
 pipeline-backup-*.sql
