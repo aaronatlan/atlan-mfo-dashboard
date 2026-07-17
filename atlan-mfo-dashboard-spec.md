@@ -438,15 +438,14 @@ The category selector at the top of the fund record (Buyout/growth/VC · Seconda
 - **Analyst view**: everything above — dense, editable, filters, data-entry buttons.
 - **Presentation mode**: read-only, clean, designed for projection at IC. No sidebar or filters. Content: headline figure (capital under review), 3–4 top-level metrics, allocation by strategy (bars), priority opportunities (top by score), and the governance reminder in the footer. A full-screen mode is desirable.
 
-The toggle is available in the top bar for an analyst. A partner is **locked** into presentation mode (see §7).
+The toggle is available in the top bar for both roles — analyst and partner have the same rights (see §7).
 
 ---
 
 ## 7. Authentication and roles
 
 - Login screen on startup: username + password, checked against `app_user` (BCrypt hash). The current session keeps the user and their role.
-- **ANALYST**: full read/write access, lands in the analyst view, can switch to presentation.
-- **PARTNER**: read-only, lands in and stays in presentation mode; data-entry screens and edit buttons are not offered.
+- **ANALYST** and **PARTNER** have the same rights: full read/write access, land in the analyst view, can switch to presentation and back. The role only changes the label shown in the app.
 - No sensitive data or database credentials are stored in the clear in the code. The first administrator user is created by the seed (`seed-dev.sql` in development, `seed-prod.sql` in production).
 - **Forced password change**: the admin (and any user provisioned with a temporary password) carries `must_change_password = TRUE`. After a successful authentication, the user is routed to the `change-password.fxml` screen **before** accessing the application, as long as this flag is true (see §13.3).
 

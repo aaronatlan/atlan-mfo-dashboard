@@ -52,7 +52,7 @@ The **dev** seed creates two demo accounts:
 
 - `admin` / `admin` — analyst; `must_change_password`: the application forces
   a password change before accessing the screens (see spec §13.3);
-- `partner` / `partner` — read-only, locked into presentation mode (§6.3, §7).
+- `partner` / `partner` — same rights as analyst (§7); label only differs.
 
 In **production** (`db.seed=prod`), only an `admin` account with a temporary
 password is created; other users are provisioned via `scripts/user-add.sh`

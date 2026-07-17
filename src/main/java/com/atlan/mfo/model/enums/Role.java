@@ -1,9 +1,10 @@
 package com.atlan.mfo.model.enums;
 
-/** Rôle applicatif d'un utilisateur (voir §7). */
+/**
+ * Rôle applicatif d'un utilisateur (voir §7). Les deux rôles ont les mêmes droits
+ * (accès complet lecture/écriture, mode présentation) ; seul le libellé affiché diffère.
+ */
 public enum Role {
-    /** Accès complet lecture/écriture, vue analyste. */
     ANALYST,
-    /** Lecture seule, verrouillé en mode présentation. */
     PARTNER
 }

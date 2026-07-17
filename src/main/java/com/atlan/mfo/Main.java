@@ -95,16 +95,13 @@ public class Main extends Application {
     }
 
     /**
-     * Après login : un partner atterrit (et reste) en mode présentation ; un
-     * analyste atterrit dans la coquille éditable (voir §7).
+     * Après login : tous les rôles atterrissent dans la coquille éditable (§7) ;
+     * analyste et partner ont les mêmes droits (édition, décisions). Le mode
+     * présentation reste accessible aux deux depuis la coquille (bouton dédié).
      */
     public void showHome(AppUser user) {
         Session.setCurrentUser(user);
-        if (user.isPartner()) {
-            showPresentation(user);
-        } else {
-            showAnalystShell(user);
-        }
+        showAnalystShell(user);
     }
 
     /** Coquille analyste (menu latéral + Pipeline summary, édition). */
@@ -116,8 +113,8 @@ public class Main extends Application {
     }
 
     /**
-     * Mode présentation (§6.3). L'analyste peut revenir à sa vue ; le partner est
-     * verrouillé ici (pas de retour), les deux peuvent passer en plein écran.
+     * Mode présentation (§6.3). Analyste et partner ont les mêmes droits : les deux
+     * peuvent revenir à la coquille éditable et passer en plein écran.
      */
     public void showPresentation(AppUser user) {
         // Lecture base (moteur + opportunités) hors thread UI : l'écran ne fige pas.
@@ -162,18 +159,18 @@ public class Main extends Application {
     }
 
     private void showPresentationView(AppUser user, PresentationData data) {
-        Runnable onExitToAnalyst = user.isAnalyst() ? () -> showAnalystShell(user) : null;
+        Runnable onExitToAnalyst = () -> showAnalystShell(user);
         Runnable onFullScreen = () -> stage.setFullScreen(!stage.isFullScreen());
         Runnable onLogout = () -> {
             Session.clear();
             showLogin();
         };
-        // L'analyste peut acter les décisions de statut en séance ; le partner reste en lecture seule (§7).
+        // Analyste et partner peuvent tous deux acter les décisions de statut en séance (§7).
         // Persistance optimiste : le combo affiche déjà le nouveau statut, on écrit en
         // tâche de fond SANS reconstruire la vue (fluide, reste en plein écran). En cas
         // d'échec seulement, on resynchronise la vue et on prévient.
-        java.util.function.BiConsumer<PipelineItem, DealStatus> onStatusChange = user.isAnalyst()
-                ? (item, status) -> com.atlan.mfo.ui.util.Async.run(
+        java.util.function.BiConsumer<PipelineItem, DealStatus> onStatusChange =
+                (item, status) -> com.atlan.mfo.ui.util.Async.run(
                 () -> {
                     if (item.type() == PipelineItem.Type.FUND) {
                         new FundInvestmentDao().updateStatus(item.id(), status, user.id());
@@ -185,8 +182,7 @@ public class Main extends Application {
                 ex -> {
                     com.atlan.mfo.ui.util.ErrorDialog.show(ex);
                     showPresentation(user);
-                })
-                : null;
+                });
         java.util.function.Consumer<PipelineItem> onOpen =
                 item -> openPresentationDetail(user, data, item);
         java.util.function.Function<PipelineItem, String> headline =

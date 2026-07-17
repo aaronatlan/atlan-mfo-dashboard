@@ -15,12 +15,4 @@ public record AppUser(
         Role role,
         boolean active,
         boolean mustChangePassword) {
-
-    public boolean isPartner() {
-        return role == Role.PARTNER;
-    }
-
-    public boolean isAnalyst() {
-        return role == Role.ANALYST;
-    }
 }

@@ -46,8 +46,9 @@ sections below.
 - **The application** is installed on each machine (self-contained installer,
   embedded Java runtime: no JDK to install).
 - **Application-level multi-user**: everyone has their own account in
-  `app_user` (BCrypt password), with an `ANALYST` role (read/write) or
-  `PARTNER` role (read-only, locked into presentation mode).
+  `app_user` (BCrypt password), with an `ANALYST` or `PARTNER` role — both
+  have the same rights (read/write, presentation mode); the role only
+  changes the label shown in the app.
 - The application connects with **a single database role** (`atlan_app`) with
   minimal privileges — never a superuser.
 
