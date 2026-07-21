@@ -62,5 +62,8 @@ public record DirectDeal(
         String subStrategy,         // libellé de sous-stratégie (enfant de assetClass)
         String accessRoute,         // Classification.AccessRoute (code, single)
         String secondaryMandate,    // Classification.SecondaryMandate — CSV (rare pour un deal)
-        String underlyingStrategy) {// Classification.UnderlyingStrategy — CSV
+        String underlyingStrategy,  // Classification.UnderlyingStrategy — CSV
+
+        // Régions d'investissement ciblées (Region — CSV, multi). Distinct de geography (siège GP).
+        String targetRegions) {
 }

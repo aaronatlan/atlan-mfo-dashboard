@@ -58,7 +58,8 @@ public final class DetailView extends BorderPane {
         addRow(g1, "Asset class", assetClassLabel(f.assetClass()));
         addRow(g1, "Sub-strategy", Formatters.text(f.subStrategy()));
         addRow(g1, "Access route", accessRouteLabel(f.accessRoute()));
-        addRow(g1, "Geography", Formatters.text(f.geography()));
+        addRow(g1, "Geography (GP HQ)", Formatters.text(f.geography()));
+        addRow(g1, "Target regions", regionsLabel(f.targetRegions()));
         addRow(g1, "Vs. benchmark", f.vsBenchmark() == null ? "—" : f.vsBenchmark().label());
         addRow(g1, "Planned commitment", Formatters.money(f.commitment(), f.currency()));
         if (f.secondaryMandate() != null || f.underlyingStrategy() != null) {
@@ -101,7 +102,8 @@ public final class DetailView extends BorderPane {
         addRow(g1, "Access route", accessRouteLabel(d.accessRoute()));
         addRow(g1, "Industry", Formatters.text(d.industry()));
         addRow(g1, "GP / sponsor", Formatters.text(d.gp()));
-        addRow(g1, "Geography", Formatters.text(d.geography()));
+        addRow(g1, "Geography (GP HQ)", Formatters.text(d.geography()));
+        addRow(g1, "Target regions", regionsLabel(d.targetRegions()));
         addRow(g1, "Investment type", Formatters.text(d.invType()));
         addRow(g1, "Vs. benchmark", d.vsBenchmark() == null ? "—" : d.vsBenchmark().label());
         addRow(g1, "Planned commitment", Formatters.money(d.commitment(), d.currency()));
@@ -322,6 +324,12 @@ public final class DetailView extends BorderPane {
         return Formatters.text(com.atlan.mfo.model.enums.Classification.label(
                 com.atlan.mfo.model.enums.Classification.AccessRoute.class, code,
                 com.atlan.mfo.model.enums.Classification.AccessRoute::label));
+    }
+
+    private static String regionsLabel(String csv) {
+        return Formatters.text(com.atlan.mfo.model.enums.Classification.labelsFromCsv(
+                com.atlan.mfo.model.enums.Region.class, csv,
+                com.atlan.mfo.model.enums.Region::label));
     }
 
     private static String secondaryMandateLabel(String csv) {

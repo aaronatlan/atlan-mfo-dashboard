@@ -152,6 +152,11 @@ ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS access_route        TEXT;
 ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS secondary_mandate   TEXT;
 ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS underlying_strategy TEXT;
 
+-- Régions d'investissement ciblées (multi-sélection, CSV de codes Region) — distinctes de
+-- geography (pays du siège du GP). Sur fonds et deals.
+ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS target_regions TEXT;
+ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS target_regions TEXT;
+
 -- Paramètres de scoring modifiables (méthodologie éditable, §5). Clé → valeur ;
 -- si une clé est absente, le moteur utilise sa valeur par défaut.
 CREATE TABLE IF NOT EXISTS scoring_param (

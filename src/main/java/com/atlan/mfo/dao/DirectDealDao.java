@@ -22,7 +22,7 @@ public final class DirectDealDao {
                    entry_mult, peers_mult, exit_val, exp_irr_pct, exp_moic,
                    deal_deadline, target_exit, comments,
                    contact_name, contact_email, contact_phone, currency,
-                   asset_class, sub_strategy, access_route, secondary_mandate, underlying_strategy,
+                   asset_class, sub_strategy, access_route, secondary_mandate, underlying_strategy, target_regions,
                    version, updated_at, updated_by
               FROM direct_deal
             """;
@@ -50,9 +50,9 @@ public final class DirectDealDao {
                entry_mult, peers_mult, exit_val, exp_irr_pct, exp_moic,
                deal_deadline, target_exit, comments,
                contact_name, contact_email, contact_phone, currency,
-               asset_class, sub_strategy, access_route, secondary_mandate, underlying_strategy, updated_by)
+               asset_class, sub_strategy, access_route, secondary_mandate, underlying_strategy, target_regions, updated_by)
             VALUES (?, ?, ?::deal_status, ?::benchmark_status, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING id
             """;
 
@@ -64,7 +64,7 @@ public final class DirectDealDao {
                entry_mult=?, peers_mult=?, exit_val=?, exp_irr_pct=?, exp_moic=?,
                deal_deadline=?, target_exit=?, comments=?,
                contact_name=?, contact_email=?, contact_phone=?, currency=?,
-               asset_class=?, sub_strategy=?, access_route=?, secondary_mandate=?, underlying_strategy=?,
+               asset_class=?, sub_strategy=?, access_route=?, secondary_mandate=?, underlying_strategy=?, target_regions=?,
                version=version+1, updated_at=now(), updated_by=?
              WHERE id=? AND version=?
             """;
@@ -74,7 +74,7 @@ public final class DirectDealDao {
         try (Connection conn = Database.dataSource().getConnection();
              PreparedStatement ps = conn.prepareStatement(INSERT)) {
             setDealParams(ps, d);
-            ps.setLong(35, userId);
+            ps.setLong(36, userId);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 return rs.getLong(1);
@@ -122,9 +122,9 @@ public final class DirectDealDao {
         try (Connection conn = Database.dataSource().getConnection();
              PreparedStatement ps = conn.prepareStatement(UPDATE)) {
             setDealParams(ps, d);
-            ps.setLong(35, userId);
-            ps.setLong(36, d.id());
-            ps.setLong(37, d.version());
+            ps.setLong(36, userId);
+            ps.setLong(37, d.id());
+            ps.setLong(38, d.version());
             if (ps.executeUpdate() == 0) {
                 throw new StaleDataException(
                         "The deal has been modified by another user since it was opened.");
@@ -134,7 +134,7 @@ public final class DirectDealDao {
         }
     }
 
-    /** Renseigne les 34 colonnes de données (1..34). L'appelant fixe updated_by / id / version. */
+    /** Renseigne les 35 colonnes de données (1..35). L'appelant fixe updated_by / id / version. */
     private void setDealParams(PreparedStatement ps, DirectDeal d) throws SQLException {
         ps.setString(1, d.name());
         JdbcSupport.setString(ps, 2, d.nextSteps());
@@ -170,6 +170,7 @@ public final class DirectDealDao {
         JdbcSupport.setString(ps, 32, d.accessRoute());
         JdbcSupport.setString(ps, 33, d.secondaryMandate());
         JdbcSupport.setString(ps, 34, d.underlyingStrategy());
+        JdbcSupport.setString(ps, 35, d.targetRegions());
     }
 
     private DirectDeal map(ResultSet rs) throws SQLException {
@@ -220,6 +221,7 @@ public final class DirectDealDao {
                 rs.getString("sub_strategy"),
                 rs.getString("access_route"),
                 rs.getString("secondary_mandate"),
-                rs.getString("underlying_strategy"));
+                rs.getString("underlying_strategy"),
+                rs.getString("target_regions"));
     }
 }

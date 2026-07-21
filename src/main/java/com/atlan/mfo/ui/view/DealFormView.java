@@ -36,6 +36,7 @@ public final class DealFormView extends BorderPane {
     private final ComboBox<BenchmarkStatus> benchCombo =
             FormControls.enumCombo(BenchmarkStatus.values(), BenchmarkStatus::label, true);
     private final ComboBox<String> geoCombo = FormControls.geographyCombo();
+    private final RegionSelect targetRegions = new RegionSelect();
     private final ClassificationFields classification = new ClassificationFields(java.util.List.of(
             com.atlan.mfo.model.enums.Classification.AccessRoute.CO_INVESTMENT,
             com.atlan.mfo.model.enums.Classification.AccessRoute.DIRECT_INVESTMENT));
@@ -126,7 +127,8 @@ public final class DealFormView extends BorderPane {
         r = row(g, r, "Vs. benchmark", benchCombo);
         r = row(g, r, "Industry", industryCombo);
         r = row(g, r, "GP / sponsor", gpField);
-        r = row(g, r, "Geography", geoCombo);
+        r = row(g, r, "Geography (GP HQ)", geoCombo);
+        r = row(g, r, "Target regions", targetRegions);
         r = row(g, r, "Investment type", invTypeField);
         r = row(g, r, "Planned commitment", commitmentField);
         r = row(g, r, "Currency", currencyCombo);
@@ -212,6 +214,7 @@ public final class DealFormView extends BorderPane {
             industryCombo.getEditor().setText(existing.industry());
             gpField.setText(existing.gp());
             geoCombo.setValue(existing.geography());
+            targetRegions.populate(existing.targetRegions());
             invTypeField.setText(existing.invType());
             commitmentField.setText(str(existing.commitment()));
             currencyCombo.setValue(com.atlan.mfo.model.enums.Currency.fromCode(existing.currency()).code());
@@ -292,7 +295,8 @@ public final class DealFormView extends BorderPane {
                 classification.subStrategy(),
                 classification.accessRoute(),
                 classification.secondaryMandate(),
-                classification.underlyingStrategy());
+                classification.underlyingStrategy(),
+                targetRegions.csv());
     }
 
     private void save() {

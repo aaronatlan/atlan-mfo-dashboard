@@ -40,6 +40,7 @@ public final class FundFormView extends BorderPane {
     private final ComboBox<BenchmarkStatus> benchCombo =
             FormControls.enumCombo(BenchmarkStatus.values(), BenchmarkStatus::label, true);
     private final ComboBox<String> geoCombo = FormControls.geographyCombo();
+    private final RegionSelect targetRegions = new RegionSelect();
     private final ClassificationFields classification = new ClassificationFields(java.util.List.of(
             com.atlan.mfo.model.enums.Classification.AccessRoute.PRIMARY_FUND,
             com.atlan.mfo.model.enums.Classification.AccessRoute.SECONDARY));
@@ -112,7 +113,8 @@ public final class FundFormView extends BorderPane {
         r = row(g, r, "Name", nameField);
         r = row(g, r, "Status", statusCombo);
         r = row(g, r, "Vs. benchmark", benchCombo);
-        r = row(g, r, "Geography", geoCombo);
+        r = row(g, r, "Geography (GP HQ)", geoCombo);
+        r = row(g, r, "Target regions", targetRegions);
         r = row(g, r, "Planned commitment", commitmentField);
         r = row(g, r, "Currency", currencyCombo);
         r = row(g, r, "First close", firstClosePicker);
@@ -259,6 +261,7 @@ public final class FundFormView extends BorderPane {
             statusCombo.setValue(existing.status());
             benchCombo.setValue(existing.vsBenchmark());
             geoCombo.setValue(existing.geography());
+            targetRegions.populate(existing.targetRegions());
             classification.populate(existing.assetClass(), existing.subStrategy(), existing.accessRoute(),
                     existing.secondaryMandate(), existing.underlyingStrategy());
             commitmentField.setText(str(existing.commitment()));
@@ -315,7 +318,8 @@ public final class FundFormView extends BorderPane {
                 classification.subStrategy(),
                 classification.accessRoute(),
                 classification.secondaryMandate(),
-                classification.underlyingStrategy());
+                classification.underlyingStrategy(),
+                targetRegions.csv());
     }
 
     /**

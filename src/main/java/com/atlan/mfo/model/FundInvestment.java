@@ -52,5 +52,8 @@ public record FundInvestment(
         String subStrategy,         // libellé de sous-stratégie (enfant de assetClass)
         String accessRoute,         // Classification.AccessRoute (code, single)
         String secondaryMandate,    // Classification.SecondaryMandate — CSV (secondaires)
-        String underlyingStrategy) {// Classification.UnderlyingStrategy — CSV (secondaires)
+        String underlyingStrategy,  // Classification.UnderlyingStrategy — CSV (secondaires)
+
+        // Régions d'investissement ciblées (Region — CSV, multi). Distinct de geography (siège GP).
+        String targetRegions) {
 }
