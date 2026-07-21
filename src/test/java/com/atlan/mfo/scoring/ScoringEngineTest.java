@@ -240,7 +240,7 @@ class ScoringEngineTest {
         return new FundInvestment(1, cat, "Test", null, DealStatus.INITIAL_REVIEW, null, geo, assetClass, null,
                 vintages, null, finalClose, null, 0, null, null,
                 null, null, null, "USD",
-                null, null, null, null, null);
+                null, null, null, null, null, null);
     }
 
     private static DirectDeal deal(String geo, Double cagr, Double margin, Double fcfConv, Double expIrr) {

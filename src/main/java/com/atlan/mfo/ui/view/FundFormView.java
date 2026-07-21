@@ -45,6 +45,7 @@ public final class FundFormView extends BorderPane {
             com.atlan.mfo.model.enums.Classification.AccessRoute.PRIMARY_FUND,
             com.atlan.mfo.model.enums.Classification.AccessRoute.SECONDARY));
     private final TextField nameField = FormControls.field("fund name");
+    private final TextField gpNameField = FormControls.field("GP / manager name");
     private final TextField commitmentField = FormControls.field("e.g. 25m or 25000000");
     private final ComboBox<String> currencyCombo = FormControls.currencyCombo();
     private final DatePicker firstClosePicker = new DatePicker();
@@ -111,6 +112,7 @@ public final class FundFormView extends BorderPane {
         g.setVgap(10);
         int r = 0;
         r = row(g, r, "Name", nameField);
+        r = row(g, r, "GP / manager", gpNameField);
         r = row(g, r, "Status", statusCombo);
         r = row(g, r, "Vs. benchmark", benchCombo);
         r = row(g, r, "Geography (GP HQ)", geoCombo);
@@ -266,6 +268,7 @@ public final class FundFormView extends BorderPane {
         statusCombo.setValue(DealStatus.INITIAL_REVIEW);
         if (existing != null) {
             nameField.setText(existing.name());
+            gpNameField.setText(existing.gpName());
             statusCombo.setValue(existing.status());
             benchCombo.setValue(existing.vsBenchmark());
             geoCombo.setValue(existing.geography());
@@ -327,7 +330,8 @@ public final class FundFormView extends BorderPane {
                 classification.accessRoute(),
                 classification.secondaryMandate(),
                 classification.underlyingStrategy(),
-                targetRegions.csv());
+                targetRegions.csv(),
+                tn(gpNameField.getText()));
     }
 
     /**

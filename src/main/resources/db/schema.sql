@@ -162,6 +162,9 @@ ALTER TABLE fund_vintage ADD COLUMN IF NOT EXISTS fund_size    NUMERIC;
 ALTER TABLE fund_vintage ADD COLUMN IF NOT EXISTS target_raise NUMERIC;
 ALTER TABLE fund_vintage ADD COLUMN IF NOT EXISTS cash_yield   NUMERIC;
 
+-- Nom du GP / gérant (distinct du nom du fonds). Les deals ont déjà la colonne gp.
+ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS gp_name TEXT;
+
 -- Paramètres de scoring modifiables (méthodologie éditable, §5). Clé → valeur ;
 -- si une clé est absente, le moteur utilise sa valeur par défaut.
 CREATE TABLE IF NOT EXISTS scoring_param (

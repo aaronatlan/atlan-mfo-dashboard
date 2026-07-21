@@ -55,6 +55,7 @@ public final class DetailView extends BorderPane {
                 breakdown, onBack, onEdit, onDelete));
 
         GridPane g1 = grid();
+        addRow(g1, "GP / manager", Formatters.text(f.gpName()));
         addRow(g1, "Asset class", assetClassLabel(f.assetClass()));
         addRow(g1, "Sub-strategy", Formatters.text(f.subStrategy()));
         addRow(g1, "Access route", accessRouteLabel(f.accessRoute()));

@@ -55,5 +55,8 @@ public record FundInvestment(
         String underlyingStrategy,  // Classification.UnderlyingStrategy — CSV (secondaires)
 
         // Régions d'investissement ciblées (Region — CSV, multi). Distinct de geography (siège GP).
-        String targetRegions) {
+        String targetRegions,
+
+        // Nom du GP / gérant, distinct du nom du fonds (les deals ont déjà gp).
+        String gpName) {
 }
