@@ -76,7 +76,7 @@ public final class DetailView extends BorderPane {
         GridPane layout = twoColumns();
         layout.add(card("Score breakdown", scoreBars(breakdown)), 0, 0);
         layout.add(card("General", g1), 1, 0);
-        layout.add(card("Vintages (track record)", vintageTable(f.vintages())), 0, 1);
+        layout.add(card("Vintages (track record)", vintageTable(f.vintages(), f.currency())), 0, 1);
         layout.add(card("Timeline", g4), 1, 1);
         layout.add(card("Contact", contactGrid(f.contactName(), f.contactEmail(), f.contactPhone())), 0, 2);
         if (f.comments() != null && !f.comments().isBlank()) {
@@ -357,7 +357,7 @@ public final class DetailView extends BorderPane {
     }
 
     /** Tableau des millésimes (plus récent en haut), ou message si aucun. */
-    private static Node vintageTable(List<FundVintage> vintages) {
+    private static Node vintageTable(List<FundVintage> vintages, String currency) {
         if (vintages == null || vintages.isEmpty()) {
             return paragraph("No vintage reported.");
         }
@@ -365,7 +365,7 @@ public final class DetailView extends BorderPane {
         g.getStyleClass().add("method-table");
         g.setHgap(28);
         g.setVgap(8);
-        String[] heads = {"Vintage", "DPI", "TVPI", "IRR", "MOIC"};
+        String[] heads = {"Vintage", "DPI", "TVPI", "IRR", "MOIC", "Fund size", "Target raise", "Cash yield"};
         for (int c = 0; c < heads.length; c++) {
             Label h = new Label(heads[c]);
             h.getStyleClass().add("method-head");
@@ -378,7 +378,10 @@ public final class DetailView extends BorderPane {
                     Formatters.multiple(v.dpi()),
                     Formatters.multiple(v.tvpi()),
                     Formatters.percent(v.irr()),
-                    Formatters.multiple(v.moic())};
+                    Formatters.multiple(v.moic()),
+                    Formatters.money(v.fundSize(), currency),
+                    Formatters.money(v.targetRaise(), currency),
+                    Formatters.percent(v.cashYield())};
             for (int c = 0; c < cells.length; c++) {
                 Label cell = new Label(cells[c]);
                 cell.getStyleClass().add("method-cell");

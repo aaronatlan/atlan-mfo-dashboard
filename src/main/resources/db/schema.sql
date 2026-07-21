@@ -157,6 +157,11 @@ ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS underlying_strategy TEXT;
 ALTER TABLE fund_investment ADD COLUMN IF NOT EXISTS target_regions TEXT;
 ALTER TABLE direct_deal     ADD COLUMN IF NOT EXISTS target_regions TEXT;
 
+-- Par millésime : taille du fonds levé + cible de levée, et cash yield (private credit).
+ALTER TABLE fund_vintage ADD COLUMN IF NOT EXISTS fund_size    NUMERIC;
+ALTER TABLE fund_vintage ADD COLUMN IF NOT EXISTS target_raise NUMERIC;
+ALTER TABLE fund_vintage ADD COLUMN IF NOT EXISTS cash_yield   NUMERIC;
+
 -- Paramètres de scoring modifiables (méthodologie éditable, §5). Clé → valeur ;
 -- si une clé est absente, le moteur utilise sa valeur par défaut.
 CREATE TABLE IF NOT EXISTS scoring_param (

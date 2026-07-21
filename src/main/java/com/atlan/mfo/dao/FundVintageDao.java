@@ -17,7 +17,7 @@ import java.util.Map;
 public final class FundVintageDao {
 
     private static final String SELECT = """
-            SELECT id, fund_id, vintage_year, dpi, tvpi, irr, moic
+            SELECT id, fund_id, vintage_year, dpi, tvpi, irr, moic, fund_size, target_raise, cash_yield
               FROM fund_vintage
              ORDER BY fund_id, vintage_year DESC
             """;
@@ -41,8 +41,9 @@ public final class FundVintageDao {
     /** Insère un millésime dans la transaction du fonds (connexion partagée). */
     public void insert(Connection conn, long fundId, FundVintage v) throws SQLException {
         String sql = """
-                INSERT INTO fund_vintage (fund_id, vintage_year, dpi, tvpi, irr, moic)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO fund_vintage
+                  (fund_id, vintage_year, dpi, tvpi, irr, moic, fund_size, target_raise, cash_yield)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, fundId);
@@ -51,6 +52,9 @@ public final class FundVintageDao {
             JdbcSupport.setDouble(ps, 4, v.tvpi());
             JdbcSupport.setDouble(ps, 5, v.irr());
             JdbcSupport.setDouble(ps, 6, v.moic());
+            JdbcSupport.setDouble(ps, 7, v.fundSize());
+            JdbcSupport.setDouble(ps, 8, v.targetRaise());
+            JdbcSupport.setDouble(ps, 9, v.cashYield());
             ps.executeUpdate();
         }
     }
@@ -71,6 +75,9 @@ public final class FundVintageDao {
                 JdbcSupport.getDouble(rs, "dpi"),
                 JdbcSupport.getDouble(rs, "tvpi"),
                 JdbcSupport.getDouble(rs, "irr"),
-                JdbcSupport.getDouble(rs, "moic"));
+                JdbcSupport.getDouble(rs, "moic"),
+                JdbcSupport.getDouble(rs, "fund_size"),
+                JdbcSupport.getDouble(rs, "target_raise"),
+                JdbcSupport.getDouble(rs, "cash_yield"));
     }
 }

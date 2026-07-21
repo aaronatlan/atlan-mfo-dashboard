@@ -11,5 +11,12 @@ public record FundVintage(
         Double dpi,
         Double tvpi,
         Double irr,
-        Double moic) {
+        Double moic,
+
+        // Taille du fonds levé pour ce millésime et cible de levée (devise du fonds).
+        Double fundSize,
+        Double targetRaise,
+
+        // Cash yield (rendement courant) — pertinent surtout pour le private credit. Fraction.
+        Double cashYield) {
 }

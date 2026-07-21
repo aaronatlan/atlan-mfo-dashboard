@@ -170,7 +170,7 @@ public final class FundFormView extends BorderPane {
     private HBox vintageHeader() {
         HBox h = new HBox(8);
         h.getStyleClass().add("vintage-head");
-        for (String s : new String[]{"Year", "DPI", "TVPI", "IRR", "MOIC", ""}) {
+        for (String s : new String[]{"Year", "DPI", "TVPI", "IRR", "MOIC", "Size", "Target", "Yield", ""}) {
             Label l = new Label(s);
             l.getStyleClass().add("form-section");
             l.setMinWidth(70);
@@ -211,6 +211,9 @@ public final class FundFormView extends BorderPane {
         final TextField tvpi = small("TVPI");
         final TextField irr = small("IRR");
         final TextField moic = small("MOIC");
+        final TextField fundSize = small("size");
+        final TextField targetRaise = small("target");
+        final TextField cashYield = small("yield");
         HBox node;
 
         VintageRow(FundVintage v) {
@@ -220,6 +223,9 @@ public final class FundFormView extends BorderPane {
                 tvpi.setText(str(v.tvpi()));
                 irr.setText(str(v.irr()));
                 moic.setText(str(v.moic()));
+                fundSize.setText(str(v.fundSize()));
+                targetRaise.setText(str(v.targetRaise()));
+                cashYield.setText(str(v.cashYield()));
             }
             Button remove = new Button("✕");
             remove.getStyleClass().add("ghost-button");
@@ -228,10 +234,10 @@ public final class FundFormView extends BorderPane {
                 vintageBox.getChildren().remove(node);
                 recompute();
             });
-            for (TextField f : new TextField[]{year, dpi, tvpi, irr, moic}) {
+            for (TextField f : new TextField[]{year, dpi, tvpi, irr, moic, fundSize, targetRaise, cashYield}) {
                 f.textProperty().addListener((o, a, b) -> recompute());
             }
-            node = new HBox(8, year, dpi, tvpi, irr, moic, remove);
+            node = new HBox(8, year, dpi, tvpi, irr, moic, fundSize, targetRaise, cashYield, remove);
         }
 
         FundVintage toModel() {
@@ -241,7 +247,9 @@ public final class FundFormView extends BorderPane {
             }
             return new FundVintage(0, 0, y,
                     FormControls.parse(dpi.getText()), FormControls.parse(tvpi.getText()),
-                    FormControls.parse(irr.getText()), FormControls.parse(moic.getText()));
+                    FormControls.parse(irr.getText()), FormControls.parse(moic.getText()),
+                    FormControls.parse(fundSize.getText()), FormControls.parse(targetRaise.getText()),
+                    FormControls.parse(cashYield.getText()));
         }
 
         private TextField small(String prompt) {

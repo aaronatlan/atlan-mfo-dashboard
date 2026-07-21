@@ -223,12 +223,12 @@ class ScoringEngineTest {
 
     /** Millésime sans TVPI (repli sur MOIC). */
     private static FundVintage v(int year, Double dpi, Double irr, Double moic) {
-        return new FundVintage(1, 1, year, dpi, null, irr, moic);
+        return new FundVintage(1, 1, year, dpi, null, irr, moic, null, null, null);
     }
 
     /** Millésime avec TVPI explicite. */
     private static FundVintage vt(int year, Double dpi, Double tvpi, Double irr, Double moic) {
-        return new FundVintage(1, 1, year, dpi, tvpi, irr, moic);
+        return new FundVintage(1, 1, year, dpi, tvpi, irr, moic, null, null, null);
     }
 
     private static FundInvestment fund(Category cat, String assetClass, String geo, List<FundVintage> vintages) {
