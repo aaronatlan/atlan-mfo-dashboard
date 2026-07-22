@@ -1,6 +1,7 @@
 package com.atlan.mfo.ui.view;
 
 import com.atlan.mfo.model.DirectDeal;
+import com.atlan.mfo.model.Industries;
 import com.atlan.mfo.model.enums.BenchmarkStatus;
 import com.atlan.mfo.model.enums.DealStatus;
 import com.atlan.mfo.scoring.ScoringEngine;
@@ -43,10 +44,7 @@ public final class DealFormView extends BorderPane {
 
     private final TextField nameField = FormControls.field("deal name");
     private final ComboBox<String> industryCombo = FormControls.editableCombo("industry",
-            "Technology", "Software", "Fintech", "Financial services", "Healthcare", "Biotech",
-            "Energy", "Consumer", "Retail", "Industrials", "Real estate", "Media & telecom",
-            "Business services", "Materials", "Transport & logistics", "Education",
-            "Agriculture & food", "Other");
+            Industries.ALL.toArray(new String[0]));
     private final TextField gpField = FormControls.field("GP / sponsor");
     private final TextField invTypeField = FormControls.field("investment type");
     private final TextField commitmentField = FormControls.field("e.g. 40m");

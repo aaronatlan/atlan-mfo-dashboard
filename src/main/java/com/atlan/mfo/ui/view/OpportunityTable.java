@@ -1,5 +1,6 @@
 package com.atlan.mfo.ui.view;
 
+import com.atlan.mfo.model.Industries;
 import com.atlan.mfo.model.PipelineItem;
 import com.atlan.mfo.model.enums.Classification;
 import com.atlan.mfo.model.enums.Classification.AccessRoute;
@@ -29,8 +30,11 @@ import java.util.function.Consumer;
 
 /**
  * Tableau d'opportunités : filtres par route d'accès, sous-stratégie, statut, tier,
- * secteur, actifs, plus recherche et tri (§6.1, structure Patrimium). Les filtres de
- * classification n'apparaissent que si des valeurs sont présentes dans la liste.
+ * secteur, actifs, plus recherche et tri (§6.1, structure Patrimium). Route d'accès et
+ * secteur proposent toujours leur liste complète et fixe de valeurs (pas seulement ce qui
+ * est déjà représenté dans le pipeline) ; le filtre lui-même n'apparaît que si le champ est
+ * pertinent pour la liste affichée. Le filtre de sous-stratégie, lui, reste dérivé des
+ * valeurs présentes (texte libre, dépendant de la classe d'actifs).
  */
 public final class OpportunityTable extends VBox {
 
@@ -66,11 +70,11 @@ public final class OpportunityTable extends VBox {
         setSpacing(12);
         this.total = items.size();
 
-        List<String> routes = items.stream()
-                .map(i -> routeBucket(i.accessRoute()))
-                .filter(s -> s != null).distinct()
-                .sorted(Comparator.comparingInt(OpportunityTable::bucketRank)).toList();
-        this.hasRoute = !routes.isEmpty();
+        // Routes et secteurs : liste complète et fixe (pas seulement ce qui est déjà
+        // représenté dans le pipeline actuel), pour que le filtre reste utilisable même
+        // sur une catégorie encore vide.
+        List<String> routes = List.of(GROUP_PRIMARY, GROUP_COINVEST, GROUP_SECONDARY);
+        this.hasRoute = items.stream().anyMatch(i -> routeBucket(i.accessRoute()) != null);
 
         List<String> subStrats = items.stream()
                 .map(PipelineItem::subStrategy)
@@ -78,11 +82,8 @@ public final class OpportunityTable extends VBox {
                 .distinct().sorted().toList();
         this.hasSubStrat = !subStrats.isEmpty();
 
-        List<String> industries = items.stream()
-                .map(PipelineItem::industry)
-                .filter(s -> s != null && !s.isBlank())
-                .distinct().sorted().toList();
-        this.hasIndustry = !industries.isEmpty();
+        List<String> industries = Industries.ALL;
+        this.hasIndustry = items.stream().anyMatch(i -> i.industry() != null && !i.industry().isBlank());
 
         filtered = new FilteredList<>(FXCollections.observableArrayList(items), p -> true);
 
@@ -111,14 +112,6 @@ public final class OpportunityTable extends VBox {
         };
     }
 
-    private static int bucketRank(String bucket) {
-        return switch (bucket) {
-            case GROUP_PRIMARY -> 0;
-            case GROUP_COINVEST -> 1;
-            case GROUP_SECONDARY -> 2;
-            default -> 3;
-        };
-    }
 
     /**
      * Barre de filtres sur deux niveaux, pour éviter tout débordement/troncature quand
