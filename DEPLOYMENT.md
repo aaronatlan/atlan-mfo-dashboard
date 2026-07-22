@@ -256,6 +256,14 @@ accounts), a `pg_dump` (see §6) remains the reference.
    sub-strategy, access route). Until applied, those features degrade
    gracefully (defaults / empty values) instead of failing.
 
+   **v1.5.0 (dashboard feedback) — apply BEFORE deploying the new version.**
+   Unlike the additions above, the v1.5.0 app *reads* these new columns, so
+   they must exist first. Adding them is safe and backward-compatible (the
+   older installed apps ignore the extra columns). Copy-paste ready snippet:
+   `src/main/resources/db/migrations/2026-07-dashboard-feedback.sql` (run it in
+   the Neon SQL editor as owner). New columns: `target_regions` (funds + deals),
+   `fund_size` / `target_raise` / `cash_yield` (fund_vintage), `gp_name` (funds).
+
 ---
 
 ## 9. Security summary
