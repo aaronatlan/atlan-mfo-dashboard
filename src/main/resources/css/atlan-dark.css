@@ -893,7 +893,8 @@
 .donut-seg-1 { -fx-fill: -atlan-moderate; }  /* Venture capital */
 .donut-seg-2 { -fx-fill: -atlan-accent; }    /* Private credit */
 .donut-seg-3 { -fx-fill: -atlan-caution; }   /* Real assets */
-.donut-seg-4 { -fx-fill: #B8974A; }          /* Secondaries */
+.donut-seg-4 { -fx-fill: #B8974A; }          /* Hedge fund */
+.donut-seg-5 { -fx-fill: #6B8E9E; }          /* Secondaries */
 .donut-hole { -fx-fill: -atlan-card; }       /* perce le trou (couleur du panneau) */
 
 .donut-total-value {
@@ -919,6 +920,7 @@
 .swatch-2 { -fx-background-color: -atlan-accent; }
 .swatch-3 { -fx-background-color: -atlan-caution; }
 .swatch-4 { -fx-background-color: #B8974A; }
+.swatch-5 { -fx-background-color: #6B8E9E; }
 
 .donut-legend-name {
     -fx-text-fill: -atlan-text-2;

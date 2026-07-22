@@ -10,8 +10,13 @@ import com.atlan.mfo.model.enums.Tier;
 import com.atlan.mfo.ui.util.Formatters;
 import com.atlan.mfo.ui.util.FormControls;
 import javafx.geometry.HPos;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.shape.Arc;
+import javafx.scene.shape.ArcType;
+import javafx.scene.shape.Circle;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -135,13 +140,14 @@ public final class PresentationView extends BorderPane {
                 metric(avg.isPresent() ? Long.toString(Math.round(avg.getAsDouble())) : "—", "AVERAGE SCORE"),
                 metric(Long.toString(strong), "STRONG TIER"));
 
-        // Les quatre panneaux dans une seule grille 2×2 (colonnes de 50%) : la gouttière
+        // Tous les panneaux dans une seule grille à 2 colonnes de 50 % : la gouttière
         // centrale tombe exactement au même endroit d'une rangée à l'autre — pas de décalage.
-        GridPane panels = panelGrid(
-                panel("FUND SIZE VS TARGET RAISE — BY ASSET CLASS", fundSizeChart()),
+        GridPane panels = panelGrid(List.of(
+                panel("ALLOCATION BY ASSET CLASS", allocationChart(active)),
                 panel("PIPELINE BY STAGE", statusFunnel(all)),
+                panel("FUND SIZE VS TARGET RAISE — BY ASSET CLASS", fundSizeChart()),
                 panel("AVERAGE PERFORMANCE BY ASSET CLASS — LATEST VINTAGE", performanceByClass()),
-                panel("FUNDS BY VINTAGE YEAR", fundsPerVintageChart()));
+                panel("FUNDS BY VINTAGE YEAR", fundsPerVintageChart())));
 
         VBox box = new VBox(28, hero, metrics, panels,
                 panel("GEOGRAPHIC EXPOSURE — BY OPPORTUNITY COUNT", geographyChart(active)),
@@ -150,8 +156,11 @@ public final class PresentationView extends BorderPane {
         return box;
     }
 
-    /** Grille 2×2 de panneaux, colonnes de 50 % : alignées à l'identique sur les deux rangées. */
-    private GridPane panelGrid(VBox topLeft, VBox topRight, VBox bottomLeft, VBox bottomRight) {
+    /**
+     * Grille de panneaux sur 2 colonnes de 50 % (alignées à l'identique d'une rangée à
+     * l'autre). Un dernier panneau « orphelin » (nombre impair) occupe toute la largeur.
+     */
+    private GridPane panelGrid(List<VBox> panels) {
         GridPane g = new GridPane();
         g.setHgap(20);
         g.setVgap(28);
@@ -159,15 +168,18 @@ public final class PresentationView extends BorderPane {
         col.setPercentWidth(50);
         col.setHalignment(HPos.LEFT);
         g.getColumnConstraints().addAll(col, col);
-        VBox[][] cells = {{topLeft, topRight}, {bottomLeft, bottomRight}};
-        for (int r = 0; r < cells.length; r++) {
-            for (int c = 0; c < cells[r].length; c++) {
-                VBox p = cells[r][c];
-                p.setMaxWidth(Double.MAX_VALUE);
-                p.setMaxHeight(Double.MAX_VALUE);
-                GridPane.setHgrow(p, Priority.ALWAYS);
-                GridPane.setVgrow(p, Priority.ALWAYS);
-                g.add(p, c, r);
+        int n = panels.size();
+        for (int i = 0; i < n; i++) {
+            VBox p = panels.get(i);
+            p.setMaxWidth(Double.MAX_VALUE);
+            p.setMaxHeight(Double.MAX_VALUE);
+            GridPane.setHgrow(p, Priority.ALWAYS);
+            GridPane.setVgrow(p, Priority.ALWAYS);
+            if (i == n - 1 && n % 2 == 1) {
+                g.add(p, 0, i / 2);
+                GridPane.setColumnSpan(p, 2);   // orphelin → pleine largeur
+            } else {
+                g.add(p, i % 2, i / 2);
             }
         }
         return g;
@@ -194,6 +206,131 @@ public final class PresentationView extends BorderPane {
         VBox box = new VBox(18, title, holder);
         box.getStyleClass().add("pres-panel");
         return box;
+    }
+
+    /* ---- Allocation par classe d'actifs : donut (Arc natif) + légende ---- */
+
+    private static final com.atlan.mfo.model.enums.Classification.AssetClass[] SEG =
+            com.atlan.mfo.model.enums.Classification.AssetClass.values();
+    private static final String[] SEG_LABELS = java.util.Arrays.stream(SEG)
+            .map(com.atlan.mfo.model.enums.Classification.AssetClass::label).toArray(String[]::new);
+
+    private HBox allocationChart(List<PipelineItem> active) {
+        double[] values = new double[SEG.length];
+        for (PipelineItem i : active) {
+            if (i.commitmentUsd() == null) {
+                continue;
+            }
+            for (int k = 0; k < SEG.length; k++) {
+                if (SEG[k].name().equals(i.assetClass())) {
+                    values[k] += i.commitmentUsd();
+                    break;
+                }
+            }
+        }
+        double total = 0;
+        for (double v : values) {
+            total += v;
+        }
+
+        // Anneau : secteurs pleins (Arc ROUND depuis le centre) + un disque central couleur
+        // carte qui « perce » le trou. Rendu net, sans artefact de contour.
+        double rOuter = 92, rInner = 56, cx = 92, cy = 92;
+        Pane ring = new Pane();
+        ring.setMinSize(184, 184);
+        ring.setPrefSize(184, 184);
+        ring.setMaxSize(184, 184);
+        java.util.List<Arc> arcs = new java.util.ArrayList<>();
+        java.util.List<Integer> arcSeg = new java.util.ArrayList<>();
+        double startAngle = 90; // haut ; les secteurs tournent dans le sens horaire (longueur négative)
+        for (int k = 0; k < values.length; k++) {
+            double frac = total > 0 ? values[k] / total : 0;
+            if (frac <= 0) {
+                continue;
+            }
+            double sweep = -frac * 360;
+            Arc arc = new Arc(cx, cy, rOuter, rOuter, startAngle, sweep);
+            arc.setType(ArcType.ROUND);
+            arc.getStyleClass().addAll("donut-seg", "donut-seg-" + k);
+            ring.getChildren().add(arc);
+            arcs.add(arc);
+            arcSeg.add(k);
+            startAngle += sweep;
+        }
+        Circle hole = new Circle(cx, cy, rInner);
+        hole.getStyleClass().add("donut-hole");
+        ring.getChildren().add(hole);
+        // Le nombre seul tient dans le trou ; la devise passe dans le sous-libellé.
+        Label totalValue = new Label(Formatters.money(total));
+        totalValue.getStyleClass().add("donut-total-value");
+        Label totalCap = new Label("USD COMMITTED");
+        totalCap.getStyleClass().add("donut-total-label");
+        VBox center = new VBox(1, totalValue, totalCap);
+        center.setAlignment(Pos.CENTER);
+        center.setMouseTransparent(true);   // laisse passer le survol vers les secteurs
+        StackPane donut = new StackPane(ring, center);
+        donut.setMinSize(180, 180);
+
+        VBox legend = new VBox(12);
+        legend.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(legend, Priority.ALWAYS);
+        HBox[] legendRows = new HBox[SEG_LABELS.length];
+        for (int k = 0; k < SEG_LABELS.length; k++) {
+            legendRows[k] = legendRow(k, SEG_LABELS[k], values[k], total);
+            legend.getChildren().add(legendRows[k]);
+        }
+
+        // Interactivité : survol d'un secteur → surbrillance (les autres s'atténuent),
+        // centre = montant + part, ligne de légende mise en avant, et tooltip précis.
+        final double totalF = total;
+        for (int a = 0; a < arcs.size(); a++) {
+            Arc arc = arcs.get(a);
+            int k = arcSeg.get(a);
+            long pct = totalF > 0 ? Math.round(values[k] / totalF * 100) : 0;
+            arc.setCursor(javafx.scene.Cursor.HAND);
+            Tooltip tip = new Tooltip(SEG_LABELS[k] + ":  " + Formatters.money(values[k], "USD") + "  ·  " + pct + "%");
+            tip.setShowDelay(javafx.util.Duration.millis(120));
+            Tooltip.install(arc, tip);
+            arc.setOnMouseEntered(e -> {
+                for (Arc other : arcs) {
+                    other.setOpacity(other == arc ? 1.0 : 0.28);
+                }
+                totalValue.setText(Formatters.money(values[k]));
+                totalCap.setText(pct + "% OF TOTAL");
+                legendRows[k].getStyleClass().add("legend-row-active");
+            });
+            arc.setOnMouseExited(e -> {
+                for (Arc other : arcs) {
+                    other.setOpacity(1.0);
+                }
+                totalValue.setText(Formatters.money(totalF));
+                totalCap.setText("USD COMMITTED");
+                legendRows[k].getStyleClass().remove("legend-row-active");
+            });
+        }
+
+        HBox row = new HBox(28, donut, legend);
+        row.setAlignment(Pos.CENTER_LEFT);
+        return row;
+    }
+
+    private HBox legendRow(int idx, String name, double value, double total) {
+        Region swatch = new Region();
+        swatch.getStyleClass().addAll("legend-swatch", "swatch-" + idx);
+        Label label = new Label(name);
+        label.getStyleClass().add("donut-legend-name");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        Label amount = new Label(Formatters.money(value, "USD"));
+        amount.getStyleClass().add("donut-legend-value");
+        long pct = total > 0 ? Math.round(value / total * 100) : 0;
+        Label percent = new Label(pct + "%");
+        percent.getStyleClass().add("donut-legend-pct");
+        percent.setMinWidth(52);
+        percent.setAlignment(Pos.CENTER_RIGHT);
+        HBox row = new HBox(12, swatch, label, spacer, amount, percent);
+        row.setAlignment(Pos.CENTER_LEFT);
+        return row;
     }
 
     /* ---- Graphes fonds : taille/cible, performance par classe, fonds par millésime ---- */
