@@ -137,7 +137,8 @@ public class Main extends Application {
     /** Données de la vue présentation, calculées hors thread UI. */
     private record PresentationData(ScoringEngine engine, java.util.List<PipelineItem> items,
                                     java.util.Map<Long, FundInvestment> fundById,
-                                    java.util.Map<Long, DirectDeal> dealById) {
+                                    java.util.Map<Long, DirectDeal> dealById,
+                                    com.atlan.mfo.model.FxRates fx) {
     }
 
     private static PresentationData buildPresentationData() {
@@ -155,7 +156,7 @@ public class Main extends Application {
             items.add(PipelineItem.ofDeal(d, engine.score(d, today), fx));
             dealById.put(d.id(), d);
         }
-        return new PresentationData(engine, items, fundById, dealById);
+        return new PresentationData(engine, items, fundById, dealById, fx);
     }
 
     private void showPresentationView(AppUser user, PresentationData data) {
@@ -188,7 +189,9 @@ public class Main extends Application {
         java.util.function.Function<PipelineItem, String> headline =
                 item -> presentationHeadline(item, data.fundById(), data.dealById());
 
-        PresentationView view = new PresentationView(data.items(), onStatusChange, onOpen, headline,
+        java.util.List<FundInvestment> funds = new java.util.ArrayList<>(data.fundById().values());
+        PresentationView view = new PresentationView(data.items(), funds, data.fx(),
+                onStatusChange, onOpen, headline,
                 onExitToAnalyst, onFullScreen, onLogout);
         setScene(view, 1280, 800);
     }

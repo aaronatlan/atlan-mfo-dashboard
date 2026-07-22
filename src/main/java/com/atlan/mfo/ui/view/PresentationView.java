@@ -1,27 +1,27 @@
 package com.atlan.mfo.ui.view;
 
+import com.atlan.mfo.model.FundInvestment;
+import com.atlan.mfo.model.FundVintage;
+import com.atlan.mfo.model.FxRates;
 import com.atlan.mfo.model.PipelineItem;
+import com.atlan.mfo.model.enums.Classification.AssetClass;
 import com.atlan.mfo.model.enums.DealStatus;
 import com.atlan.mfo.model.enums.Tier;
 import com.atlan.mfo.ui.util.Formatters;
 import com.atlan.mfo.ui.util.FormControls;
+import javafx.scene.layout.GridPane;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.shape.Arc;
-import javafx.scene.shape.ArcType;
-import javafx.scene.shape.Circle;
 
 import java.util.Comparator;
 import java.util.List;
@@ -41,20 +41,28 @@ public final class PresentationView extends BorderPane {
     private final BiConsumer<PipelineItem, DealStatus> onStatusChange;
     private final Consumer<PipelineItem> onOpen;
     private final Function<PipelineItem, String> headline;
+    private final List<FundInvestment> activeFunds;
+    private final FxRates fx;
 
     /**
+     * @param funds          fonds complets (avec millésimes) — nécessaires aux graphes par
+     *                       classe d'actifs / par millésime (taille, cible, DPI/TVPI/IRR/MOIC)
+     * @param fx             taux de change (agrégats taille/cible en USD)
      * @param onStatusChange appelé quand un statut est changé (analyste) ; {@code null}
      *                       pour un partner (statuts en lecture seule)
      * @param onOpen         ouvre la fiche complète d'une opportunité (clic sur le nom)
      * @param headline       texte résumé (millésime le plus récent / métriques) par ligne
      */
-    public PresentationView(List<PipelineItem> items, BiConsumer<PipelineItem, DealStatus> onStatusChange,
+    public PresentationView(List<PipelineItem> items, List<FundInvestment> funds, FxRates fx,
+                            BiConsumer<PipelineItem, DealStatus> onStatusChange,
                             Consumer<PipelineItem> onOpen, Function<PipelineItem, String> headline,
                             Runnable onExitToAnalyst, Runnable onToggleFullScreen, Runnable onLogout) {
         getStyleClass().add("presentation-root");
         this.onStatusChange = onStatusChange;
         this.onOpen = onOpen;
         this.headline = headline;
+        this.fx = fx;
+        this.activeFunds = funds.stream().filter(f -> f.status().isActive()).toList();
 
         List<PipelineItem> active = items.stream().filter(PipelineItem::isActive).toList();
 
@@ -126,6 +134,8 @@ public final class PresentationView extends BorderPane {
                 metric(Long.toString(strong), "STRONG TIER"));
 
         VBox box = new VBox(28, hero, metrics, panelsRow(active, all),
+                panel("AVERAGE PERFORMANCE BY ASSET CLASS — LATEST VINTAGE", performanceByClass()),
+                panel("FUNDS BY VINTAGE YEAR", fundsPerVintageChart()),
                 panel("GEOGRAPHIC EXPOSURE — BY OPPORTUNITY COUNT", geographyChart(active)),
                 decisions(all));
         box.getStyleClass().add("presentation-body");
@@ -143,13 +153,13 @@ public final class PresentationView extends BorderPane {
     /* ---- Panneaux graphiques (allocation + pipeline) côte à côte ---- */
 
     private HBox panelsRow(List<PipelineItem> active, List<PipelineItem> all) {
-        VBox allocation = panel("ALLOCATION BY ASSET CLASS", allocationChart(active));
+        VBox sizing = panel("FUND SIZE VS TARGET RAISE — BY ASSET CLASS", fundSizeChart());
         VBox pipeline = panel("PIPELINE BY STAGE", statusFunnel(all));
-        allocation.setMaxWidth(Double.MAX_VALUE);
+        sizing.setMaxWidth(Double.MAX_VALUE);
         pipeline.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(allocation, Priority.ALWAYS);
+        HBox.setHgrow(sizing, Priority.ALWAYS);
         HBox.setHgrow(pipeline, Priority.ALWAYS);
-        HBox row = new HBox(20, allocation, pipeline);
+        HBox row = new HBox(20, sizing, pipeline);
         row.setFillHeight(true);
         return row;
     }
@@ -162,129 +172,164 @@ public final class PresentationView extends BorderPane {
         return box;
     }
 
-    /* ---- Allocation par classe d'actifs : donut (Arc natif) + légende ---- */
+    /* ---- Graphes fonds : taille/cible, performance par classe, fonds par millésime ---- */
 
-    private static final com.atlan.mfo.model.enums.Classification.AssetClass[] SEG =
-            com.atlan.mfo.model.enums.Classification.AssetClass.values();
-    private static final String[] SEG_LABELS = java.util.Arrays.stream(SEG)
-            .map(com.atlan.mfo.model.enums.Classification.AssetClass::label).toArray(String[]::new);
+    /** Millésime le plus récent d'un fonds (porte les métriques affichées), ou null. */
+    private static FundVintage latest(FundInvestment f) {
+        return f.vintages() == null ? null : f.vintages().stream()
+                .max(Comparator.comparingInt(FundVintage::vintageYear)).orElse(null);
+    }
 
-    private HBox allocationChart(List<PipelineItem> active) {
-        double[] values = new double[SEG.length];
-        for (PipelineItem i : active) {
-            if (i.commitmentUsd() == null) {
-                continue;
-            }
-            for (int k = 0; k < SEG.length; k++) {
-                if (SEG[k].name().equals(i.assetClass())) {
-                    values[k] += i.commitmentUsd();
-                    break;
-                }
-            }
-        }
-        double total = 0;
-        for (double v : values) {
-            total += v;
-        }
+    private static AssetClass classOf(FundInvestment f) {
+        return com.atlan.mfo.model.enums.Classification.fromCode(AssetClass.class, f.assetClass());
+    }
 
-        // Anneau : secteurs pleins (Arc ROUND depuis le centre) + un disque central couleur
-        // carte qui « perce » le trou. Rendu net, sans artefact de contour.
-        double rOuter = 92, rInner = 56, cx = 92, cy = 92;
-        Pane ring = new Pane();
-        ring.setMinSize(184, 184);
-        ring.setPrefSize(184, 184);
-        ring.setMaxSize(184, 184);
-        java.util.List<Arc> arcs = new java.util.ArrayList<>();
-        java.util.List<Integer> arcSeg = new java.util.ArrayList<>();
-        double startAngle = 90; // haut ; les secteurs tournent dans le sens horaire (longueur négative)
-        for (int k = 0; k < values.length; k++) {
-            double frac = total > 0 ? values[k] / total : 0;
-            if (frac <= 0) {
-                continue;
-            }
-            double sweep = -frac * 360;
-            Arc arc = new Arc(cx, cy, rOuter, rOuter, startAngle, sweep);
-            arc.setType(ArcType.ROUND);
-            arc.getStyleClass().addAll("donut-seg", "donut-seg-" + k);
-            ring.getChildren().add(arc);
-            arcs.add(arc);
-            arcSeg.add(k);
-            startAngle += sweep;
-        }
-        Circle hole = new Circle(cx, cy, rInner);
-        hole.getStyleClass().add("donut-hole");
-        ring.getChildren().add(hole);
-        // Le nombre seul tient dans le trou ; la devise passe dans le sous-libellé.
-        Label totalValue = new Label(Formatters.money(total));
-        totalValue.getStyleClass().add("donut-total-value");
-        Label totalCap = new Label("USD COMMITTED");
-        totalCap.getStyleClass().add("donut-total-label");
-        VBox center = new VBox(1, totalValue, totalCap);
-        center.setAlignment(Pos.CENTER);
-        center.setMouseTransparent(true);   // laisse passer le survol vers les secteurs
-        StackPane donut = new StackPane(ring, center);
-        donut.setMinSize(180, 180);
+    private double usd(Double value, String currency) {
+        Double u = fx.toUsd(value, currency);
+        return u == null ? 0 : u;
+    }
 
-        VBox legend = new VBox(12);
-        legend.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(legend, Priority.ALWAYS);
-        HBox[] legendRows = new HBox[SEG_LABELS.length];
-        for (int k = 0; k < SEG_LABELS.length; k++) {
-            legendRows[k] = legendRow(k, SEG_LABELS[k], values[k], total);
-            legend.getChildren().add(legendRows[k]);
-        }
+    private Label placeholder(String text) {
+        Label l = new Label(text);
+        l.getStyleClass().add("pres-priority-metrics");
+        return l;
+    }
 
-        // Interactivité : survol d'un secteur → surbrillance (les autres s'atténuent),
-        // centre = montant + part, ligne de légende mise en avant, et tooltip précis.
-        final double totalF = total;
-        for (int a = 0; a < arcs.size(); a++) {
-            Arc arc = arcs.get(a);
-            int k = arcSeg.get(a);
-            long pct = totalF > 0 ? Math.round(values[k] / totalF * 100) : 0;
-            arc.setCursor(javafx.scene.Cursor.HAND);
-            Tooltip tip = new Tooltip(SEG_LABELS[k] + ":  " + Formatters.money(values[k], "USD") + "  ·  " + pct + "%");
-            tip.setShowDelay(javafx.util.Duration.millis(120));
-            Tooltip.install(arc, tip);
-            arc.setOnMouseEntered(e -> {
-                for (Arc other : arcs) {
-                    other.setOpacity(other == arc ? 1.0 : 0.28);
-                }
-                totalValue.setText(Formatters.money(values[k]));
-                totalCap.setText(pct + "% OF TOTAL");
-                legendRows[k].getStyleClass().add("legend-row-active");
-            });
-            arc.setOnMouseExited(e -> {
-                for (Arc other : arcs) {
-                    other.setOpacity(1.0);
-                }
-                totalValue.setText(Formatters.money(totalF));
-                totalCap.setText("USD COMMITTED");
-                legendRows[k].getStyleClass().remove("legend-row-active");
-            });
-        }
-
-        HBox row = new HBox(28, donut, legend);
+    /**
+     * Barre horizontale générique (réutilise le style « funnel »), pour les graphes
+     * taille/cible et fonds-par-millésime.
+     */
+    private HBox metricBar(String label, double value, double max, String valueText, String fillClass) {
+        Label l = new Label(label);
+        l.getStyleClass().add("funnel-label");
+        l.setMinWidth(190);
+        Region fill = new Region();
+        fill.getStyleClass().addAll("funnel-fill", fillClass);
+        StackPane track = new StackPane(fill);
+        track.getStyleClass().add("funnel-track");
+        track.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(track, Priority.ALWAYS);
+        double frac = max > 0 ? value / max : 0;
+        fill.maxWidthProperty().bind(track.widthProperty().multiply(frac));
+        Label v = new Label(valueText);
+        v.getStyleClass().add("funnel-value");
+        v.setMinWidth(90);
+        HBox row = new HBox(14, l, track, v);
         row.setAlignment(Pos.CENTER_LEFT);
         return row;
     }
 
-    private HBox legendRow(int idx, String name, double value, double total) {
-        Region swatch = new Region();
-        swatch.getStyleClass().addAll("legend-swatch", "swatch-" + idx);
-        Label label = new Label(name);
-        label.getStyleClass().add("donut-legend-name");
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        Label amount = new Label(Formatters.money(value, "USD"));
-        amount.getStyleClass().add("donut-legend-value");
-        long pct = total > 0 ? Math.round(value / total * 100) : 0;
-        Label percent = new Label(pct + "%");
-        percent.getStyleClass().add("donut-legend-pct");
-        percent.setMinWidth(52);
-        percent.setAlignment(Pos.CENTER_RIGHT);
-        HBox row = new HBox(12, swatch, label, spacer, amount, percent);
-        row.setAlignment(Pos.CENTER_LEFT);
-        return row;
+    /** Taille de fonds levée vs cible de levée, agrégées en USD par classe d'actifs (#2). */
+    private Node fundSizeChart() {
+        java.util.Map<AssetClass, double[]> byClass = new java.util.LinkedHashMap<>();
+        for (AssetClass ac : AssetClass.values()) {
+            byClass.put(ac, new double[2]);   // [size, target]
+        }
+        for (FundInvestment f : activeFunds) {
+            FundVintage v = latest(f);
+            AssetClass ac = classOf(f);
+            if (v == null || ac == null) {
+                continue;
+            }
+            double[] agg = byClass.get(ac);
+            agg[0] += usd(v.fundSize(), f.currency());
+            agg[1] += usd(v.targetRaise(), f.currency());
+        }
+        double max = 0;
+        for (double[] a : byClass.values()) {
+            max = Math.max(max, Math.max(a[0], a[1]));
+        }
+        if (max <= 0) {
+            return placeholder("No fund size or target raise reported yet.");
+        }
+        VBox rows = new VBox(14);
+        for (var e : byClass.entrySet()) {
+            double[] a = e.getValue();
+            if (a[0] <= 0 && a[1] <= 0) {
+                continue;
+            }
+            VBox group = new VBox(6,
+                    metricBar(e.getKey().label() + " · size", a[0], max, Formatters.money(a[0], "USD"), "funnel-stage"),
+                    metricBar(e.getKey().label() + " · target", a[1], max, Formatters.money(a[1], "USD"), "funnel-approved"));
+            rows.getChildren().add(group);
+        }
+        return rows;
+    }
+
+    /** Moyenne des performances (DPI/TVPI/IRR/MOIC) du millésime récent, par classe (#7). */
+    private Node performanceByClass() {
+        java.util.Map<AssetClass, java.util.List<FundVintage>> byClass = new java.util.LinkedHashMap<>();
+        for (FundInvestment f : activeFunds) {
+            FundVintage v = latest(f);
+            AssetClass ac = classOf(f);
+            if (v == null || ac == null) {
+                continue;
+            }
+            byClass.computeIfAbsent(ac, k -> new java.util.ArrayList<>()).add(v);
+        }
+        if (byClass.isEmpty()) {
+            return placeholder("No fund vintage reported yet.");
+        }
+        GridPane g = new GridPane();
+        g.getStyleClass().add("method-table");
+        g.setHgap(28);
+        g.setVgap(8);
+        String[] heads = {"Asset class", "DPI", "TVPI", "IRR", "MOIC", "Funds"};
+        for (int c = 0; c < heads.length; c++) {
+            Label h = new Label(heads[c]);
+            h.getStyleClass().add("method-head");
+            g.add(h, c, 0);
+        }
+        int r = 1;
+        for (var e : byClass.entrySet()) {
+            java.util.List<FundVintage> vs = e.getValue();
+            String[] cells = {
+                    e.getKey().label(),
+                    Formatters.multiple(avg(vs, FundVintage::dpi)),
+                    Formatters.multiple(avg(vs, FundVintage::tvpi)),
+                    Formatters.percent(avg(vs, FundVintage::irr)),
+                    Formatters.multiple(avg(vs, FundVintage::moic)),
+                    Integer.toString(vs.size())};
+            for (int c = 0; c < cells.length; c++) {
+                Label cell = new Label(cells[c]);
+                cell.getStyleClass().add("method-cell");
+                g.add(cell, c, r);
+            }
+            r++;
+        }
+        return g;
+    }
+
+    /** Moyenne d'une métrique de millésime sur une liste, en ignorant les valeurs absentes. */
+    private static Double avg(java.util.List<FundVintage> vs, Function<FundVintage, Double> metric) {
+        java.util.OptionalDouble m = vs.stream().map(metric).filter(x -> x != null)
+                .mapToDouble(Double::doubleValue).average();
+        return m.isPresent() ? m.getAsDouble() : null;
+    }
+
+    /** Nombre de fonds par année de millésime (#7). */
+    private Node fundsPerVintageChart() {
+        java.util.Map<Integer, Long> byYear = new java.util.TreeMap<>();
+        for (FundInvestment f : activeFunds) {
+            if (f.vintages() == null) {
+                continue;
+            }
+            for (FundVintage v : f.vintages()) {
+                byYear.merge(v.vintageYear(), 1L, Long::sum);
+            }
+        }
+        if (byYear.isEmpty()) {
+            return placeholder("No fund vintage reported yet.");
+        }
+        long max = byYear.values().stream().mapToLong(Long::longValue).max().orElse(0L);
+        VBox rows = new VBox(10);
+        java.util.List<Integer> years = new java.util.ArrayList<>(byYear.keySet());
+        java.util.Collections.reverse(years);   // plus récent en haut
+        for (Integer y : years) {
+            long c = byYear.get(y);
+            rows.getChildren().add(metricBar(Integer.toString(y), c, max, Long.toString(c), "funnel-stage"));
+        }
+        return rows;
     }
 
     /* ---- Pipeline par étape : barres horizontales colorées ---- */
