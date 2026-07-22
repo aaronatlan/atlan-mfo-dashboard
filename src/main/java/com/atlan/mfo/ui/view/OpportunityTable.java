@@ -34,7 +34,12 @@ import java.util.function.Consumer;
  */
 public final class OpportunityTable extends VBox {
 
-    private static final String ALL_ROUTES = "All access routes";
+    private static final String ALL_ROUTES = "All access types";
+    // Regroupement des routes d'accès en deux familles utiles au comité : engagements
+    // de fonds (primaires) d'un côté, co-investissements & directs de l'autre (retour #6).
+    private static final String GROUP_PRIMARY = "Primary fund commitments";
+    private static final String GROUP_COINVEST = "Co-investment & direct";
+    private static final String GROUP_SECONDARY = "Secondary";
     private static final String ALL_SUBSTRATS = "All sub-strategies";
     private static final String ALL_STATUSES = "All statuses";
     private static final String ALL_TIERS = "All tiers";
@@ -62,8 +67,9 @@ public final class OpportunityTable extends VBox {
         this.total = items.size();
 
         List<String> routes = items.stream()
-                .map(i -> routeLabel(i.accessRoute()))
-                .filter(s -> s != null).distinct().sorted().toList();
+                .map(i -> routeBucket(i.accessRoute()))
+                .filter(s -> s != null).distinct()
+                .sorted(Comparator.comparingInt(OpportunityTable::bucketRank)).toList();
         this.hasRoute = !routes.isEmpty();
 
         List<String> subStrats = items.stream()
@@ -88,8 +94,30 @@ public final class OpportunityTable extends VBox {
         updateCount();
     }
 
-    static String routeLabel(String code) {
-        return Classification.label(AccessRoute.class, code, AccessRoute::label);
+    /**
+     * Famille de route d'accès (regroupée) : les co-investissements et les investissements
+     * directs sont fondus dans un seul groupe, pour lister « primaires » vs « co-invest &
+     * direct » d'un coup (retour #6). {@code null} si la route n'est pas renseignée.
+     */
+    static String routeBucket(String code) {
+        AccessRoute r = Classification.fromCode(AccessRoute.class, code);
+        if (r == null) {
+            return null;
+        }
+        return switch (r) {
+            case PRIMARY_FUND -> GROUP_PRIMARY;
+            case CO_INVESTMENT, DIRECT_INVESTMENT -> GROUP_COINVEST;
+            case SECONDARY -> GROUP_SECONDARY;
+        };
+    }
+
+    private static int bucketRank(String bucket) {
+        return switch (bucket) {
+            case GROUP_PRIMARY -> 0;
+            case GROUP_COINVEST -> 1;
+            case GROUP_SECONDARY -> 2;
+            default -> 3;
+        };
     }
 
     /**
@@ -186,7 +214,7 @@ public final class OpportunityTable extends VBox {
         String q = search.getText() == null ? "" : search.getText().trim().toLowerCase();
 
         filtered.setPredicate(item -> {
-            if (route != null && !ALL_ROUTES.equals(route) && !route.equals(routeLabel(item.accessRoute()))) {
+            if (route != null && !ALL_ROUTES.equals(route) && !route.equals(routeBucket(item.accessRoute()))) {
                 return false;
             }
             if (sub != null && !ALL_SUBSTRATS.equals(sub) && !sub.equals(item.subStrategy())) {
