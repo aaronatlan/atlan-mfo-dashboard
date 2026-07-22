@@ -9,6 +9,8 @@ import com.atlan.mfo.model.enums.DealStatus;
 import com.atlan.mfo.model.enums.Tier;
 import com.atlan.mfo.ui.util.Formatters;
 import com.atlan.mfo.ui.util.FormControls;
+import javafx.geometry.HPos;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -133,14 +135,42 @@ public final class PresentationView extends BorderPane {
                 metric(avg.isPresent() ? Long.toString(Math.round(avg.getAsDouble())) : "—", "AVERAGE SCORE"),
                 metric(Long.toString(strong), "STRONG TIER"));
 
-        VBox box = new VBox(28, hero, metrics, panelsRow(active, all),
-                equalRow(
-                        panel("AVERAGE PERFORMANCE BY ASSET CLASS — LATEST VINTAGE", performanceByClass()),
-                        panel("FUNDS BY VINTAGE YEAR", fundsPerVintageChart())),
+        // Les quatre panneaux dans une seule grille 2×2 (colonnes de 50%) : la gouttière
+        // centrale tombe exactement au même endroit d'une rangée à l'autre — pas de décalage.
+        GridPane panels = panelGrid(
+                panel("FUND SIZE VS TARGET RAISE — BY ASSET CLASS", fundSizeChart()),
+                panel("PIPELINE BY STAGE", statusFunnel(all)),
+                panel("AVERAGE PERFORMANCE BY ASSET CLASS — LATEST VINTAGE", performanceByClass()),
+                panel("FUNDS BY VINTAGE YEAR", fundsPerVintageChart()));
+
+        VBox box = new VBox(28, hero, metrics, panels,
                 panel("GEOGRAPHIC EXPOSURE — BY OPPORTUNITY COUNT", geographyChart(active)),
                 decisions(all));
         box.getStyleClass().add("presentation-body");
         return box;
+    }
+
+    /** Grille 2×2 de panneaux, colonnes de 50 % : alignées à l'identique sur les deux rangées. */
+    private GridPane panelGrid(VBox topLeft, VBox topRight, VBox bottomLeft, VBox bottomRight) {
+        GridPane g = new GridPane();
+        g.setHgap(20);
+        g.setVgap(28);
+        ColumnConstraints col = new ColumnConstraints();
+        col.setPercentWidth(50);
+        col.setHalignment(HPos.LEFT);
+        g.getColumnConstraints().addAll(col, col);
+        VBox[][] cells = {{topLeft, topRight}, {bottomLeft, bottomRight}};
+        for (int r = 0; r < cells.length; r++) {
+            for (int c = 0; c < cells[r].length; c++) {
+                VBox p = cells[r][c];
+                p.setMaxWidth(Double.MAX_VALUE);
+                p.setMaxHeight(Double.MAX_VALUE);
+                GridPane.setHgrow(p, Priority.ALWAYS);
+                GridPane.setVgrow(p, Priority.ALWAYS);
+                g.add(p, c, r);
+            }
+        }
+        return g;
     }
 
 
@@ -150,26 +180,6 @@ public final class PresentationView extends BorderPane {
         Label l = new Label(label);
         l.getStyleClass().add("pres-metric-label");
         return new VBox(2, v, l);
-    }
-
-    /* ---- Panneaux graphiques (allocation + pipeline) côte à côte ---- */
-
-    private HBox panelsRow(List<PipelineItem> active, List<PipelineItem> all) {
-        VBox sizing = panel("FUND SIZE VS TARGET RAISE — BY ASSET CLASS", fundSizeChart());
-        VBox pipeline = panel("PIPELINE BY STAGE", statusFunnel(all));
-        return equalRow(sizing, pipeline);
-    }
-
-    /** Deux panneaux côte à côte, largeur ET hauteur égalisées. */
-    private HBox equalRow(VBox left, VBox right) {
-        for (VBox p : new VBox[]{left, right}) {
-            p.setMaxWidth(Double.MAX_VALUE);
-            p.setMaxHeight(Double.MAX_VALUE);
-            HBox.setHgrow(p, Priority.ALWAYS);
-        }
-        HBox row = new HBox(20, left, right);
-        row.setFillHeight(true);
-        return row;
     }
 
     private VBox panel(String titleText, Node content) {
