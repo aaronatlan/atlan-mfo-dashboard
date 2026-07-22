@@ -77,11 +77,17 @@ public final class DetailView extends BorderPane {
         GridPane layout = twoColumns();
         layout.add(card("Score breakdown", scoreBars(breakdown)), 0, 0);
         layout.add(card("General", g1), 1, 0);
-        layout.add(card("Vintages (track record)", vintageTable(f.vintages(), f.currency())), 0, 1);
-        layout.add(card("Timeline", g4), 1, 1);
-        layout.add(card("Contact", contactGrid(f.contactName(), f.contactEmail(), f.contactPhone())), 0, 2);
+        layout.add(card("Timeline", g4), 0, 1);
+        layout.add(card("Contact", contactGrid(f.contactName(), f.contactEmail(), f.contactPhone())), 1, 1);
+        // Le tableau des millésimes a beaucoup de colonnes (perf + taille/cible/yield) :
+        // pleine largeur pour tout afficher en entier, sans troncature.
+        Node vintages = card("Vintages (track record)", vintageTable(f.vintages(), f.currency()));
+        layout.add(vintages, 0, 2);
+        GridPane.setColumnSpan(vintages, 2);
         if (f.comments() != null && !f.comments().isBlank()) {
-            layout.add(card("Comments", paragraph(f.comments())), 1, 2);
+            Node comments = card("Comments", paragraph(f.comments()));
+            layout.add(comments, 0, 3);
+            GridPane.setColumnSpan(comments, 2);
         }
 
         v.setCenter(scroll(layout));
@@ -370,6 +376,7 @@ public final class DetailView extends BorderPane {
         for (int c = 0; c < heads.length; c++) {
             Label h = new Label(heads[c]);
             h.getStyleClass().add("method-head");
+            h.setMinWidth(Region.USE_PREF_SIZE);   // jamais tronqué en « … »
             g.add(h, c, 0);
         }
         int r = 1;
@@ -386,6 +393,7 @@ public final class DetailView extends BorderPane {
             for (int c = 0; c < cells.length; c++) {
                 Label cell = new Label(cells[c]);
                 cell.getStyleClass().add("method-cell");
+                cell.setMinWidth(Region.USE_PREF_SIZE);   // valeurs affichées en entier
                 g.add(cell, c, r);
             }
             r++;
