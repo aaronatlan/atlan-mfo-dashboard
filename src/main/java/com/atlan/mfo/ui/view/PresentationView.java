@@ -386,9 +386,14 @@ public final class PresentationView extends BorderPane {
      * taille/cible et fonds-par-millésime.
      */
     private HBox metricBar(String label, double value, double max, String valueText, String fillClass) {
+        return metricBar(label, value, max, valueText, fillClass, 190);
+    }
+
+    private HBox metricBar(String label, double value, double max, String valueText, String fillClass,
+                           double labelWidth) {
         Label l = new Label(label);
         l.getStyleClass().add("funnel-label");
-        l.setMinWidth(190);
+        l.setMinWidth(labelWidth);
         Region fill = new Region();
         fill.getStyleClass().addAll("funnel-fill", fillClass);
         StackPane track = new StackPane(fill);
@@ -550,7 +555,7 @@ public final class PresentationView extends BorderPane {
         java.util.Collections.reverse(years);   // plus récent en haut
         for (Integer y : years) {
             long c = byYear.get(y);
-            rows.getChildren().add(metricBar(Integer.toString(y), c, max, Long.toString(c), "funnel-stage"));
+            rows.getChildren().add(metricBar(Integer.toString(y), c, max, Long.toString(c), "funnel-stage", 60));
         }
         return rows;
     }
