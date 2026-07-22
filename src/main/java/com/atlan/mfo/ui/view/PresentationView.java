@@ -536,6 +536,11 @@ public final class PresentationView extends BorderPane {
     }
 
     /** Nombre de fonds par année de millésime (#7). Barre horizontale par année. */
+    // Hauteur maximale du panneau « Funds by vintage year » : au-delà, on défile dans le
+    // panneau au lieu de le laisser grandir avec le nombre d'années couvertes par le
+    // pipeline (qui ne fera qu'augmenter au fil des millésimes futurs).
+    private static final double VINTAGE_CHART_MAX_HEIGHT = 300;
+
     private Node fundsPerVintageChart() {
         java.util.Map<Integer, Long> byYear = new java.util.TreeMap<>();
         for (FundInvestment f : activeFunds) {
@@ -557,7 +562,15 @@ public final class PresentationView extends BorderPane {
             long c = byYear.get(y);
             rows.getChildren().add(metricBar(Integer.toString(y), c, max, Long.toString(c), "funnel-stage", 60));
         }
-        return rows;
+
+        ScrollPane scroll = new ScrollPane(rows);
+        scroll.setFitToWidth(true);
+        scroll.getStyleClass().add("pres-inline-scroll");
+        scroll.setMaxHeight(VINTAGE_CHART_MAX_HEIGHT);
+        // Sous ce seuil (peu d'années), pas de barre de défilement inutile : la hauteur
+        // suit le contenu, plafonnée seulement au-delà.
+        scroll.setPrefHeight(Math.min(VINTAGE_CHART_MAX_HEIGHT, years.size() * 34 + (years.size() - 1) * 10));
+        return scroll;
     }
 
     /* ---- Pipeline par étape : barres horizontales colorées ---- */

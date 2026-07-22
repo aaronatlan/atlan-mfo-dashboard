@@ -1017,6 +1017,15 @@
     -fx-background-color: transparent;
 }
 
+/* Défilement interne d'un panneau (ex. fonds par millésime, si trop d'années) */
+.pres-inline-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+.pres-inline-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
 .pres-priority-row {
     -fx-background-color: -atlan-card;
     -fx-background-radius: 6;
