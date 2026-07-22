@@ -417,19 +417,22 @@ public final class PresentationView extends BorderPane {
         return rows;
     }
 
-    /** Moyenne des performances (DPI/TVPI/IRR/MOIC) du millésime récent, par classe (#7). */
+    /**
+     * Moyenne des performances (DPI/TVPI/IRR/MOIC) du millésime récent, par classe (#7).
+     * Liste toutes les classes d'actifs fixes, même celles sans aucun fonds actif.
+     */
     private Node performanceByClass() {
         java.util.Map<AssetClass, java.util.List<FundVintage>> byClass = new java.util.LinkedHashMap<>();
+        for (AssetClass ac : AssetClass.values()) {
+            byClass.put(ac, new java.util.ArrayList<>());
+        }
         for (FundInvestment f : activeFunds) {
             FundVintage v = latest(f);
             AssetClass ac = classOf(f);
             if (v == null || ac == null) {
                 continue;
             }
-            byClass.computeIfAbsent(ac, k -> new java.util.ArrayList<>()).add(v);
-        }
-        if (byClass.isEmpty()) {
-            return placeholder("No fund vintage reported yet.");
+            byClass.get(ac).add(v);
         }
         GridPane g = new GridPane();
         g.getStyleClass().add("method-table");
