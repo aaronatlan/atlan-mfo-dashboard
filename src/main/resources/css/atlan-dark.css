@@ -983,6 +983,21 @@
     -fx-max-height: 12;
 }
 
+/* Fonds par millesime : histogramme vertical compact (colonnes cote a cote) */
+.vintage-bar {
+    -fx-background-color: -atlan-accent;
+    -fx-background-radius: 4 4 0 0;
+}
+.vintage-count-label {
+    -fx-text-fill: -atlan-text;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+.vintage-year-label {
+    -fx-text-fill: -atlan-text-2;
+    -fx-font-size: 13px;
+}
+
 /* Carte du monde (exposition géographique) */
 .map-legend-bar {
     -fx-background-color: linear-gradient(to right,

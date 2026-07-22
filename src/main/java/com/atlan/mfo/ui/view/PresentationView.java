@@ -12,6 +12,7 @@ import com.atlan.mfo.ui.util.FormControls;
 import javafx.geometry.HPos;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Arc;
@@ -505,7 +506,11 @@ public final class PresentationView extends BorderPane {
         return m.isPresent() ? m.getAsDouble() : null;
     }
 
-    /** Nombre de fonds par année de millésime (#7). */
+    /**
+     * Nombre de fonds par année de millésime (#7). Histogramme vertical compact (colonnes
+     * cote à cote, hauteur fixe) plutôt qu'une barre horizontale par année empilée — la
+     * hauteur du panneau ne dépend plus du nombre d'années couvertes par le pipeline.
+     */
     private Node fundsPerVintageChart() {
         java.util.Map<Integer, Long> byYear = new java.util.TreeMap<>();
         for (FundInvestment f : activeFunds) {
@@ -520,14 +525,30 @@ public final class PresentationView extends BorderPane {
             return placeholder("No fund vintage reported yet.");
         }
         long max = byYear.values().stream().mapToLong(Long::longValue).max().orElse(0L);
-        VBox rows = new VBox(10);
-        java.util.List<Integer> years = new java.util.ArrayList<>(byYear.keySet());
-        java.util.Collections.reverse(years);   // plus récent en haut
-        for (Integer y : years) {
-            long c = byYear.get(y);
-            rows.getChildren().add(metricBar(Integer.toString(y), c, max, Long.toString(c), "funnel-stage"));
+        double chartHeight = 120;
+
+        FlowPane cols = new FlowPane(18, 12);
+        for (var e : byYear.entrySet()) {   // ordre chronologique (plus ancien à gauche)
+            long c = e.getValue();
+            Label count = new Label(Long.toString(c));
+            count.getStyleClass().add("vintage-count-label");
+
+            Region bar = new Region();
+            bar.getStyleClass().add("vintage-bar");
+            double frac = max > 0 ? (double) c / max : 0;
+            double h = Math.max(4, chartHeight * frac);
+            bar.setMinSize(40, h);
+            bar.setMaxSize(40, h);
+
+            Label year = new Label(Integer.toString(e.getKey()));
+            year.getStyleClass().add("vintage-year-label");
+
+            VBox col = new VBox(6, count, bar, year);
+            col.setAlignment(Pos.BOTTOM_CENTER);
+            cols.getChildren().add(col);
         }
-        return rows;
+        cols.setAlignment(Pos.BOTTOM_LEFT);
+        return cols;
     }
 
     /* ---- Pipeline par étape : barres horizontales colorées ---- */
