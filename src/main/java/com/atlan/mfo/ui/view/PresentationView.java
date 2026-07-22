@@ -134,12 +134,24 @@ public final class PresentationView extends BorderPane {
                 metric(Long.toString(strong), "STRONG TIER"));
 
         VBox box = new VBox(28, hero, metrics, panelsRow(active, all),
-                panel("AVERAGE PERFORMANCE BY ASSET CLASS — LATEST VINTAGE", performanceByClass()),
-                panel("FUNDS BY VINTAGE YEAR", fundsPerVintageChart()),
+                twoPanels(
+                        panel("AVERAGE PERFORMANCE BY ASSET CLASS — LATEST VINTAGE", performanceByClass()),
+                        panel("FUNDS BY VINTAGE YEAR", fundsPerVintageChart())),
                 panel("GEOGRAPHIC EXPOSURE — BY OPPORTUNITY COUNT", geographyChart(active)),
                 decisions(all));
         box.getStyleClass().add("presentation-body");
         return box;
+    }
+
+    /** Deux panneaux côte à côte, largeur partagée (évite d'empiler et gagner en hauteur). */
+    private HBox twoPanels(VBox left, VBox right) {
+        left.setMaxWidth(Double.MAX_VALUE);
+        right.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(left, Priority.ALWAYS);
+        HBox.setHgrow(right, Priority.ALWAYS);
+        HBox row = new HBox(20, left, right);
+        row.setFillHeight(true);
+        return row;
     }
 
     private VBox metric(String value, String label) {
