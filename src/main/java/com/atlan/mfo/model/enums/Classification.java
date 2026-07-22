@@ -26,6 +26,7 @@ public final class Classification {
         VENTURE_CAPITAL("Venture Capital"),
         PRIVATE_CREDIT("Private Credit"),
         REAL_ASSETS("Real Assets"),
+        HEDGE_FUND("Hedge Fund"),
         SECONDARIES("Secondaries");
 
         private final String label;
@@ -50,6 +51,9 @@ public final class Classification {
                         "Structured Credit / Asset-Based Lending", "Real Estate Debt", "NAV Financing", "Royalties");
                 case REAL_ASSETS -> List.of(
                         "Real Estate", "Infrastructure", "Natural Resources");
+                case HEDGE_FUND -> List.of(
+                        "Long / Short Equity", "Global Macro", "Event-Driven", "Relative Value",
+                        "Multi-Strategy", "Managed Futures / CTA", "Credit");
                 case SECONDARIES -> List.of();
             };
         }

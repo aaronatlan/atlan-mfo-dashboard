@@ -118,6 +118,10 @@ public final class ScoringProfile {
             case "VENTURE_CAPITAL" -> gridD;
             case "REAL_ASSETS" -> gridE;
             case "SECONDARIES" -> gridF;
+            // Hedge funds : pas de grille dédiée (métriques Sharpe/vol/drawdown et cibles
+            // À DÉFINIR PAR LE COMITÉ). En attendant, notés sur la grille A si des multiples
+            // de type DPI/TVPI/IRR sont renseignés — sinon score neutre (métriques absentes).
+            case "HEDGE_FUND" -> gridA;
             default -> gridA;   // PRIVATE_EQUITY et non classé
         };
     }
