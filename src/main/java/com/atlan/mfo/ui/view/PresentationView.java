@@ -380,7 +380,11 @@ public final class PresentationView extends BorderPane {
         return row;
     }
 
-    /** Taille de fonds levée vs cible de levée, agrégées en USD par classe d'actifs (#2). */
+    /**
+     * Taille de fonds levée vs cible de levée, agrégées en USD par classe d'actifs (#2).
+     * Une ligne compacte par classe (repère « bullet » : barre = taille, trait = cible),
+     * toujours les 6 classes fixes — même hauteur que le tableau de performance voisin.
+     */
     private Node fundSizeChart() {
         java.util.Map<AssetClass, double[]> byClass = new java.util.LinkedHashMap<>();
         for (AssetClass ac : AssetClass.values()) {
@@ -400,21 +404,51 @@ public final class PresentationView extends BorderPane {
         for (double[] a : byClass.values()) {
             max = Math.max(max, Math.max(a[0], a[1]));
         }
-        if (max <= 0) {
-            return placeholder("No fund size or target raise reported yet.");
-        }
-        VBox rows = new VBox(14);
+        VBox rows = new VBox(10);
         for (var e : byClass.entrySet()) {
             double[] a = e.getValue();
-            if (a[0] <= 0 && a[1] <= 0) {
-                continue;
-            }
-            VBox group = new VBox(6,
-                    metricBar(e.getKey().label() + " · size", a[0], max, Formatters.money(a[0], "USD"), "funnel-stage"),
-                    metricBar(e.getKey().label() + " · target", a[1], max, Formatters.money(a[1], "USD"), "funnel-approved"));
-            rows.getChildren().add(group);
+            String valueText = (a[0] <= 0 && a[1] <= 0)
+                    ? "—"
+                    : Formatters.money(a[0], "USD") + " / " + Formatters.money(a[1], "USD") + " target";
+            rows.getChildren().add(bulletRow(e.getKey().label(), a[0], a[1], max, valueText));
         }
         return rows;
+    }
+
+    /** Ligne « bullet » : barre pleine = valeur réelle, trait vertical = cible. */
+    private HBox bulletRow(String label, double value, double target, double max, String valueText) {
+        Label l = new Label(label);
+        l.getStyleClass().add("funnel-label");
+        l.setMinWidth(150);
+
+        StackPane track = new StackPane();
+        track.getStyleClass().add("bullet-track");
+        track.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(track, Priority.ALWAYS);
+
+        Region targetMarker = new Region();
+        targetMarker.getStyleClass().add("bullet-target");
+        targetMarker.setMinHeight(22);
+        targetMarker.setMaxHeight(22);
+        double targetFrac = max > 0 ? target / max : 0;
+        targetMarker.maxWidthProperty().bind(track.widthProperty().multiply(targetFrac));
+        StackPane.setAlignment(targetMarker, Pos.CENTER_LEFT);
+
+        Region sizeBar = new Region();
+        sizeBar.getStyleClass().add("bullet-size");
+        double sizeFrac = max > 0 ? value / max : 0;
+        sizeBar.maxWidthProperty().bind(track.widthProperty().multiply(sizeFrac));
+        StackPane.setAlignment(sizeBar, Pos.CENTER_LEFT);
+
+        track.getChildren().addAll(targetMarker, sizeBar);
+
+        Label v = new Label(valueText);
+        v.getStyleClass().add("funnel-value");
+        v.setMinWidth(180);
+
+        HBox row = new HBox(14, l, track, v);
+        row.setAlignment(Pos.CENTER_LEFT);
+        return row;
     }
 
     /**

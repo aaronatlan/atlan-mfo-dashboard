@@ -963,6 +963,26 @@
     -fx-font-size: 15px;
 }
 
+/* Taille de fonds vs cible : une ligne compacte par classe (repère « bullet »), au lieu
+   de deux barres empilées — garde la meme hauteur que le tableau de performance voisin. */
+.bullet-track {
+    -fx-background-color: -atlan-raised;
+    -fx-background-radius: 4;
+    -fx-min-height: 22;
+    -fx-pref-height: 22;
+}
+.bullet-target {
+    -fx-background-color: transparent;
+    -fx-border-color: -atlan-text-3;
+    -fx-border-width: 0 2 0 0;   /* simple repère vertical à la cible */
+}
+.bullet-size {
+    -fx-background-color: -atlan-accent;
+    -fx-background-radius: 4;
+    -fx-min-height: 12;
+    -fx-max-height: 12;
+}
+
 /* Carte du monde (exposition géographique) */
 .map-legend-bar {
     -fx-background-color: linear-gradient(to right,
