@@ -12,7 +12,6 @@ import com.atlan.mfo.ui.util.FormControls;
 import javafx.geometry.HPos;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Arc;
@@ -141,17 +140,21 @@ public final class PresentationView extends BorderPane {
                 metric(avg.isPresent() ? Long.toString(Math.round(avg.getAsDouble())) : "—", "AVERAGE SCORE"),
                 metric(Long.toString(strong), "STRONG TIER"));
 
-        // Tous les panneaux dans une seule grille à 2 colonnes de 50 % : la gouttière
-        // centrale tombe exactement au même endroit d'une rangée à l'autre — pas de décalage.
+        // Panneaux « by asset class » sur une grille 2 colonnes de 50 % (alignée d'une
+        // rangée à l'autre). Carte + fonds par millésime à part : la carte a besoin de
+        // plus de largeur, sans contrainte d'alignement avec la grille du dessus.
         GridPane panels = panelGrid(List.of(
                 panel("ALLOCATION BY ASSET CLASS", allocationChart(active)),
                 panel("PIPELINE BY STAGE", statusFunnel(all)),
                 panel("FUND SIZE VS TARGET RAISE — BY ASSET CLASS", fundSizeChart()),
-                panel("AVERAGE PERFORMANCE BY ASSET CLASS — LATEST VINTAGE", performanceByClass()),
-                panel("FUNDS BY VINTAGE YEAR", fundsPerVintageChart()),
-                panel("GEOGRAPHIC EXPOSURE — BY OPPORTUNITY COUNT", geographyChart(active))));
+                panel("AVERAGE PERFORMANCE BY ASSET CLASS — LATEST VINTAGE", performanceByClass())));
 
-        VBox box = new VBox(28, hero, metrics, panels, decisions(all));
+        GridPane geoRow = weightedRow(
+                panel("GEOGRAPHIC EXPOSURE — BY OPPORTUNITY COUNT", geographyChart(active)),
+                panel("FUNDS BY VINTAGE YEAR", fundsPerVintageChart()),
+                65);
+
+        VBox box = new VBox(28, hero, metrics, panels, geoRow, decisions(all));
         box.getStyleClass().add("presentation-body");
         return box;
     }
@@ -182,6 +185,28 @@ public final class PresentationView extends BorderPane {
                 g.add(p, i % 2, i / 2);
             }
         }
+        return g;
+    }
+
+    /** Deux panneaux sur une même rangée, largeurs asymétriques (leftPercent / reste). */
+    private GridPane weightedRow(VBox left, VBox right, double leftPercent) {
+        GridPane g = new GridPane();
+        g.setHgap(20);
+        ColumnConstraints c1 = new ColumnConstraints();
+        c1.setPercentWidth(leftPercent);
+        c1.setHalignment(HPos.LEFT);
+        ColumnConstraints c2 = new ColumnConstraints();
+        c2.setPercentWidth(100 - leftPercent);
+        c2.setHalignment(HPos.LEFT);
+        g.getColumnConstraints().addAll(c1, c2);
+        for (VBox p : new VBox[]{left, right}) {
+            p.setMaxWidth(Double.MAX_VALUE);
+            p.setMaxHeight(Double.MAX_VALUE);
+            GridPane.setHgrow(p, Priority.ALWAYS);
+            GridPane.setVgrow(p, Priority.ALWAYS);
+        }
+        g.add(left, 0, 0);
+        g.add(right, 1, 0);
         return g;
     }
 
@@ -505,11 +530,7 @@ public final class PresentationView extends BorderPane {
         return m.isPresent() ? m.getAsDouble() : null;
     }
 
-    /**
-     * Nombre de fonds par année de millésime (#7). Histogramme vertical compact (colonnes
-     * cote à cote, hauteur fixe) plutôt qu'une barre horizontale par année empilée — la
-     * hauteur du panneau ne dépend plus du nombre d'années couvertes par le pipeline.
-     */
+    /** Nombre de fonds par année de millésime (#7). Barre horizontale par année. */
     private Node fundsPerVintageChart() {
         java.util.Map<Integer, Long> byYear = new java.util.TreeMap<>();
         for (FundInvestment f : activeFunds) {
@@ -524,30 +545,14 @@ public final class PresentationView extends BorderPane {
             return placeholder("No fund vintage reported yet.");
         }
         long max = byYear.values().stream().mapToLong(Long::longValue).max().orElse(0L);
-        double chartHeight = 120;
-
-        FlowPane cols = new FlowPane(18, 12);
-        for (var e : byYear.entrySet()) {   // ordre chronologique (plus ancien à gauche)
-            long c = e.getValue();
-            Label count = new Label(Long.toString(c));
-            count.getStyleClass().add("vintage-count-label");
-
-            Region bar = new Region();
-            bar.getStyleClass().add("vintage-bar");
-            double frac = max > 0 ? (double) c / max : 0;
-            double h = Math.max(4, chartHeight * frac);
-            bar.setMinSize(40, h);
-            bar.setMaxSize(40, h);
-
-            Label year = new Label(Integer.toString(e.getKey()));
-            year.getStyleClass().add("vintage-year-label");
-
-            VBox col = new VBox(6, count, bar, year);
-            col.setAlignment(Pos.BOTTOM_CENTER);
-            cols.getChildren().add(col);
+        VBox rows = new VBox(10);
+        java.util.List<Integer> years = new java.util.ArrayList<>(byYear.keySet());
+        java.util.Collections.reverse(years);   // plus récent en haut
+        for (Integer y : years) {
+            long c = byYear.get(y);
+            rows.getChildren().add(metricBar(Integer.toString(y), c, max, Long.toString(c), "funnel-stage"));
         }
-        cols.setAlignment(Pos.BOTTOM_LEFT);
-        return cols;
+        return rows;
     }
 
     /* ---- Pipeline par étape : barres horizontales colorées ---- */
