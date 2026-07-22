@@ -148,11 +148,10 @@ public final class PresentationView extends BorderPane {
                 panel("PIPELINE BY STAGE", statusFunnel(all)),
                 panel("FUND SIZE VS TARGET RAISE — BY ASSET CLASS", fundSizeChart()),
                 panel("AVERAGE PERFORMANCE BY ASSET CLASS — LATEST VINTAGE", performanceByClass()),
-                panel("FUNDS BY VINTAGE YEAR", fundsPerVintageChart())));
+                panel("FUNDS BY VINTAGE YEAR", fundsPerVintageChart()),
+                panel("GEOGRAPHIC EXPOSURE — BY OPPORTUNITY COUNT", geographyChart(active))));
 
-        VBox box = new VBox(28, hero, metrics, panels,
-                panel("GEOGRAPHIC EXPOSURE — BY OPPORTUNITY COUNT", geographyChart(active)),
-                decisions(all));
+        VBox box = new VBox(28, hero, metrics, panels, decisions(all));
         box.getStyleClass().add("presentation-body");
         return box;
     }
