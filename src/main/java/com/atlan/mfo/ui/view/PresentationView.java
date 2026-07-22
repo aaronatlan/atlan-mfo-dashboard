@@ -134,7 +134,7 @@ public final class PresentationView extends BorderPane {
                 metric(Long.toString(strong), "STRONG TIER"));
 
         VBox box = new VBox(28, hero, metrics, panelsRow(active, all),
-                twoPanels(
+                equalRow(
                         panel("AVERAGE PERFORMANCE BY ASSET CLASS — LATEST VINTAGE", performanceByClass()),
                         panel("FUNDS BY VINTAGE YEAR", fundsPerVintageChart())),
                 panel("GEOGRAPHIC EXPOSURE — BY OPPORTUNITY COUNT", geographyChart(active)),
@@ -143,16 +143,6 @@ public final class PresentationView extends BorderPane {
         return box;
     }
 
-    /** Deux panneaux côte à côte, largeur partagée (évite d'empiler et gagner en hauteur). */
-    private HBox twoPanels(VBox left, VBox right) {
-        left.setMaxWidth(Double.MAX_VALUE);
-        right.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(left, Priority.ALWAYS);
-        HBox.setHgrow(right, Priority.ALWAYS);
-        HBox row = new HBox(20, left, right);
-        row.setFillHeight(true);
-        return row;
-    }
 
     private VBox metric(String value, String label) {
         Label v = new Label(value);
@@ -167,11 +157,17 @@ public final class PresentationView extends BorderPane {
     private HBox panelsRow(List<PipelineItem> active, List<PipelineItem> all) {
         VBox sizing = panel("FUND SIZE VS TARGET RAISE — BY ASSET CLASS", fundSizeChart());
         VBox pipeline = panel("PIPELINE BY STAGE", statusFunnel(all));
-        sizing.setMaxWidth(Double.MAX_VALUE);
-        pipeline.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(sizing, Priority.ALWAYS);
-        HBox.setHgrow(pipeline, Priority.ALWAYS);
-        HBox row = new HBox(20, sizing, pipeline);
+        return equalRow(sizing, pipeline);
+    }
+
+    /** Deux panneaux côte à côte, largeur ET hauteur égalisées. */
+    private HBox equalRow(VBox left, VBox right) {
+        for (VBox p : new VBox[]{left, right}) {
+            p.setMaxWidth(Double.MAX_VALUE);
+            p.setMaxHeight(Double.MAX_VALUE);
+            HBox.setHgrow(p, Priority.ALWAYS);
+        }
+        HBox row = new HBox(20, left, right);
         row.setFillHeight(true);
         return row;
     }
@@ -179,7 +175,13 @@ public final class PresentationView extends BorderPane {
     private VBox panel(String titleText, Node content) {
         Label title = new Label(titleText);
         title.getStyleClass().add("pres-section-title");
-        VBox box = new VBox(18, title, content);
+        // Contenu centré verticalement dans l'espace disponible : quand deux panneaux
+        // d'une rangée sont égalisés en hauteur, le plus court (table courte, état vide)
+        // reste équilibré au lieu d'être collé en haut avec un grand vide dessous.
+        StackPane holder = new StackPane(content);
+        holder.setAlignment(Pos.CENTER_LEFT);
+        VBox.setVgrow(holder, Priority.ALWAYS);
+        VBox box = new VBox(18, title, holder);
         box.getStyleClass().add("pres-panel");
         return box;
     }
