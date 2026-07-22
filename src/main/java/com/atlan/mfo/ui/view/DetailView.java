@@ -77,13 +77,13 @@ public final class DetailView extends BorderPane {
         GridPane layout = twoColumns();
         layout.add(card("Score breakdown", scoreBars(breakdown)), 0, 0);
         layout.add(card("General", g1), 1, 0);
-        layout.add(card("Timeline", g4), 0, 1);
-        layout.add(card("Contact", contactGrid(f.contactName(), f.contactEmail(), f.contactPhone())), 1, 1);
         // Le tableau des millésimes a beaucoup de colonnes (perf + taille/cible/yield) :
-        // pleine largeur pour tout afficher en entier, sans troncature.
+        // pleine largeur pour tout afficher en entier, sans troncature — juste sous General.
         Node vintages = card("Vintages (track record)", vintageTable(f.vintages(), f.currency()));
-        layout.add(vintages, 0, 2);
+        layout.add(vintages, 0, 1);
         GridPane.setColumnSpan(vintages, 2);
+        layout.add(card("Timeline", g4), 0, 2);
+        layout.add(card("Contact", contactGrid(f.contactName(), f.contactEmail(), f.contactPhone())), 1, 2);
         if (f.comments() != null && !f.comments().isBlank()) {
             Node comments = card("Comments", paragraph(f.comments()));
             layout.add(comments, 0, 3);
