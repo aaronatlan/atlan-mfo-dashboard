@@ -130,6 +130,9 @@ public final class DealFormView extends BorderPane {
         r = row(g, r, "Investment type", invTypeField);
         r = row(g, r, "Planned commitment", commitmentField);
         r = row(g, r, "Currency", currencyCombo);
+        r = section(g, r, "CLASSIFICATION");
+        g.add(classification, 0, r, 2, 1);
+        r++;
         r = section(g, r, "FINANCIAL PERFORMANCE");
         r = row(g, r, "Revenue", revenueField);
         r = row(g, r, "Revenue CAGR", cagrField);
@@ -152,9 +155,6 @@ public final class DealFormView extends BorderPane {
         r = row(g, r, "Contact name", contactNameField);
         r = row(g, r, "Contact email", contactEmailField);
         r = row(g, r, "Contact phone", contactPhoneField);
-        r = section(g, r, "CLASSIFICATION");
-        g.add(classification, 0, r, 2, 1);
-        r++;
 
         nextStepsArea.setPromptText("next steps");
         nextStepsArea.setPrefRowCount(2);
